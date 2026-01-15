@@ -1,7 +1,6 @@
 #/bin/sh
-forge="`dirname $0`/../../.."
-forge=`realpath ${forge}`
-layers=${forge}/base_layer
+layers="`dirname $0`/../.."
+layers=`realpath ${layers}`
 platform=docker
 build="${layers}/build/${platform}"
 machine=$1
@@ -105,7 +104,7 @@ do
             ;;
         *)
             echo "Spinning up container ${toolchain_basename} from rvbl-${toolchain_basename}."
-            docker run --interactive --tty --detach --name ${toolchain_basename} --volume ${forge}:${forge} rvbl-${toolchain_basename}
+            docker run --interactive --tty --detach --name ${toolchain_basename} --volume ${layers}:${layers} rvbl-${toolchain_basename}
             ;;
     esac
 
