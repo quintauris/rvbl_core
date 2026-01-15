@@ -1,9 +1,0 @@
-== Function `rvbl_extension_present`
-Returns whether a particular RISC-V extension is available.
-
-=== Parameters
-`misa_extensions`:: RISC-V extension to check.
-
-=== Return value
-`rvbl_bool_t`:: Whether given extension is available.
-
