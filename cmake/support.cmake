@@ -31,7 +31,7 @@ function(rvbl_run_generators)
     file(MAKE_DIRECTORY ${generated_path} ${documentation_path})
 
     execute_process(
-        COMMAND "${MACHINE_GENERATOR}" "${CMAKE_CURRENT_SOURCE_DIR}/model/model.json" "${vendor_path}/quintauris_community/meta/machine.schema.json" "${vendor_path}" --dependencies
+        COMMAND "${MACHINE_GENERATOR}" "${CMAKE_CURRENT_SOURCE_DIR}/model/model.json" "${vendor_path}/quintauris/meta/machine.schema.json" "${vendor_path}" --dependencies
         OUTPUT_VARIABLE model_files
         #COMMAND_ECHO STDOUT
         #ECHO_OUTPUT_VARIABLE
@@ -42,7 +42,7 @@ function(rvbl_run_generators)
     set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS "${model_files}")
 
     execute_process(
-        COMMAND "${MACHINE_GENERATOR}" "${CMAKE_CURRENT_SOURCE_DIR}/model/model.json" "${vendor_path}/quintauris_community/meta/machine.schema.json" "${vendor_path}" --dry
+        COMMAND "${MACHINE_GENERATOR}" "${CMAKE_CURRENT_SOURCE_DIR}/model/model.json" "${vendor_path}/quintauris/meta/machine.schema.json" "${vendor_path}" --dry
         WORKING_DIRECTORY "${generated_path}"
         OUTPUT_VARIABLE generated_files
         #COMMAND_ECHO STDOUT
@@ -54,7 +54,7 @@ function(rvbl_run_generators)
     # C files
     add_custom_command(
         OUTPUT ${generated_files}
-        COMMAND "${MACHINE_GENERATOR}" "${CMAKE_CURRENT_SOURCE_DIR}/model/model.json" "${vendor_path}/quintauris_community/meta/machine.schema.json" "${vendor_path}"
+        COMMAND "${MACHINE_GENERATOR}" "${CMAKE_CURRENT_SOURCE_DIR}/model/model.json" "${vendor_path}/quintauris/meta/machine.schema.json" "${vendor_path}"
         DEPENDS ${model_files}
         WORKING_DIRECTORY ${generated_path}
         COMMENT "Generating machine headers from ${CMAKE_CURRENT_SOURCE_DIR}/model/model.json ..."
@@ -65,7 +65,7 @@ function(rvbl_run_generators)
     # Linker files
     add_custom_command(
         OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/memory.GNU.ld"
-        COMMAND "${MACHINE_GENERATOR}" "${CMAKE_CURRENT_SOURCE_DIR}/model/model.json" "${vendor_path}/quintauris_community/meta/machine.schema.json" "${vendor_path}" --linker
+        COMMAND "${MACHINE_GENERATOR}" "${CMAKE_CURRENT_SOURCE_DIR}/model/model.json" "${vendor_path}/quintauris/meta/machine.schema.json" "${vendor_path}" --linker
         MAIN_DEPENDENCY "${CMAKE_CURRENT_SOURCE_DIR}/model/model.json"
         DEPENDS "${model_files}"
         WORKING_DIRECTORY ${generated_path}
@@ -77,7 +77,7 @@ function(rvbl_run_generators)
     # Model documentation
     add_custom_command(
         OUTPUT "${documentation_path}/model.html"
-        COMMAND "${MACHINE_GENERATOR}" "${CMAKE_CURRENT_SOURCE_DIR}/model/model.json" "${vendor_path}/quintauris_community/meta/machine.schema.json" "${vendor_path}" --documentation
+        COMMAND "${MACHINE_GENERATOR}" "${CMAKE_CURRENT_SOURCE_DIR}/model/model.json" "${vendor_path}/quintauris/meta/machine.schema.json" "${vendor_path}" --documentation
         COMMAND "${ASCIIDOCTOR}" -o "${documentation_path}/model.html" "${documentation_path}/model.adoc"
         WORKING_DIRECTORY "${documentation_path}"
         MAIN_DEPENDENCY "${CMAKE_CURRENT_SOURCE_DIR}/model/model.json"
