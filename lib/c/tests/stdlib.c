@@ -1,0 +1,20 @@
+#include "rvbl/c/stdlib.h"
+#include "rvbl/test/rvbl_test.h"
+
+int main(void)
+{
+    rvbl_hart_hang_if_not(0);
+    rvbl_test_initialize();
+
+    ASSERT_EQ(abs(-23), 23);
+    ASSERT_EQ(abs(23), 23);
+    ASSERT_EQ(abs(0), 0);
+
+    ASSERT_EQ(abs(-23l), 23l);
+    ASSERT_EQ(abs(23l), 23l);
+    ASSERT_EQ(abs(0l), 0l);
+
+    PASS();
+
+    return 0;
+}

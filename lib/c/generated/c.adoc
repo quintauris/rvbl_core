@@ -1,0 +1,108 @@
+== Type `size_t`
+Unsigned integer type of the result of sizeof, offsetof.
+
+== Type `int8_t`
+Signed 8-bit integer.
+
+== Type `int_fast8_t`
+Signed fast 8-bit integer.
+
+== Type `int16_t`
+Signed 16-bit integer.
+
+== Type `int32_t`
+Signed 32-bit integer.
+
+== Type `int64_t`
+Signed 64-bit integer.
+
+== Type `intptr_t`
+Signed integer type capable of holding a pointer to void.
+
+== Type `uint8_t`
+Unsigned 8-bit integer.
+
+== Type `uint_fast8_t`
+Unsigned fast 8-bit integer.
+
+== Type `uint16_t`
+Unsigned 16-bit integer.
+
+== Type `uint32_t`
+Unsigned 32-bit integer.
+
+== Type `uint64_t`
+Unsigned 64-bit integer.
+
+== Type `uintptr_t`
+Unsigned integer type capable of holding a pointer to void.
+
+== Function `abs`
+Computes the absolute value of an integer number.
+
+=== Parameters
+`int`:: Integer value.
+
+=== Return value
+`int`:: The absolute value.
+
+== Function `abs`
+Computes the absolute value of an integer number.
+
+=== Parameters
+`long`:: Integer value.
+
+=== Return value
+`long`:: The absolute value.
+
+= RISC-V Base Layer C Library
+Quintauris GmbH
+:toc: left
+
+Implements parts of the C standard library required by the Base Layer.
+
+== Function `strlen`
+Returns the length of the given null-terminated byte string.
+
+=== Parameters
+`const char*`:: Pointer to the null-terminated byte string to be examined.
+
+=== Return value
+`size_t`:: The length of the null-terminated byte string.
+
+== Function `memset`
+Copies the value `unsigned char` into each of the first `size_t` characters
+of the object pointed to by `void*`.
+
+=== Parameters
+`void*`:: Pointer to the object to fill.
+`int`:: Fill byte.
+`size_t`:: Number of bytes to fill.
+
+=== Return value
+`void*`:: A copy of `void*` parameter.
+
+== Function `memcpy`
+Copies `size_t` characters from the object pointed to by `const void*` to
+the object pointed to by `void*`.
+
+=== Parameters
+`void*`:: Pointer to the object to copy to.
+`const void*`:: Pointer to the object to copy from.
+`size_t`:: Number of bytes to copy.
+
+=== Return value
+`void*`:: A copy of `void*` parameter.
+
+== Function `strcmp`
+Compares two null-terminated byte strings lexicographically.
+
+=== Parameters
+`const char*`:: Pointer to the first null-terminated string to compare.
+`const char*`:: Pointer to the second null-terminated string to compare.
+
+=== Return value
+`int`:: Negative value if lhs appears before rhs in lexicographical order.
+Zero if lhs and rhs compare equal. Positive value if lhs appears after rhs
+in lexicographical order.
+

@@ -1,0 +1,22 @@
+= RISC-V Base Layer Compiler Abstraction Library
+Quintauris GmbH
+:toc: left
+
+Implements Compiler Abstraction macros.
+
+== Macro `RVBL_BEGIN_DISABLE_OPTIMIZATION`
+
+Begins code section where the compiler shall perform no optimization.
+
+== Macro `RVBL_END_DISABLE_OPTIMIZATION`
+
+Ends code section where the compiler shall perform no optimization.
+
+== Macro `XLEN`
+
+Native machine word size (32, 64 or 128-bits).
+
+== Macro `NULL`
+
+Pointer to `0x00000000`.
+
