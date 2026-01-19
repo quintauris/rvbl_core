@@ -1,22 +1,46 @@
 function(rvbl_setup_generators)
     find_program(
-        DOC_EXTRACT_GENERIC
-        NAMES extract_generic 
-        HINTS "${host_tools}/doc"
-        REQUIRED
-        NO_DEFAULT_PATH
-    )
-
-    find_program(
         ASCIIDOCTOR
         NAMES asciidoctor 
         REQUIRED
     )
 
     find_program(
-        MACHINE_GENERATOR
-        NAMES generator 
-        HINTS "${host_tools}/generator"
+        EXTRACTOR_ASCIIDOC
+        NAMES asciidoc_extractor
+        HINTS "${host_tools}/asciidoc_extractor"
+        REQUIRED
+        NO_DEFAULT_PATH
+    )
+
+    find_program(
+        GENERATOR_ASCIIDOC
+        NAMES generator_asciidoc
+        HINTS "${host_tools}/rvbl_generator_asciidoc"
+        REQUIRED
+        NO_DEFAULT_PATH
+    )
+
+    find_program(
+        GENERATOR_LINKER
+        NAMES generator_linker
+        HINTS "${host_tools}/rvbl_generator_linker"
+        REQUIRED
+        NO_DEFAULT_PATH
+    )
+
+    find_program(
+        GENERATOR_C
+        NAMES generator_c
+        HINTS "${host_tools}/rvbl_generator_c"
+        REQUIRED
+        NO_DEFAULT_PATH
+    )
+
+    find_program(
+        MODEL_PARSER
+        NAMES parser
+        HINTS "${host_tools}/rvbl_model"
         REQUIRED
         NO_DEFAULT_PATH
     )
@@ -30,8 +54,9 @@ function(rvbl_run_generators)
     set(documentation_path "${CMAKE_CURRENT_SOURCE_DIR}/generated/doc")
     file(MAKE_DIRECTORY ${generated_path} ${documentation_path})
 
+    # Compute model dependencies
     execute_process(
-        COMMAND "${MACHINE_GENERATOR}" "${CMAKE_CURRENT_SOURCE_DIR}/model/model.json" "${vendor_path}/quintauris/meta/machine.schema.json" "${vendor_path}" --dependencies
+        COMMAND "${MODEL_PARSER}" "${CMAKE_CURRENT_SOURCE_DIR}/model/model.json" "${vendor_path}/quintauris/meta/machine.schema.json" "${vendor_path}" --dependencies
         OUTPUT_VARIABLE model_files
         #COMMAND_ECHO STDOUT
         #ECHO_OUTPUT_VARIABLE
@@ -41,8 +66,9 @@ function(rvbl_run_generators)
     list(APPEND model_files "${CMAKE_CURRENT_SOURCE_DIR}/model/model.json")
     set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS "${model_files}")
 
+    # Compute C generator outputs
     execute_process(
-        COMMAND "${MACHINE_GENERATOR}" "${CMAKE_CURRENT_SOURCE_DIR}/model/model.json" "${vendor_path}/quintauris/meta/machine.schema.json" "${vendor_path}" --dry
+        COMMAND "${GENERATOR_C}" "${CMAKE_CURRENT_SOURCE_DIR}/model/model.json" "${vendor_path}/quintauris/meta/machine.schema.json" "${vendor_path}" --dry
         WORKING_DIRECTORY "${generated_path}"
         OUTPUT_VARIABLE generated_files
         #COMMAND_ECHO STDOUT
@@ -51,10 +77,10 @@ function(rvbl_run_generators)
     string(STRIP "${generated_files}" generated_files)
     list(TRANSFORM generated_files PREPEND "${generated_path}/")
 
-    # C files
+    # Generate C files
     add_custom_command(
         OUTPUT ${generated_files}
-        COMMAND "${MACHINE_GENERATOR}" "${CMAKE_CURRENT_SOURCE_DIR}/model/model.json" "${vendor_path}/quintauris/meta/machine.schema.json" "${vendor_path}"
+        COMMAND "${GENERATOR_C}" "${CMAKE_CURRENT_SOURCE_DIR}/model/model.json" "${vendor_path}/quintauris/meta/machine.schema.json" "${vendor_path}"
         DEPENDS ${model_files}
         WORKING_DIRECTORY ${generated_path}
         COMMENT "Generating machine headers from ${CMAKE_CURRENT_SOURCE_DIR}/model/model.json ..."
@@ -62,27 +88,36 @@ function(rvbl_run_generators)
         #ECHO_OUTPUT_VARIABLE
     )
 
-    # Linker files
+    # Compute Linker generator outputs
+    execute_process(
+        COMMAND "${GENERATOR_LINKER}" "${CMAKE_CURRENT_SOURCE_DIR}/model/model.json" "${vendor_path}/quintauris/meta/machine.schema.json" "${vendor_path}" --dry
+        WORKING_DIRECTORY "${generated_path}"
+        OUTPUT_VARIABLE generated_files_linker
+        #COMMAND_ECHO STDOUT
+        #ECHO_OUTPUT_VARIABLE
+    )
+    string(STRIP "${generated_files_linker}" generated_files_linker)
+    list(TRANSFORM generated_files_linker PREPEND "${generated_path}/")
+
+    # Generate Linker files
     add_custom_command(
-        OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/memory.GNU.ld"
-        COMMAND "${MACHINE_GENERATOR}" "${CMAKE_CURRENT_SOURCE_DIR}/model/model.json" "${vendor_path}/quintauris/meta/machine.schema.json" "${vendor_path}" --linker
-        MAIN_DEPENDENCY "${CMAKE_CURRENT_SOURCE_DIR}/model/model.json"
+        OUTPUT ${generated_files_linker}
+        COMMAND "${GENERATOR_LINKER}" "${CMAKE_CURRENT_SOURCE_DIR}/model/model.json" "${vendor_path}/quintauris/meta/machine.schema.json" "${vendor_path}"
         DEPENDS "${model_files}"
         WORKING_DIRECTORY ${generated_path}
-        BYPRODUCTS "${CMAKE_CURRENT_BINARY_DIR}/memory.GNU.ld" "${CMAKE_CURRENT_BINARY_DIR}/memory.Tasking.ld" "${CMAKE_CURRENT_BINARY_DIR}/memory.IAR.ld"
         COMMENT "Generating linker files from ${CMAKE_CURRENT_SOURCE_DIR}/model/model.json ..."
+        #COMMAND_ECHO STDOUT
+        #ECHO_OUTPUT_VARIABLE
     )
-    add_custom_target(linker_files ALL DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/memory.GNU.ld")
+    add_custom_target(linker_files ALL DEPENDS ${generated_files_linker})
 
     # Model documentation
     add_custom_command(
-        OUTPUT "${documentation_path}/model.html"
-        COMMAND "${MACHINE_GENERATOR}" "${CMAKE_CURRENT_SOURCE_DIR}/model/model.json" "${vendor_path}/quintauris/meta/machine.schema.json" "${vendor_path}" --documentation
+        OUTPUT "${documentation_path}/model.adoc" "${documentation_path}/model.html"
+        COMMAND "${GENERATOR_ASCIIDOC}" "${CMAKE_CURRENT_SOURCE_DIR}/model/model.json" "${vendor_path}/quintauris/meta/machine.schema.json" "${vendor_path}"
         COMMAND "${ASCIIDOCTOR}" -o "${documentation_path}/model.html" "${documentation_path}/model.adoc"
         WORKING_DIRECTORY "${documentation_path}"
-        MAIN_DEPENDENCY "${CMAKE_CURRENT_SOURCE_DIR}/model/model.json"
         DEPENDS "${model_files}"
-        BYPRODUCTS "${documentation_path}/model.adoc"
         COMMENT "Generating model documentation from ${CMAKE_CURRENT_SOURCE_DIR}/model/model.json ..."
     )
     add_custom_target(model_doc ALL DEPENDS "${documentation_path}/model.html")
@@ -104,7 +139,7 @@ function(rvbl_run_generators)
 
         add_custom_command(
             OUTPUT ${adoc_output}
-            COMMAND ${DOC_EXTRACT_GENERIC} ${source} ${adoc_output}
+            COMMAND ${EXTRACTOR_ASCIIDOC} ${source} ${adoc_output}
             DEPENDS ${source}
         )
         list(APPEND machine_list ${adoc_output})
@@ -129,7 +164,7 @@ function(rvbl_documentation module)
     get_target_property(sources rvbl_${module} SOURCES)
     add_custom_command(
         OUTPUT "${documentation_path}/${module}.html"
-        COMMAND "${DOC_EXTRACT_GENERIC}" ${sources} "${documentation_path}/${module}.adoc"
+        COMMAND "${EXTRACTOR_ASCIIDOC}" ${sources} "${documentation_path}/${module}.adoc"
         COMMAND ${ASCIIDOCTOR} -o "${documentation_path}/${module}.html" "${documentation_path}/${module}.adoc" 
         DEPENDS ${sources}
         BYPRODUCTS "${documentation_path}/${module}.adoc"
