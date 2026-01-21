@@ -98,7 +98,7 @@ if (example_build_for_flash)
     set_target_properties(
         ${example_name}
         PROPERTIES
-            LINKER_SCRIPT "${CMAKE_SOURCE_DIR}/linker/${rvbl_linker_id}.ld"
+            LINKER_SCRIPT "${CMAKE_SOURCE_DIR}/linker/${rvbl_linker_id}_flash.ld"
             LINKER_INCLUDE_PATH_1 "${CMAKE_SOURCE_DIR}/../../../base/linker"
             LINKER_INCLUDE_PATH_2 "${CMAKE_SOURCE_DIR}/generated"
     )
