@@ -8,7 +8,7 @@ function(rvbl_setup_generators)
     find_program(
         EXTRACTOR_ASCIIDOC
         NAMES asciidoc_extractor
-        HINTS "${host_tools}/asciidoc_extractor"
+        HINTS ${host_tools}/asciidoc_extractor ${host_tools}
         REQUIRED
         NO_DEFAULT_PATH
     )
@@ -16,7 +16,7 @@ function(rvbl_setup_generators)
     find_program(
         GENERATOR_ASCIIDOC
         NAMES generator_asciidoc
-        HINTS "${host_tools}/rvbl_generator_asciidoc"
+        HINTS ${host_tools}/rvbl_generator_asciidoc ${host_tools}
         REQUIRED
         NO_DEFAULT_PATH
     )
@@ -24,7 +24,7 @@ function(rvbl_setup_generators)
     find_program(
         GENERATOR_LINKER
         NAMES generator_linker
-        HINTS "${host_tools}/rvbl_generator_linker"
+        HINTS ${host_tools}/rvbl_generator_linker ${host_tools}
         REQUIRED
         NO_DEFAULT_PATH
     )
@@ -32,7 +32,7 @@ function(rvbl_setup_generators)
     find_program(
         GENERATOR_C
         NAMES generator_c
-        HINTS "${host_tools}/rvbl_generator_c"
+        HINTS ${host_tools}/rvbl_generator_c ${host_tools}
         REQUIRED
         NO_DEFAULT_PATH
     )
@@ -40,7 +40,7 @@ function(rvbl_setup_generators)
     find_program(
         MODEL_PARSER
         NAMES parser
-        HINTS "${host_tools}/rvbl_model"
+        HINTS ${host_tools}/rvbl_model ${host_tools}
         REQUIRED
         NO_DEFAULT_PATH
     )
