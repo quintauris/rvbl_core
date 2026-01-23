@@ -61,7 +61,7 @@ fn main() -> ExitCode {
             let machines = select::machines(&args.machine, &elements, &mut configuration);
             let toolchains = select::toolchains(&args.toolchain, &elements, &mut configuration);
 
-            for machine in machines {
+            'machine_loop: for machine in machines {
                 for toolchain in toolchains.iter().into_iter() {
                     println!(
                         "Configuring machine {} with toolchain {} ...",
@@ -69,7 +69,7 @@ fn main() -> ExitCode {
                         toolchain.element.moniker(),
                     );
                     match command::configure(&root, &machine, &toolchain, &args.build_type, args.docker) {
-                        Ok(code) => if code == 0.into() { continue } else { result = code },
+                        Ok(code) => if code == 0.into() { continue } else { result = code; break 'machine_loop },
                         Err(_) => result = ExitCode::from(254),
                     }
                 }
@@ -81,7 +81,7 @@ fn main() -> ExitCode {
             let machines = select::machines(&args.machine, &elements, &mut configuration);
             let toolchains = select::toolchains(&args.toolchain, &elements, &mut configuration);
 
-            for machine in machines {
+            'machine_loop: for machine in machines {
                 for toolchain in toolchains.iter().into_iter() {
                     println!(
                         "Building machine {} with toolchain {} ...",
@@ -89,7 +89,7 @@ fn main() -> ExitCode {
                         toolchain.element.moniker(),
                     );
                     match command::build(&root, &machine, &toolchain, args.jobs, args.docker) {
-                        Ok(code) => if code == 0.into() { continue } else { result = code },
+                        Ok(code) => if code == 0.into() { continue } else { result = code; break 'machine_loop },
                         Err(_) => result = ExitCode::from(254),
                     }
                 }
@@ -101,7 +101,7 @@ fn main() -> ExitCode {
             let machines = select::machines(&args.machine, &elements, &mut configuration);
             let toolchains = select::toolchains(&args.toolchain, &elements, &mut configuration);
 
-            for machine in machines {
+            'machine_loop: for machine in machines {
                 for toolchain in toolchains.iter().into_iter() {
                     println!(
                         "Testing machine {} with toolchain {} ...",
@@ -109,7 +109,7 @@ fn main() -> ExitCode {
                         toolchain.element.moniker(),
                     );
                     match command::test(&root, &machine, &toolchain, args.docker) {
-                        Ok(code) => if code == 0.into() { continue } else { result = code },
+                        Ok(code) => if code == 0.into() { continue } else { result = code; break 'machine_loop },
                         Err(_) => result = ExitCode::from(254),
                     }
                 }
@@ -126,7 +126,7 @@ fn main() -> ExitCode {
                     toolchain.element.moniker(),
                 );
                 match command::provision(&toolchain) {
-                    Ok(code) => if code == 0.into() { continue } else { result = code },
+                    Ok(code) => if code == 0.into() { continue } else { result = code; break },
                     Err(_) => result = ExitCode::from(254),
                 }
             }
@@ -140,7 +140,7 @@ fn main() -> ExitCode {
                     toolchain.element.moniker(),
                 );
                 match command::up(&root, &toolchain) {
-                    Ok(code) => if code == 0.into() { continue } else { result = code },
+                    Ok(code) => if code == 0.into() { continue } else { result = code; break },
                     Err(_) => result = ExitCode::from(254),
                 }
             }
@@ -154,7 +154,7 @@ fn main() -> ExitCode {
                     toolchain.element.moniker(),
                 );
                 match command::down(&toolchain) {
-                    Ok(code) => if code == 0.into() { continue } else { result = code },
+                    Ok(code) => if code == 0.into() { continue } else { result = code; break },
                     Err(_) => result = ExitCode::from(254),
                 }
             }

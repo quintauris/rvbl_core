@@ -39,8 +39,8 @@ impl Machine {
         
         result.push("build");
         result.push(if docker { "docker" } else { "local" });
-        result.push(machine.element.slug());
         result.push(toolchain.element.slug());
+        result.push(machine.element.slug());
 
         result
     }
