@@ -101,6 +101,20 @@ pub enum Element {
     Unknown
 }
 
+pub trait Moniker {
+    fn moniker(&self) -> String;
+}
+
+impl Moniker for Element {
+    fn moniker(&self) -> String {
+        match self {
+            Element::Toolchain(t) => t.element.moniker(),
+            Element::Machine(m) => m.element.moniker(),
+            _ => String::from("")
+        }
+    }
+}
+
 impl Element {
     pub fn from(path : &PathBuf) -> Element {
         if path.iter().count() >= 3 {

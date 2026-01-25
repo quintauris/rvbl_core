@@ -4,6 +4,7 @@ mod argument;
 mod configuration;
 mod command;
 mod select;
+mod interactive;
 
 use std::process::ExitCode;
 use walkdir::WalkDir;
