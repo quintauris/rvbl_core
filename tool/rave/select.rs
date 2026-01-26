@@ -4,12 +4,7 @@ use crate::configuration::Configuration;
 use crate::element::{Element, Machine, Moniker, Toolchain};
 use crate::interactive;
 
-fn generic<'a, F>(
-    filter: &str,
-    elements: &'a Vec<Element>,
-    configuration: &mut Configuration,
-    f: F,
-) -> Vec<&'a Element>
+fn generic<'a, F>(filter: &str, elements: &'a Vec<Element>, f: F) -> Vec<&'a Element>
 where
     F: Fn(&&Element) -> bool,
 {
@@ -23,10 +18,6 @@ where
     if result.is_empty() {
         panic!("Can't find any suitable elements in \"{filter}\"");
     } else {
-        configuration.last_machines.clear();
-        result
-            .iter()
-            .for_each(|m| configuration.last_machines.push(m.moniker()));
         result
     }
 }
@@ -61,18 +52,19 @@ pub fn machines<'a>(
         "ask" => interactive::choose("machine", &all).expect("No option chosen"),
         _ => filter.to_string(),
     };
-    let machines = generic(&input, elements, configuration, |e| {
-        matches!(e, Element::Machine(_))
-    });
-
-    machines
+    let machines = generic(&input, elements, |e| matches!(e, Element::Machine(_)));
+    let result: Vec<&Machine> = machines
         .iter()
         .map(|e| match e {
             Element::Machine(m) => Some(m),
             _ => None,
         })
         .flatten()
-        .collect()
+        .collect();
+
+    configuration.last_machines = result.iter().map(|m| m.element.moniker()).collect();
+
+    result
 }
 
 pub fn toolchains<'a>(
@@ -90,16 +82,17 @@ pub fn toolchains<'a>(
         "ask" => interactive::choose("toolchain", &all).expect(""),
         _ => filter.to_string(),
     };
-    let toolchains = generic(&input, elements, configuration, |e| {
-        matches!(e, Element::Toolchain(_))
-    });
-
-    toolchains
+    let toolchains = generic(&input, elements, |e| matches!(e, Element::Toolchain(_)));
+    let result: Vec<&Toolchain> = toolchains
         .iter()
         .map(|e| match e {
             Element::Toolchain(m) => Some(m),
             _ => None,
         })
         .flatten()
-        .collect()
+        .collect();
+
+    configuration.last_toolchains = result.iter().map(|m| m.element.moniker()).collect();
+
+    result
 }
