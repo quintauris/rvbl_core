@@ -1,14 +1,17 @@
-use reedline::{Signal, default_emacs_keybindings, ColumnarMenu, DefaultCompleter, Emacs, KeyCode, KeyModifiers, Reedline, ReedlineEvent, ReedlineMenu, MenuBuilder};
+use reedline::{
+    ColumnarMenu, DefaultCompleter, Emacs, KeyCode, KeyModifiers, MenuBuilder, Reedline,
+    ReedlineEvent, ReedlineMenu, Signal, default_emacs_keybindings,
+};
 
-pub fn choose(what : &str, options : &Vec<String>) -> Option<String> {
+pub fn choose(what: &str, options: &Vec<String>) -> Option<String> {
     let prompt = reedline::DefaultPrompt::new(
         reedline::DefaultPromptSegment::Basic(what.to_owned()),
-        reedline::DefaultPromptSegment::Empty
+        reedline::DefaultPromptSegment::Empty,
     );
     let mut completer = Box::new(DefaultCompleter::with_inclusions(&['_', '.']));
-    
+
     completer.insert(options.clone());
-    
+
     let completion_menu = Box::new(ColumnarMenu::default().with_name("completion_menu"));
     let mut keybindings = default_emacs_keybindings();
 
@@ -18,25 +21,20 @@ pub fn choose(what : &str, options : &Vec<String>) -> Option<String> {
         ReedlineEvent::UntilFound(vec![
             ReedlineEvent::Menu("completion_menu".to_string()),
             ReedlineEvent::MenuNext,
-            ]),
-        );
+        ]),
+    );
     let edit_mode = Box::new(Emacs::new(keybindings));
     let mut line_editor = Reedline::create()
         .with_completer(completer)
         .with_menu(ReedlineMenu::EngineCompleter(completion_menu))
-        .with_edit_mode(edit_mode)
-    ;
+        .with_edit_mode(edit_mode);
 
     loop {
         let input = line_editor.read_line(&prompt);
-        
+
         match input {
-            Ok(Signal::Success(buffer)) => {
-                return Some(buffer)
-            }
-            Ok(Signal::CtrlD) | Ok(Signal::CtrlC) | Err(_) => {
-                return None
-            }
+            Ok(Signal::Success(buffer)) => return Some(buffer),
+            Ok(Signal::CtrlD) | Ok(Signal::CtrlC) | Err(_) => return None,
         }
     }
 }

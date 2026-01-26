@@ -67,4 +67,3 @@ pub enum Arguments {
     Up(UpArgs),
     Down(DownArgs),
 }
-

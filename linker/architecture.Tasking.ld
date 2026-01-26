@@ -45,7 +45,7 @@ derivative rv32i
   core rv32i
   {
     architecture = RV32I;
-  } 
+  }
 }
 
 processor rv32i

@@ -16,7 +16,7 @@ section_layout ::linear
 
   group program (contiguous, load_addr=mem:FLASH, ordered, fill)
   {
-    group program_text 
+    group program_text
     {
       select ".text*";
     }
@@ -24,7 +24,7 @@ section_layout ::linear
     "text_begin_flash" := addressof(group:program_text);
     "text_end_flash" := addressof(group:program_text) + sizeof(group:program_text);
 
-    group program_rodata 
+    group program_rodata
     {
       select ".rodata*";
     }
@@ -32,7 +32,7 @@ section_layout ::linear
     "rodata_begin_flash" := addressof(group:program_rodata);
     "rodata_end_flash" := addressof(group:program_rodata) + sizeof(group:program_rodata);
 
-    group program_data 
+    group program_data
     {
       select ".data*";
     }
@@ -81,7 +81,7 @@ section_layout ::linear
     stack "general_purpose_stack";
     stack "supervisor_stack";
     stack "interrupt_stack";
-    
+
     "general_purpose_stack_top" := "_lc_ub_general_purpose_stack";
     "general_purpose_stack_begin" := "_lc_ue_general_purpose_stack";
     "supervisor_stack_top" := "_lc_ub_supervisor_stack";

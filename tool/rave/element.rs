@@ -2,16 +2,28 @@ use std::fmt;
 use std::path::PathBuf;
 
 pub struct ElementPath {
-    pub path : PathBuf
+    pub path: PathBuf,
 }
 
 impl ElementPath {
     pub fn vendor(&self) -> String {
-        self.path.iter().nth_back(2).unwrap().to_str().unwrap().to_string()
+        self.path
+            .iter()
+            .nth_back(2)
+            .unwrap()
+            .to_str()
+            .unwrap()
+            .to_string()
     }
 
     pub fn name(&self) -> String {
-        self.path.iter().nth_back(0).unwrap().to_str().unwrap().to_string()
+        self.path
+            .iter()
+            .nth_back(0)
+            .unwrap()
+            .to_str()
+            .unwrap()
+            .to_string()
     }
 
     pub fn slug(&self) -> String {
@@ -30,13 +42,19 @@ impl fmt::Display for ElementPath {
 }
 
 pub struct Machine {
-    pub element : ElementPath,
+    pub element: ElementPath,
 }
 
 impl Machine {
-    pub fn build_path(&self, root : &PathBuf, machine : &Machine, toolchain : &Toolchain, docker : bool) -> PathBuf {
+    pub fn build_path(
+        &self,
+        root: &PathBuf,
+        machine: &Machine,
+        toolchain: &Toolchain,
+        docker: bool,
+    ) -> PathBuf {
         let mut result = root.clone();
-        
+
         result.push("build");
         result.push(if docker { "docker" } else { "local" });
         result.push(toolchain.element.slug());
@@ -53,7 +71,7 @@ impl fmt::Display for Machine {
 }
 
 pub struct Toolchain {
-    pub element : ElementPath,
+    pub element: ElementPath,
 }
 
 impl Toolchain {
@@ -65,7 +83,7 @@ impl Toolchain {
         format!("rvbl:{}", self.element.moniker())
     }
 
-    pub fn tools_build_path(&self, root : &PathBuf, docker : bool) -> PathBuf {
+    pub fn tools_build_path(&self, root: &PathBuf, docker: bool) -> PathBuf {
         let mut result = root.clone();
 
         result.push("build");
@@ -80,9 +98,9 @@ impl Toolchain {
         result
     }
 
-    pub fn tools_path(&self, root : &PathBuf, docker : bool) -> PathBuf {
+    pub fn tools_path(&self, root: &PathBuf, docker: bool) -> PathBuf {
         let mut result = self.tools_build_path(root, docker);
-        
+
         result.push("release");
 
         result
@@ -98,7 +116,7 @@ impl fmt::Display for Toolchain {
 pub enum Element {
     Toolchain(Toolchain),
     Machine(Machine),
-    Unknown
+    Unknown,
 }
 
 pub trait Moniker {
@@ -110,18 +128,22 @@ impl Moniker for Element {
         match self {
             Element::Toolchain(t) => t.element.moniker(),
             Element::Machine(m) => m.element.moniker(),
-            _ => String::from("")
+            _ => String::from(""),
         }
     }
 }
 
 impl Element {
-    pub fn from(path : &PathBuf) -> Element {
+    pub fn from(path: &PathBuf) -> Element {
         if path.iter().count() >= 3 {
             match path.iter().nth_back(1).unwrap().to_str().unwrap() {
-                "machine" => Element::Machine(Machine{element: ElementPath{path: path.clone()}}),
-                "toolchain" => Element::Toolchain(Toolchain{element: ElementPath{path: path.clone()}}),
-                _ => Element::Unknown
+                "machine" => Element::Machine(Machine {
+                    element: ElementPath { path: path.clone() },
+                }),
+                "toolchain" => Element::Toolchain(Toolchain {
+                    element: ElementPath { path: path.clone() },
+                }),
+                _ => Element::Unknown,
             }
         } else {
             Element::Unknown

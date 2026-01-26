@@ -1,23 +1,23 @@
-mod element;
-mod path;
 mod argument;
-mod configuration;
 mod command;
-mod select;
+mod configuration;
+mod element;
 mod interactive;
+mod path;
+mod select;
 
-use std::process::ExitCode;
-use walkdir::WalkDir;
-use itertools::Itertools;
-use element::Element;
 use argument::Arguments;
 use clap::Parser;
+use element::Element;
+use itertools::Itertools;
+use std::process::ExitCode;
+use walkdir::WalkDir;
 
 fn main() -> ExitCode {
     let root = path::layers_root().expect("Layers root path not found.");
     let configuration_file = path::configuration_file(&root);
     let args = Arguments::parse();
-    let mut elements : Vec<Element> = vec![];
+    let mut elements: Vec<Element> = vec![];
     let mut scanned = 0;
     let mut result = ExitCode::from(0);
     let mut configuration = configuration::read(&configuration_file);
@@ -26,14 +26,16 @@ fn main() -> ExitCode {
     println!("Configuration: {:?}", configuration);
 
     let walker = WalkDir::new(&root).into_iter();
-    
-    for entry in walker.filter_entry(|e| !path::is_hidden(e) && path::is_directory(e) && !path::is_build(e)) {
+
+    for entry in
+        walker.filter_entry(|e| !path::is_hidden(e) && path::is_directory(e) && !path::is_build(e))
+    {
         let entry = entry.unwrap();
         let element = Element::from(&entry.path().to_path_buf());
-        
+
         match element {
             Element::Machine(_) | Element::Toolchain(_) => elements.push(element),
-            Element::Unknown => {},
+            Element::Unknown => {}
         }
 
         scanned = scanned + 1;
@@ -57,7 +59,7 @@ fn main() -> ExitCode {
             } else {
                 panic!("Please specify --machines or --toolchains");
             }
-        },
+        }
         Arguments::Configure(args) => {
             let machines = select::machines(&args.machine, &elements, &mut configuration);
             let toolchains = select::toolchains(&args.toolchain, &elements, &mut configuration);
@@ -69,15 +71,28 @@ fn main() -> ExitCode {
                         machine.element.moniker(),
                         toolchain.element.moniker(),
                     );
-                    match command::configure(&root, &machine, &toolchain, &args.build_type, args.docker) {
-                        Ok(code) => if code == 0.into() { continue } else { result = code; break 'machine_loop },
+                    match command::configure(
+                        &root,
+                        &machine,
+                        &toolchain,
+                        &args.build_type,
+                        args.docker,
+                    ) {
+                        Ok(code) => {
+                            if code == 0.into() {
+                                continue;
+                            } else {
+                                result = code;
+                                break 'machine_loop;
+                            }
+                        }
                         Err(_) => result = ExitCode::from(254),
                     }
                 }
             }
-        
+
             configuration::write(&configuration_file, &configuration);
-        },
+        }
         Arguments::Build(args) => {
             let machines = select::machines(&args.machine, &elements, &mut configuration);
             let toolchains = select::toolchains(&args.toolchain, &elements, &mut configuration);
@@ -90,12 +105,19 @@ fn main() -> ExitCode {
                         toolchain.element.moniker(),
                     );
                     match command::build(&root, &machine, &toolchain, args.jobs, args.docker) {
-                        Ok(code) => if code == 0.into() { continue } else { result = code; break 'machine_loop },
+                        Ok(code) => {
+                            if code == 0.into() {
+                                continue;
+                            } else {
+                                result = code;
+                                break 'machine_loop;
+                            }
+                        }
                         Err(_) => result = ExitCode::from(254),
                     }
                 }
             }
-        
+
             configuration::write(&configuration_file, &configuration);
         }
         Arguments::Test(args) => {
@@ -110,14 +132,21 @@ fn main() -> ExitCode {
                         toolchain.element.moniker(),
                     );
                     match command::test(&root, &machine, &toolchain, args.docker) {
-                        Ok(code) => if code == 0.into() { continue } else { result = code; break 'machine_loop },
+                        Ok(code) => {
+                            if code == 0.into() {
+                                continue;
+                            } else {
+                                result = code;
+                                break 'machine_loop;
+                            }
+                        }
                         Err(_) => result = ExitCode::from(254),
                     }
                 }
             }
-        
+
             configuration::write(&configuration_file, &configuration);
-        },
+        }
         Arguments::Provision(args) => {
             let toolchains = select::toolchains(&args.toolchain, &elements, &mut configuration);
 
@@ -127,11 +156,18 @@ fn main() -> ExitCode {
                     toolchain.element.moniker(),
                 );
                 match command::provision(&toolchain) {
-                    Ok(code) => if code == 0.into() { continue } else { result = code; break },
+                    Ok(code) => {
+                        if code == 0.into() {
+                            continue;
+                        } else {
+                            result = code;
+                            break;
+                        }
+                    }
                     Err(_) => result = ExitCode::from(254),
                 }
             }
-        },
+        }
         Arguments::Up(args) => {
             let toolchains = select::toolchains(&args.toolchain, &elements, &mut configuration);
 
@@ -141,11 +177,18 @@ fn main() -> ExitCode {
                     toolchain.element.moniker(),
                 );
                 match command::up(&root, &toolchain) {
-                    Ok(code) => if code == 0.into() { continue } else { result = code; break },
+                    Ok(code) => {
+                        if code == 0.into() {
+                            continue;
+                        } else {
+                            result = code;
+                            break;
+                        }
+                    }
                     Err(_) => result = ExitCode::from(254),
                 }
             }
-        },
+        }
         Arguments::Down(args) => {
             let toolchains = select::toolchains(&args.toolchain, &elements, &mut configuration);
 
@@ -155,7 +198,14 @@ fn main() -> ExitCode {
                     toolchain.element.moniker(),
                 );
                 match command::down(&toolchain) {
-                    Ok(code) => if code == 0.into() { continue } else { result = code; break },
+                    Ok(code) => {
+                        if code == 0.into() {
+                            continue;
+                        } else {
+                            result = code;
+                            break;
+                        }
+                    }
                     Err(_) => result = ExitCode::from(254),
                 }
             }

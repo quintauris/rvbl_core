@@ -1,7 +1,7 @@
 .global _start
 .global hang
 
-.extern rvbl_boot 
+.extern rvbl_boot
 .extern general_purpose_stack_top
 .extern main
 .extern rvbl_boot_barrier
@@ -36,7 +36,7 @@ boot_done:
     mul t1, t0, t1
     la sp, general_purpose_stack_top
     add sp, sp, t1
-    call main 
+    call main
     j hang
 
 _c_init:

@@ -1,8 +1,8 @@
 SECTIONS {
-  .text.start : { *(.text.start) } > ROM 
+  .text.start : { *(.text.start) } > ROM
   .rodata.start : { *(.rodata.start) } > ROM
-  
-  .text : { 
+
+  .text : {
     . = ALIGN(8);
     text_begin_dram = .;
     text_begin_flash = LOADADDR(.text);
@@ -21,8 +21,8 @@ SECTIONS {
     rodata_end_dram = .;
     rodata_end_flash = LOADADDR(.rodata) + (rodata_end_dram - rodata_begin_dram);
   } > RAM AT > FLASH
-  
-  .data : { 
+
+  .data : {
     . = ALIGN(8);
     data_begin_dram = .;
     data_begin_flash = LOADADDR(.data);
@@ -32,7 +32,7 @@ SECTIONS {
     data_end_flash = LOADADDR(.data) + (data_end_dram - data_begin_dram);
   } > RAM AT > FLASH
 
-  .bss : { 
+  .bss : {
     . = ALIGN(8);
     bss_begin = .;
     *(.bss*)

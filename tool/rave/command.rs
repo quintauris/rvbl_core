@@ -1,14 +1,18 @@
-use std::process::{Command, ExitCode, Stdio};
 use std::path::PathBuf;
+use std::process::{Command, ExitCode, Stdio};
 
 use crate::element::{Machine, Toolchain};
 
-fn run<I, S>(program : &str, parameters : I, toolchain : &Toolchain, docker : bool) -> std::io::Result<ExitCode>
+fn run<I, S>(
+    program: &str,
+    parameters: I,
+    toolchain: &Toolchain,
+    docker: bool,
+) -> std::io::Result<ExitCode>
 where
-    I : IntoIterator<Item = S>,
-    S : AsRef<std::ffi::OsStr>
+    I: IntoIterator<Item = S>,
+    S: AsRef<std::ffi::OsStr>,
 {
-
     let mut command = if docker {
         let mut result = Command::new("docker");
         result.args(["exec", "--interactive", "--tty", &toolchain.container()]);
@@ -34,12 +38,18 @@ where
                 println!("Command completed unsuccessfully");
                 Ok(ExitCode::from(o.status.code().unwrap_or(255) as u8))
             }
-        },
-        Err(e) => Err(e)
+        }
+        Err(e) => Err(e),
     }
 }
 
-pub fn configure(root : &PathBuf, machine : &Machine, toolchain : &Toolchain, build_type : &String, docker : bool) -> std::io::Result<ExitCode> {
+pub fn configure(
+    root: &PathBuf,
+    machine: &Machine,
+    toolchain: &Toolchain,
+    build_type: &String,
+    docker: bool,
+) -> std::io::Result<ExitCode> {
     let build_path = machine.build_path(root, machine, toolchain, docker);
     let mut toolchain_path = toolchain.element.path.clone();
 
@@ -48,80 +58,126 @@ pub fn configure(root : &PathBuf, machine : &Machine, toolchain : &Toolchain, bu
 
     run(
         "cmake",
-        ["-S", machine.element.path.as_os_str().to_str().unwrap(),
-        "-B", build_path.as_os_str().to_str().unwrap(),
-        "-D", &format!("host_tools={}", toolchain.tools_path(root, docker).as_os_str().to_str().unwrap()),
-        "-D", &format!("CMAKE_BUILD_TYPE={}", build_type),
-        "--toolchain", toolchain_path.as_os_str().to_str().unwrap()],
-        toolchain, docker
+        [
+            "-S",
+            machine.element.path.as_os_str().to_str().unwrap(),
+            "-B",
+            build_path.as_os_str().to_str().unwrap(),
+            "-D",
+            &format!(
+                "host_tools={}",
+                toolchain
+                    .tools_path(root, docker)
+                    .as_os_str()
+                    .to_str()
+                    .unwrap()
+            ),
+            "-D",
+            &format!("CMAKE_BUILD_TYPE={}", build_type),
+            "--toolchain",
+            toolchain_path.as_os_str().to_str().unwrap(),
+        ],
+        toolchain,
+        docker,
     )
 }
 
-pub fn build(root : &PathBuf, machine : &Machine, toolchain : &Toolchain, jobs : u32, docker : bool) -> std::io::Result<ExitCode> {
+pub fn build(
+    root: &PathBuf,
+    machine: &Machine,
+    toolchain: &Toolchain,
+    jobs: u32,
+    docker: bool,
+) -> std::io::Result<ExitCode> {
     let build_path = machine.build_path(root, machine, toolchain, docker);
 
     run(
         "cmake",
-        ["--build", build_path.as_os_str().to_str().unwrap(),
-        "--parallel", &jobs.to_string()],
+        [
+            "--build",
+            build_path.as_os_str().to_str().unwrap(),
+            "--parallel",
+            &jobs.to_string(),
+        ],
         toolchain,
-        docker
+        docker,
     )
 }
 
-pub fn test(root : &PathBuf, machine : &Machine, toolchain : &Toolchain, docker : bool) -> std::io::Result<ExitCode> {
+pub fn test(
+    root: &PathBuf,
+    machine: &Machine,
+    toolchain: &Toolchain,
+    docker: bool,
+) -> std::io::Result<ExitCode> {
     let build_path = machine.build_path(root, machine, toolchain, docker);
-    
+
     run(
         "ctest",
         ["--test-dir", build_path.as_os_str().to_str().unwrap()],
         toolchain,
-        false
+        false,
     )
 }
 
-pub fn provision(toolchain : &Toolchain) -> std::io::Result<ExitCode> {
+pub fn provision(toolchain: &Toolchain) -> std::io::Result<ExitCode> {
     run(
         "docker",
-        ["build", "-t", &toolchain.image(),
-        toolchain.element.path.as_os_str().to_str().unwrap()],
+        [
+            "build",
+            "-t",
+            &toolchain.image(),
+            toolchain.element.path.as_os_str().to_str().unwrap(),
+        ],
         toolchain,
-        false
+        false,
     )
 }
 
-fn provision_tools(root : &PathBuf, toolchain : &Toolchain) -> std::io::Result<ExitCode> {
+fn provision_tools(root: &PathBuf, toolchain: &Toolchain) -> std::io::Result<ExitCode> {
     let mut tools_manifest_path = root.clone();
     let mut generators_manifest_path = root.clone();
 
     tools_manifest_path.push("base/tool/Cargo.toml");
     generators_manifest_path.push("quintauris/tool/Cargo.toml");
-    
+
     run(
         "cargo",
         [
             "build",
             "--release",
-            "--manifest-path", &tools_manifest_path.as_os_str().to_str().unwrap(),
-            "--target-dir", &toolchain.tools_build_path(root, true).as_os_str().to_str().unwrap(),
+            "--manifest-path",
+            &tools_manifest_path.as_os_str().to_str().unwrap(),
+            "--target-dir",
+            &toolchain
+                .tools_build_path(root, true)
+                .as_os_str()
+                .to_str()
+                .unwrap(),
         ],
         toolchain,
-        true
+        true,
     )?;
     run(
         "cargo",
         [
             "build",
             "--release",
-            "--manifest-path", &generators_manifest_path.as_os_str().to_str().unwrap(),
-            "--target-dir", &toolchain.tools_build_path(root, true).as_os_str().to_str().unwrap(),
+            "--manifest-path",
+            &generators_manifest_path.as_os_str().to_str().unwrap(),
+            "--target-dir",
+            &toolchain
+                .tools_build_path(root, true)
+                .as_os_str()
+                .to_str()
+                .unwrap(),
         ],
         toolchain,
-        true
+        true,
     )
 }
 
-pub fn up(root : &PathBuf, toolchain : &Toolchain) -> std::io::Result<ExitCode> {
+pub fn up(root: &PathBuf, toolchain: &Toolchain) -> std::io::Result<ExitCode> {
     let mut inspect = Command::new("docker");
     let root_string = root.as_os_str().to_str().unwrap();
 
@@ -135,29 +191,33 @@ pub fn up(root : &PathBuf, toolchain : &Toolchain) -> std::io::Result<ExitCode> 
                 println!("Container {} already running", toolchain.container());
                 provision_tools(root, toolchain)
             } else {
-                println!("Container {} not running, spinning it up...", toolchain.container());
+                println!(
+                    "Container {} not running, spinning it up...",
+                    toolchain.container()
+                );
                 run(
                     "docker",
-                    ["run",
-                    "--interactive", "--tty", "--detach",
-                    "--name", &toolchain.container(),
-                    "--volume", &format!("{root_string}:{root_string}"),
-                    &toolchain.image()],
+                    [
+                        "run",
+                        "--interactive",
+                        "--tty",
+                        "--detach",
+                        "--name",
+                        &toolchain.container(),
+                        "--volume",
+                        &format!("{root_string}:{root_string}"),
+                        &toolchain.image(),
+                    ],
                     toolchain,
-                    false
+                    false,
                 )?;
                 provision_tools(root, toolchain)
             }
-        },
-        Err(e) => Err(e)
+        }
+        Err(e) => Err(e),
     }
 }
 
-pub fn down(toolchain : &Toolchain) -> std::io::Result<ExitCode> {
-    run(
-        "docker",
-        ["stop", &toolchain.container()],
-        toolchain,
-        false
-    )
+pub fn down(toolchain: &Toolchain) -> std::io::Result<ExitCode> {
+    run("docker", ["stop", &toolchain.container()], toolchain, false)
 }
