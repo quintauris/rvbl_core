@@ -133,6 +133,12 @@ impl Moniker for Element {
     }
 }
 
+impl fmt::Display for Element {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str(self.moniker().as_str())
+    }
+}
+
 impl Element {
     pub fn from(path: &PathBuf) -> Element {
         if path.iter().count() >= 3 {

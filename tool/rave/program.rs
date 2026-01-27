@@ -49,15 +49,25 @@ fn main() -> ExitCode {
     match Arguments::parse() {
         Arguments::List(args) => {
             if args.machines {
-                let machines = select::machines("all", &elements, &mut configuration);
+                println!(
+                    "{}",
+                    select::machines("all", &elements, &mut configuration)
+                        .iter()
+                        .format("\n")
+                );
+            }
 
-                console::info!("{}", machines.iter().format("\n"));
-            } else if args.toolchains {
-                let toolchains = select::toolchains("all", &elements, &mut configuration);
+            if args.toolchains {
+                println!(
+                    "{}",
+                    select::toolchains("all", &elements, &mut configuration)
+                        .iter()
+                        .format("\n")
+                );
+            }
 
-                console::info!("{}", toolchains.iter().format("\n"));
-            } else {
-                panic!("Please specify --machines or --toolchains");
+            if !args.machines && !args.toolchains {
+                println!("{}", elements.iter().format("\n"));
             }
         }
         Arguments::Make(args) => {
