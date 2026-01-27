@@ -1,3 +1,4 @@
+use itertools::Itertools;
 use reedline::{
     ColumnarMenu, DefaultCompleter, Emacs, KeyCode, KeyModifiers, MenuBuilder, Reedline,
     ReedlineEvent, ReedlineMenu, Signal, default_emacs_keybindings,
@@ -33,7 +34,14 @@ pub fn choose(what: &str, options: &Vec<String>) -> Option<String> {
         let input = line_editor.read_line(&prompt);
 
         match input {
-            Ok(Signal::Success(buffer)) => return Some(buffer),
+            Ok(Signal::Success(buffer)) => match buffer.as_str() {
+                "all" => {
+                    return Some(options.iter().join(","));
+                }
+                _ => {
+                    return Some(buffer);
+                }
+            },
             Ok(Signal::CtrlD) | Ok(Signal::CtrlC) | Err(_) => return None,
         }
     }
