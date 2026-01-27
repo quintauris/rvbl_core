@@ -1,6 +1,7 @@
 mod argument;
 mod command;
 mod configuration;
+mod console;
 mod element;
 mod interactive;
 mod path;
@@ -21,8 +22,8 @@ fn main() -> ExitCode {
     let mut scanned = 0;
     let mut result = ExitCode::from(0);
 
-    println!("Layers root: {:?}", root.as_os_str());
-    println!("Configuration: {:?}", configuration);
+    console::info!("Layers root: {}", root.as_os_str().to_str().unwrap());
+    console::info!("Configuration: {:?}", configuration);
 
     let walker = WalkDir::new(&root).into_iter();
 
@@ -40,7 +41,7 @@ fn main() -> ExitCode {
         scanned = scanned + 1;
     }
 
-    println!(
+    console::info!(
         "Scanned {scanned} filesystem entries, found {} machines(s) and toolchain(s).",
         elements.len()
     );
@@ -50,11 +51,11 @@ fn main() -> ExitCode {
             if args.machines {
                 let machines = select::machines("all", &elements, &mut configuration);
 
-                println!("{}", machines.iter().format("\n"));
+                console::info!("{}", machines.iter().format("\n"));
             } else if args.toolchains {
                 let toolchains = select::toolchains("all", &elements, &mut configuration);
 
-                println!("{}", toolchains.iter().format("\n"));
+                console::info!("{}", toolchains.iter().format("\n"));
             } else {
                 panic!("Please specify --machines or --toolchains");
             }
@@ -66,7 +67,7 @@ fn main() -> ExitCode {
             'machine_loop: for machine in machines {
                 for toolchain in toolchains.iter().into_iter() {
                     if args.configure {
-                        println!(
+                        console::info!(
                             "Configuring machine {} with toolchain {} ...",
                             machine.element.moniker(),
                             toolchain.element.moniker(),
@@ -89,7 +90,7 @@ fn main() -> ExitCode {
                     }
 
                     if args.build {
-                        println!(
+                        console::info!(
                             "Building machine {} with toolchain {} ...",
                             machine.element.moniker(),
                             toolchain.element.moniker(),
@@ -106,7 +107,7 @@ fn main() -> ExitCode {
                     }
 
                     if args.test {
-                        println!(
+                        console::info!(
                             "Testing machine {} with toolchain {} ...",
                             machine.element.moniker(),
                             toolchain.element.moniker(),
@@ -131,7 +132,7 @@ fn main() -> ExitCode {
 
             for toolchain in toolchains.iter().into_iter() {
                 if args.provision {
-                    println!(
+                    console::info!(
                         "Provisioning Docker toolchain {} ...",
                         toolchain.element.moniker(),
                     );
@@ -148,7 +149,7 @@ fn main() -> ExitCode {
                 }
 
                 if args.up {
-                    println!(
+                    console::info!(
                         "Spinning up Docker container for toolchain {} ...",
                         toolchain.element.moniker(),
                     );
@@ -164,7 +165,7 @@ fn main() -> ExitCode {
                 }
 
                 if args.down {
-                    println!(
+                    console::info!(
                         "Winding down Docker container for toolchain {} ...",
                         toolchain.element.moniker(),
                     );

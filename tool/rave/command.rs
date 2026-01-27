@@ -1,7 +1,12 @@
 use std::path::PathBuf;
 use std::process::{Command, ExitCode, Stdio};
 
-use crate::element::{Machine, Toolchain};
+use itertools::Itertools;
+
+use crate::{
+    console::{info, line, spawning, warning},
+    element::{Machine, Toolchain},
+};
 
 fn run<I, S>(
     program: &str,
@@ -27,15 +32,19 @@ where
     command.stdin(Stdio::inherit());
     command.stderr(Stdio::inherit());
 
-    println!("> {:?}", command);
+    spawning!(
+        "> {} {}",
+        command.get_program().to_str().unwrap(),
+        command.get_args().map(|a| a.to_str()).flatten().join(" ")
+    );
 
     match command.output() {
         Ok(o) => {
             if o.status.success() {
-                println!("Command completed successfully");
+                info!("Command completed successfully");
                 Ok(ExitCode::from(0))
             } else {
-                println!("Command completed unsuccessfully");
+                warning!("Command completed unsuccessfully");
                 Ok(ExitCode::from(o.status.code().unwrap_or(255) as u8))
             }
         }
@@ -183,15 +192,19 @@ pub fn up(root: &PathBuf, toolchain: &Toolchain) -> std::io::Result<ExitCode> {
 
     inspect.args(["inspect", "-f", "{{.State.Status}}", &toolchain.container()]);
 
-    println!("> {:?}", inspect);
+    spawning!(
+        "> {} {:?}",
+        inspect.get_program().to_str().unwrap(),
+        inspect.get_args().map(|a| a.to_str()).flatten().join(" ")
+    );
 
     match inspect.output() {
         Ok(o) => {
             if o.status.success() && String::from_utf8(o.stdout).unwrap() == "running" {
-                println!("Container {} already running", toolchain.container());
+                info!("Container {} already running", toolchain.container());
                 provision_tools(root, toolchain)
             } else {
-                println!(
+                warning!(
                     "Container {} not running, spinning it up...",
                     toolchain.container()
                 );
