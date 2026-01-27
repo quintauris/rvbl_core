@@ -11,20 +11,7 @@ pub struct ListArgs {
 
 #[derive(Args)]
 #[command(version, about, long_about = None)]
-pub struct ConfigureArgs {
-    #[arg(short, long, default_value_t = String::from("gnu.gcc"))]
-    pub toolchain: String,
-    #[arg(short, long, default_value_t = String::from("qemu.virt"))]
-    pub machine: String,
-    #[arg(short, long, default_value_t = String::from("Release"))]
-    pub build_type: String,
-    #[arg(short, long)]
-    pub docker: bool,
-}
-
-#[derive(Args)]
-#[command(version, about, long_about = None)]
-pub struct BuildArgs {
+pub struct MakeArgs {
     #[arg(short, long, default_value_t = String::from("last"))]
     pub toolchain: String,
     #[arg(short, long, default_value_t = String::from("last"))]
@@ -32,38 +19,34 @@ pub struct BuildArgs {
     #[arg(short, long, default_value_t = 1)]
     pub jobs: u32,
     #[arg(short, long)]
-    pub docker: bool,
-}
-
-#[derive(Args)]
-#[command(version, about, long_about = None)]
-pub struct TestArgs {
-    #[arg(short, long, default_value_t = String::from("last"))]
-    pub toolchain: String,
-    #[arg(short, long, default_value_t = String::from("last"))]
-    pub machine: String,
+    pub configure: bool,
+    #[arg(short, long)]
+    pub build: bool,
+    #[arg(short, long)]
+    pub test: bool,
     #[arg(short, long)]
     pub docker: bool,
+    #[arg(long, default_value_t = String::from("Release"))]
+    pub build_type: String,
 }
 
 #[derive(Args)]
 #[command(version, about, long_about = None)]
-pub struct ProvisionArgs {
+pub struct DockerArgs {
     #[arg(short, long, default_value_t = String::from("gnu.gcc"))]
     pub toolchain: String,
+    #[arg(short, long)]
+    pub provision: bool,
+    #[arg(short, long)]
+    pub up: bool,
+    #[arg(short, long)]
+    pub down: bool,
 }
-
-pub type UpArgs = ProvisionArgs;
-pub type DownArgs = ProvisionArgs;
 
 #[derive(Parser)]
 #[command(version, about, long_about = None)]
 pub enum Arguments {
     List(ListArgs),
-    Configure(ConfigureArgs),
-    Build(BuildArgs),
-    Test(TestArgs),
-    Provision(ProvisionArgs),
-    Up(UpArgs),
-    Down(DownArgs),
+    Make(MakeArgs),
+    Docker(DockerArgs),
 }
