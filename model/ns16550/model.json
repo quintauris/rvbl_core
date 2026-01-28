@@ -1,0 +1,38 @@
+{
+    "$schema": "../../meta/device.schema.json",
+    "name": "uart_ns16550",
+    "instance": "$INSTANCE",
+    "memory_regions": [
+        {
+            "name": "registers",
+            "base": "$BASE",
+            "size": "1K",
+            "registers": [
+                {
+                    "name": "data",
+                    "class": "memory_mapped",
+                    "offset": "0x0",
+                    "width": 32
+                },
+                {
+                    "name": "line_status",
+                    "class": "memory_mapped",
+                    "offset": "0x5",
+                    "width": 8,
+                    "fields": [
+                        {
+                            "name": "data_ready",
+                            "position": 0,
+                            "length": 1
+                        },
+                        {
+                            "name": "thr_empty",
+                            "position": 5,
+                            "length": 1
+                        }
+                    ]
+                }
+            ]
+        }
+    ]
+}
