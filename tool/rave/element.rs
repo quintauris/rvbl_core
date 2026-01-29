@@ -113,9 +113,30 @@ impl fmt::Display for Toolchain {
     }
 }
 
+pub struct Runner {
+    pub element: ElementPath,
+}
+
+impl Runner {
+    pub fn configuration(&self) -> PathBuf {
+        let mut path = self.element.path.clone();
+
+        path.push("runner.json");
+
+        path
+    }
+}
+
+impl fmt::Display for Runner {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        self.element.fmt(f)
+    }
+}
+
 pub enum Element {
     Toolchain(Toolchain),
     Machine(Machine),
+    Runner(Runner),
     Unknown,
 }
 
@@ -128,6 +149,7 @@ impl Moniker for Element {
         match self {
             Element::Toolchain(t) => t.element.moniker(),
             Element::Machine(m) => m.element.moniker(),
+            Element::Runner(r) => r.element.moniker(),
             _ => String::from(""),
         }
     }
@@ -147,6 +169,9 @@ impl Element {
                     element: ElementPath { path: path.clone() },
                 }),
                 "toolchain" => Element::Toolchain(Toolchain {
+                    element: ElementPath { path: path.clone() },
+                }),
+                "runner" => Element::Runner(Runner {
                     element: ElementPath { path: path.clone() },
                 }),
                 _ => Element::Unknown,

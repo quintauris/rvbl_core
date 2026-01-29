@@ -1,7 +1,7 @@
 use itertools::Itertools;
 
 use crate::configuration::Configuration;
-use crate::element::{Element, Machine, Moniker, Toolchain};
+use crate::element::{Element, Machine, Moniker, Runner, Toolchain};
 use crate::interactive;
 
 fn generic<'a, F>(filter: &str, elements: &'a Vec<Element>, f: F) -> Vec<&'a Element>
@@ -28,6 +28,10 @@ fn is_machine(element: &&Element) -> bool {
 
 fn is_toolchain(element: &&Element) -> bool {
     matches!(element, Element::Toolchain(_))
+}
+
+fn is_runner(element: &&Element) -> bool {
+    matches!(element, Element::Runner(_))
 }
 
 fn all<'a, F>(elements: &'a Vec<Element>, f: F) -> Vec<&'a Element>
@@ -93,6 +97,36 @@ pub fn toolchains<'a>(
         .collect();
 
     configuration.last_toolchains = result.iter().map(|m| m.element.moniker()).collect();
+
+    result
+}
+
+pub fn runners<'a>(
+    filter: &str,
+    elements: &'a Vec<Element>,
+    configuration: &mut Configuration,
+) -> Vec<&'a Runner> {
+    let all: Vec<String> = all(elements, is_runner)
+        .iter()
+        .map(|e| e.moniker())
+        .collect();
+    let input = match filter {
+        "all" => all.iter().join(","),
+        "last" => configuration.last_runners.join(","),
+        "ask" => interactive::choose("runner", &all).expect(""),
+        _ => filter.to_string(),
+    };
+    let runners = generic(&input, elements, |e| matches!(e, Element::Runner(_)));
+    let result: Vec<&Runner> = runners
+        .iter()
+        .map(|e| match e {
+            Element::Runner(m) => Some(m),
+            _ => None,
+        })
+        .flatten()
+        .collect();
+
+    configuration.last_runners = result.iter().map(|m| m.element.moniker()).collect();
 
     result
 }

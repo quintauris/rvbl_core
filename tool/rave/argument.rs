@@ -1,3 +1,5 @@
+use std::path::PathBuf;
+
 use clap::{Args, Parser};
 
 #[derive(Args)]
@@ -10,6 +12,10 @@ pub struct ListArgs {
     /// List all toolchains
     #[arg(short, long, alias = "toolchain")]
     pub toolchains: bool,
+
+    /// List all runners
+    #[arg(short, long, alias = "runner")]
+    pub runners: bool,
 }
 
 #[derive(Args)]
@@ -68,6 +74,49 @@ pub struct DockerArgs {
     pub down: bool,
 }
 
+#[derive(Args)]
+#[command(version, about, long_about = None)]
+pub struct RunArgs {
+    /// Toolchain(s) in <layer>.<name> form (e.g. gnu.gcc), comma-sepparated
+    #[arg(short, long, default_value_t = String::from("last"))]
+    pub toolchain: String,
+
+    /// Machine(s) in <layer>.<name> form (e.g. qemu.virt), comma-separated
+    #[arg(short, long, default_value_t = String::from("last"))]
+    pub machine: String,
+
+    /// Runners(s) in <layer>.<name> form (e.g. qemu.system32-elf), comma-separated
+    #[arg(short, long, default_value_t = String::from("last"))]
+    pub runner: String,
+
+    /// Run selected actions in Docker container(s)
+    #[arg(short, long)]
+    pub docker: bool,
+
+    /// Executable image file to run, absolute or relative to build directory
+    #[arg(short, long)]
+    pub file: PathBuf,
+
+    /// Whether to run in debug configuration
+    #[arg(short, long)]
+    pub debug: bool,
+
+    /// Delay after each run
+    #[arg(short, long, default_value_t = 0)]
+    pub delay: u32,
+
+    /// File to dump after each run, absolute or relative to build directory
+    #[arg(short, long)]
+    pub dump_file: Option<PathBuf>,
+}
+
+#[derive(Args)]
+#[command(version, about, long_about = None)]
+pub struct MonikerArgs {
+    /// Path to output moniker for
+    pub path: Option<PathBuf>,
+}
+
 /// RISC-V Base Layer build tool
 #[derive(Parser)]
 #[command(version, about, long_about = None)]
@@ -78,4 +127,10 @@ pub enum Arguments {
     Make(MakeArgs),
     /// Manage Docker images and containers for toolchains
     Docker(DockerArgs),
+    /// Run executable files on targets
+    Run(RunArgs),
+    /// Output moniker (<layer>.<name>) for a path
+    Moniker(MonikerArgs),
+    /// Output diagnostic information
+    Diagnostic,
 }

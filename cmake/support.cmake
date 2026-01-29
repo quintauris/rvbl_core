@@ -1,4 +1,10 @@
-function(rvbl_setup_generators)
+function(rvbl_machine)
+  set(options "")
+  set(oneValueArgs "")
+  set(multiValueArgs QEMU_SETTINGS JRUN_SETTINGS VDK_SETTINGS T32_SETTINGS)
+  cmake_parse_arguments(PARSE_ARGV 0 arg "${options}" "${oneValueArgs}"
+                        "${multiValueArgs}")
+
   find_program(ASCIIDOCTOR NAMES asciidoctor REQUIRED)
 
   find_program(
@@ -30,11 +36,57 @@ function(rvbl_setup_generators)
     NAMES parser
     HINTS ${host_tools} ${host_tools}/release ${host_tools}/debug REQUIRED
     NO_DEFAULT_PATH)
+
+  find_program(
+    RAVE
+    NAMES rave
+    HINTS ${host_tools} ${host_tools}/release ${host_tools}/debug REQUIRED
+    NO_DEFAULT_PATH)
+
+  # Setup rvbl_toolchain_moniker global property
+  cmake_path(GET CMAKE_TOOLCHAIN_FILE PARENT_PATH cmake_toolchain_path)
+  execute_process(
+    COMMAND ${RAVE} moniker ${cmake_toolchain_path}
+    OUTPUT_VARIABLE rvbl_toolchain_moniker # COMMAND_ECHO STDOUT
+                                           # ECHO_OUTPUT_VARIABLE
+  )
+  string(STRIP "${rvbl_toolchain_moniker}" rvbl_toolchain_moniker)
+  set_property(GLOBAL PROPERTY rvbl_toolchain_moniker ${rvbl_toolchain_moniker})
+
+  # Setup rvbl_machine_moniker global property
+  execute_process(
+    COMMAND ${RAVE} moniker ${CMAKE_SOURCE_DIR}
+    OUTPUT_VARIABLE rvbl_machine_moniker # COMMAND_ECHO STDOUT
+                                         # ECHO_OUTPUT_VARIABLE
+  )
+  string(STRIP "${rvbl_machine_moniker}" rvbl_machine_moniker)
+  set_property(GLOBAL PROPERTY rvbl_machine_moniker ${rvbl_machine_moniker})
+
+  # Setup rvbl_qemu_settings global property
+  if(arg_QEMU_SETTINGS)
+    set_property(GLOBAL PROPERTY rvbl_qemu_settings ${arg_QEMU_SETTINGS})
+  endif()
+
+  # Setup rvbl_jrun_settings global property
+  if(arg_JRUN_SETTINGS)
+    set_property(GLOBAL PROPERTY rvbl_jrun_settings ${arg_JRUN_SETTINGS})
+  endif()
+
+  # Setup rvbl_vdk_settings global property
+  if(arg_VDK_SETTINGS)
+    set_property(GLOBAL PROPERTY rvbl_vdk_settings ${arg_VDK_SETTINGS})
+  endif()
+
+  # Setup rvbl_t32_settings global property
+  if(arg_T32_SETTINGS)
+    set_property(GLOBAL PROPERTY rvbl_t32_settings ${arg_T32_SETTINGS})
+  endif()
+
+  string(REGEX REPLACE "docker/[^/]+/" "local/" rvbl_rave_local ${RAVE})
+  set_property(GLOBAL PROPERTY rvbl_rave_local ${rvbl_rave_local})
 endfunction()
 
 function(rvbl_run_generators)
-  rvbl_setup_generators()
-
   set(vendor_path "${CMAKE_SOURCE_DIR}/../../..")
   set(generated_path "${CMAKE_CURRENT_SOURCE_DIR}/generated")
   set(documentation_path "${CMAKE_CURRENT_SOURCE_DIR}/generated/doc")
@@ -219,10 +271,13 @@ function(rvbl_test)
   cmake_parse_arguments(PARSE_ARGV 0 arg "${options}" "${oneValueArgs}"
                         "${multiValueArgs}")
 
-  get_property(qemu_machine_settings GLOBAL PROPERTY qemu_machine_settings)
-  get_property(jrun_settings GLOBAL PROPERTY jrun_settings)
-  get_property(vdk_settings GLOBAL PROPERTY vdk_settings)
-  get_property(trace32_settings GLOBAL PROPERTY trace32_settings)
+  get_property(rvbl_rave_local GLOBAL PROPERTY rvbl_rave_local)
+  get_property(rvbl_toolchain_moniker GLOBAL PROPERTY rvbl_toolchain_moniker)
+  get_property(rvbl_machine_moniker GLOBAL PROPERTY rvbl_machine_moniker)
+  get_property(rvbl_qemu_settings GLOBAL PROPERTY rvbl_qemu_settings)
+  get_property(rvbl_jrun_settings GLOBAL PROPERTY rvbl_jrun_settings)
+  get_property(rvbl_vdk_settings GLOBAL PROPERTY rvbl_vdk_settings)
+  get_property(rvbl_t32_settings GLOBAL PROPERTY rvbl_t32_settings)
 
   add_executable(test_${arg_NAME}
                  "${init}" "${CMAKE_CURRENT_SOURCE_DIR}/tests/${arg_NAME}.c")
@@ -236,50 +291,37 @@ function(rvbl_test)
                LINKER_INCLUDE_PATH_1 "${CMAKE_SOURCE_DIR}/../../../base/linker"
                LINKER_INCLUDE_PATH_2 "${CMAKE_SOURCE_DIR}/generated")
 
-  if(qemu_machine_settings)
+  if(rvbl_qemu_settings)
     add_test(
       NAME qemu.${arg_NAME}
       COMMAND
-        ${CMAKE_SOURCE_DIR}/../../../base/lib/test/script/driver.sh qemu
-        ${CMAKE_PROJECT_NAME}
+        ${rvbl_rave_local} run --toolchain ${rvbl_toolchain_moniker} --machine
+        ${rvbl_machine_moniker} --runner qemu.system32-elf --file
         ${CMAKE_CURRENT_BINARY_DIR}/test_${arg_NAME}${CMAKE_EXECUTABLE_SUFFIX_C}
-        ${qemu_machine_settings})
+        -- ${rvbl_qemu_settings})
     set_tests_properties(qemu.${arg_NAME} PROPERTIES SKIP_RETURN_CODE 2)
   endif()
 
-  if(jrun_settings)
+  if(rvbl_jrun_settings)
     add_test(
       NAME jrun.${arg_NAME}
       COMMAND
-        ${CMAKE_SOURCE_DIR}/../../../base/lib/test/script/driver.sh jrun
-        ${CMAKE_PROJECT_NAME}
+        ${rvbl_rave_local} run --toolchain ${rvbl_toolchain_moniker} --machine
+        ${rvbl_machine_moniker} --runner segger.jrun --dump-file
+        ${CMAKE_CURRENT_BINARY_DIR}/:tt --file
         ${CMAKE_CURRENT_BINARY_DIR}/test_${arg_NAME}${CMAKE_EXECUTABLE_SUFFIX_C}
-        ${jrun_settings})
+        -- ${rvbl_jrun_settings})
     set_tests_properties(jrun.${arg_NAME} PROPERTIES SKIP_RETURN_CODE 2)
   endif()
 
-  if(openocd_settings)
-    add_test(
-      NAME openocd.${arg_NAME}
-      COMMAND
-        ${CMAKE_SOURCE_DIR}/../../../base/lib/test/script/driver.sh openocd
-        ${CMAKE_PROJECT_NAME}
-        ${CMAKE_CURRENT_BINARY_DIR}/test_${arg_NAME}${CMAKE_EXECUTABLE_SUFFIX_C}
-        ${openocd_settings})
-    set_tests_properties(
-      openocd.${arg_NAME}
-      PROPERTIES PASS_REGULAR_EXPRESSION "PASS" FAIL_REGULAR_EXPRESSION "FAIL"
-                 SKIP_REGULAR_EXPRESSION "SKIP")
-  endif()
-
-  if(vdk_settings)
+  if(rvbl_vdk_settings)
     add_test(
       NAME vdk.${arg_NAME}
       COMMAND
-        ${CMAKE_SOURCE_DIR}/../../../base/lib/test/script/driver.sh vdk
-        ${CMAKE_PROJECT_NAME}
+        ${rvbl_rave_local} run --toolchain ${rvbl_toolchain_moniker} --machine
+        ${rvbl_machine_moniker} --runner quintauris_internal.vdk-elf --file
         ${CMAKE_CURRENT_BINARY_DIR}/test_${arg_NAME}${CMAKE_EXECUTABLE_SUFFIX_C}
-        ${vdk_settings})
+        -- ${rvbl_vdk_settings})
     set_tests_properties(
       vdk.${arg_NAME}
       PROPERTIES PASS_REGULAR_EXPRESSION
@@ -292,14 +334,15 @@ function(rvbl_test)
                  120)
   endif()
 
-  if(trace32_settings)
+  if(rvbl_t32_settings)
     add_test(
       NAME t32.${arg_NAME}
       COMMAND
-        ${CMAKE_SOURCE_DIR}/../../../base/lib/test/script/driver.sh t32
-        ${CMAKE_PROJECT_NAME}
+        ${rvbl_rave_local} run --toolchain ${rvbl_toolchain_moniker} --machine
+        ${rvbl_machine_moniker} --runner lauterbach.t32 --delay 8 --dump-file
+        output.txt --file
         ${CMAKE_CURRENT_BINARY_DIR}/test_${arg_NAME}${CMAKE_EXECUTABLE_SUFFIX_C}
-        ${trace32_settings})
+        -- ${rvbl_t32_settings})
     set_tests_properties(
       t32.${arg_NAME}
       PROPERTIES PASS_REGULAR_EXPRESSION "PASS" FAIL_REGULAR_EXPRESSION "FAIL"

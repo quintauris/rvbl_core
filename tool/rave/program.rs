@@ -21,10 +21,15 @@ fn main() -> ExitCode {
     let mut configuration = configuration::read(&configuration_file);
     let mut scanned = 0;
     let mut result = ExitCode::from(0);
-
-    console::info!("Layers root: {}", root.as_os_str().to_str().unwrap());
-    console::info!("Configuration: {:?}", configuration);
-
+    let extra_arguments_delimiter = std::env::args().find_position(|a| a == "--");
+    let common_arguments = match extra_arguments_delimiter {
+        Some((position, _)) => std::env::args().take(position).into_iter(),
+        None => std::env::args().take(std::env::args().len()),
+    };
+    let extra_arguments = match extra_arguments_delimiter {
+        Some((position, _)) => std::env::args().skip(position + 1).into_iter(),
+        None => std::env::args().skip(std::env::args().len()),
+    };
     let walker = WalkDir::new(&root).into_iter();
 
     for entry in
@@ -34,19 +39,16 @@ fn main() -> ExitCode {
         let element = Element::from(&entry.path().to_path_buf());
 
         match element {
-            Element::Machine(_) | Element::Toolchain(_) => elements.push(element),
+            Element::Machine(_) | Element::Toolchain(_) | Element::Runner(_) => {
+                elements.push(element)
+            }
             Element::Unknown => {}
         }
 
         scanned = scanned + 1;
     }
 
-    console::info!(
-        "Scanned {scanned} filesystem entries, found {} machines(s) and toolchain(s).",
-        elements.len()
-    );
-
-    match Arguments::parse() {
+    match Arguments::parse_from(common_arguments) {
         Arguments::List(args) => {
             if args.machines {
                 println!(
@@ -66,7 +68,16 @@ fn main() -> ExitCode {
                 );
             }
 
-            if !args.machines && !args.toolchains {
+            if args.runners {
+                println!(
+                    "{}",
+                    select::runners("all", &elements, &mut configuration)
+                        .iter()
+                        .format("\n")
+                );
+            }
+
+            if !args.machines && !args.toolchains && !args.runners {
                 println!("{}", elements.iter().format("\n"));
             }
         }
@@ -192,6 +203,62 @@ fn main() -> ExitCode {
             }
 
             configuration::write(&configuration_file, &configuration);
+        }
+        Arguments::Run(args) => {
+            let machines = select::machines(&args.machine, &elements, &mut configuration);
+            let toolchains = select::toolchains(&args.toolchain, &elements, &mut configuration);
+            let runners = select::runners(&args.runner, &elements, &mut configuration);
+            let extra = extra_arguments.collect::<Vec<String>>();
+
+            'machine_loop: for machine in machines {
+                for toolchain in toolchains.iter().into_iter() {
+                    for runner in runners.iter().into_iter() {
+                        match command::run(
+                            &root,
+                            machine,
+                            toolchain,
+                            runner,
+                            args.docker,
+                            &args.file,
+                            args.debug,
+                            args.delay,
+                            &args.dump_file,
+                            &extra,
+                        ) {
+                            Ok(code) => {
+                                if code != 0.into() {
+                                    result = code;
+                                    break 'machine_loop;
+                                }
+                            }
+                            Err(_) => result = ExitCode::from(254),
+                        }
+                    }
+                }
+            }
+
+            configuration::write(&configuration_file, &configuration);
+        }
+        Arguments::Moniker(args) => {
+            let path = match args.path {
+                Some(p) => p,
+                None => root,
+            };
+
+            match Element::from(&path) {
+                Element::Unknown => result = ExitCode::from(1),
+                x => {
+                    println!("{}", x);
+                }
+            }
+        }
+        Arguments::Diagnostic => {
+            console::info!("Layers root: {}", root.as_os_str().to_str().unwrap());
+            console::info!("Configuration: {:?}", configuration);
+            console::info!(
+                "Scanned {scanned} filesystem entries, found {} machines(s) and toolchain(s).",
+                elements.len()
+            );
         }
     };
 
