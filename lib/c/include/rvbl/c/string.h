@@ -58,4 +58,17 @@ void *memcpy(void *, const void *, size_t);
 /// in lexicographical order.
 int strcmp(const char *lhs, const char *rhs);
 
+/// == Function `strcpy`
+/// Copies the null-terminated byte string pointed by `const char*`,
+/// including the null terminator, to the character array whose first element
+/// is pointed to by `char*`.
+///
+/// === Parameters
+/// `char*`:: Pointer to the character array to write to.
+/// `const char*`:: Pointer to the null-terminated byte string to copy from.
+///
+/// === Return value
+/// `char*`:: A copy of `char*` parameter.
+char *strcpy(char *, const char *);
+
 #endif

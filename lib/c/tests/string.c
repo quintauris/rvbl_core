@@ -5,6 +5,7 @@ int main(void)
 {
     rvbl_hart_hang_if_not(0);
     rvbl_test_initialize();
+    char buffer[32];
 
     ASSERT_EQ(strlen(""), 0);
     ASSERT_EQ(strlen("foo"), 3);
@@ -14,6 +15,13 @@ int main(void)
     ASSERT(strcmp("", "abc") < 0);
     ASSERT(strcmp("abc", "abd") < 0);
     ASSERT(strcmp("abd", "abc") > 0);
+
+    ASSERT(strcpy(buffer, "") == buffer);
+    ASSERT_EQ(strlen(buffer), 0);
+    ASSERT_EQ(strcmp(buffer, ""), 0);
+    ASSERT(strcpy(buffer, "abc") == buffer);
+    ASSERT_EQ(strlen(buffer), 3);
+    ASSERT_EQ(strcmp(buffer, "abc"), 0);
 
     PASS();
 

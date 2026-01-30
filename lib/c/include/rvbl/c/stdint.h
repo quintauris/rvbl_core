@@ -27,6 +27,10 @@ typedef rvbl_int64_t int64_t;
 /// Signed integer type capable of holding a pointer to void.
 typedef rvbl_word_t intptr_t;
 
+/// == Type `intmax_t`
+/// Maximum-width signed integer type.
+typedef rvbl_int64_t intmax_t;
+
 /// == Type `uint8_t`
 /// Unsigned 8-bit integer.
 typedef rvbl_uint8_t uint8_t;
@@ -47,8 +51,16 @@ typedef rvbl_uint32_t uint32_t;
 /// Unsigned 64-bit integer.
 typedef rvbl_uint64_t uint64_t;
 
+/// == Type `uintmax_t`
+/// Maximum-width unsigned integer type.
+typedef rvbl_int64_t uintmax_t;
+
 /// == Type `uintptr_t`
 /// Unsigned integer type capable of holding a pointer to void.
 typedef rvbl_uword_t uintptr_t;
+
+/// == Type `ptrdiff_t`
+/// Signed integer type of the result of subtracting two pointers.
+typedef rvbl_word_t ptrdiff_t;
 
 #endif

@@ -43,3 +43,5 @@ int strcmp(const char *lhs, const char *rhs)
 
     return *(const unsigned char *)lhs - *(const unsigned char *)rhs;
 }
+
+char *strcpy(char *dest, const char *src) { return memcpy(dest, src, strlen(src) + 1); }
