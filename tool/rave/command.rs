@@ -1,5 +1,6 @@
 use core::time;
 use itertools::Itertools;
+use regex::Regex;
 use std::fs;
 use std::io::{Write, stdout};
 use std::path::PathBuf;
@@ -8,10 +9,9 @@ use std::thread::sleep;
 use which::which;
 
 use crate::configuration::{self};
-use crate::element::Runner;
 use crate::{
     console::{info, line, spawning, warning},
-    element::{Machine, Toolchain},
+    element::{Machine, Runner, Toolchain},
 };
 
 fn execute<I, S>(
@@ -241,6 +241,54 @@ pub fn down(toolchain: &Toolchain) -> std::io::Result<ExitCode> {
     execute("docker", ["stop", &toolchain.container()], toolchain, false)
 }
 
+fn extract_parameters(
+    runner: &Runner,
+    machine_configuration: &crate::configuration::Machine,
+    runner_configuration: &crate::configuration::Runner,
+    debug: bool,
+) -> Vec<String> {
+    let mut result: Vec<String> = vec![];
+    let mut machine_runner_parameters: &Vec<String> = &vec![];
+    let mut runner_parameters: &Vec<String> = &vec![];
+    let mut append_machine_runner_parameters = false;
+
+    for (key, machine_runner) in &machine_configuration.runners {
+        if let Ok(regex) = Regex::new(key) {
+            if regex.is_match(&runner.element.moniker()) {
+                if debug {
+                    if let Some(parameters) = machine_runner.debug.as_ref() {
+                        machine_runner_parameters = &parameters;
+                    }
+                } else {
+                    machine_runner_parameters = &machine_runner.default;
+                }
+
+                append_machine_runner_parameters = machine_runner.append.unwrap_or(false);
+
+                break;
+            }
+        }
+    }
+
+    if debug {
+        if let Some(parameters) = runner_configuration.parameters.debug.as_ref() {
+            runner_parameters = &parameters;
+        }
+    } else {
+        runner_parameters = &runner_configuration.parameters.default;
+    }
+
+    if append_machine_runner_parameters {
+        result.extend_from_slice(runner_parameters);
+        result.extend_from_slice(machine_runner_parameters);
+    } else {
+        result.extend_from_slice(machine_runner_parameters);
+        result.extend_from_slice(runner_parameters);
+    }
+
+    result
+}
+
 pub fn run(
     root: &PathBuf,
     machine: &Machine,
@@ -251,31 +299,31 @@ pub fn run(
     debug: bool,
     delay: u32,
     dump_file: &Option<PathBuf>,
-    extra_arguments: &Vec<String>,
+    machine_configuration: &crate::configuration::Machine,
 ) -> std::io::Result<ExitCode> {
     let mut result = Ok(ExitCode::from(0));
 
-    if let Some(runner) = configuration::runner(&runner.configuration()) {
-        for program in runner.programs {
+    if let Some(runner_configuration) = configuration::runner(&runner.configuration()) {
+        for program in runner_configuration.programs.iter() {
             let program_replaced = program.replace("$machine", &machine.element.slug());
 
             if which(&program_replaced).is_ok() {
-                let mut parameters = extra_arguments.clone();
+                let parameters = extract_parameters(
+                    runner,
+                    &machine_configuration,
+                    &runner_configuration,
+                    debug,
+                );
                 let mut file_path = root.clone();
 
                 file_path.push(machine.build_path(root, machine, toolchain, docker));
                 file_path.push(file);
 
-                parameters.extend_from_slice(if debug {
-                    &runner.parameters.debug[..]
-                } else {
-                    &runner.parameters.default[..]
-                });
-
                 let parameters_replaced = parameters
                     .iter()
                     .map(|p| p.replace("$file_path", file_path.parent().unwrap().to_str().unwrap()))
                     .map(|p| p.replace("$file", file_path.to_str().unwrap()))
+                    .map(|p| p.replace("$machine_path", &machine.element.path.to_str().unwrap()))
                     .map(|p| p.replace("$machine", &machine.element.slug()));
 
                 result = execute(&program_replaced, parameters_replaced, toolchain, docker);

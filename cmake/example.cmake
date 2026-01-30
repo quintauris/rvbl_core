@@ -37,18 +37,16 @@ if(example_test_timeout AND example_expected_output)
   get_property(rvbl_rave_local GLOBAL PROPERTY rvbl_rave_local)
   get_property(rvbl_toolchain_moniker GLOBAL PROPERTY rvbl_toolchain_moniker)
   get_property(rvbl_machine_moniker GLOBAL PROPERTY rvbl_machine_moniker)
-  get_property(rvbl_qemu_settings GLOBAL PROPERTY rvbl_qemu_settings)
-  get_property(rvbl_vdk_settings GLOBAL PROPERTY rvbl_vdk_settings)
-  get_property(rvbl_t32_settings GLOBAL PROPERTY rvbl_t32_settings)
+  get_property(rvbl_runners GLOBAL PROPERTY rvbl_runners)
 
-  if(rvbl_jrun_settings)
+  if("jrun" IN_LIST rvbl_runners)
     add_test(
       NAME jrun.example.${example_name}.elf
       COMMAND
         ${rvbl_rave_local} run --toolchain ${rvbl_toolchain_moniker} --machine
-        ${rvbl_machine_moniker} --runner segger.jrun --file
-        ${CMAKE_CURRENT_BINARY_DIR}/${example_name}${CMAKE_EXECUTABLE_SUFFIX_C}
-        -- ${rvbl_jrun_settings})
+        ${rvbl_machine_moniker} --runner segger.jrun --dump-file
+        ${CMAKE_CURRENT_BINARY_DIR}/:tt --file
+        ${CMAKE_CURRENT_BINARY_DIR}/${example_name}${CMAKE_EXECUTABLE_SUFFIX_C})
     set_tests_properties(
       jrun.example.${example_name}.elf PROPERTIES PASS_REGULAR_EXPRESSION
                                                   ${example_expected_output})
@@ -56,14 +54,13 @@ if(example_test_timeout AND example_expected_output)
                          PROPERTIES TIMEOUT ${example_test_timeout})
   endif()
 
-  if(rvbl_qemu_settings)
+  if("qemu" IN_LIST rvbl_runners)
     add_test(
       NAME qemu.example.${example_name}.elf
       COMMAND
         ${rvbl_rave_local} run --toolchain ${rvbl_toolchain_moniker} --machine
         ${rvbl_machine_moniker} --runner qemu.system32-elf --file
-        ${CMAKE_CURRENT_BINARY_DIR}/${example_name}${CMAKE_EXECUTABLE_SUFFIX_C}
-        -- ${rvbl_qemu_settings})
+        ${CMAKE_CURRENT_BINARY_DIR}/${example_name}${CMAKE_EXECUTABLE_SUFFIX_C})
     set_tests_properties(
       qemu.example.${example_name}.elf PROPERTIES PASS_REGULAR_EXPRESSION
                                                   ${example_expected_output})
@@ -75,8 +72,7 @@ if(example_test_timeout AND example_expected_output)
       COMMAND
         ${rvbl_rave_local} run --toolchain ${rvbl_toolchain_moniker} --machine
         ${rvbl_machine_moniker} --runner qemu.system32-bin --file
-        ${CMAKE_CURRENT_BINARY_DIR}/${example_name}.bin --
-        ${rvbl_qemu_settings})
+        ${CMAKE_CURRENT_BINARY_DIR}/${example_name}.bin)
     set_tests_properties(
       qemu.example.${example_name}.bin PROPERTIES PASS_REGULAR_EXPRESSION
                                                   ${example_expected_output})
@@ -84,14 +80,14 @@ if(example_test_timeout AND example_expected_output)
                          PROPERTIES TIMEOUT ${example_test_timeout})
   endif()
 
-  if(rvbl_vdk_settings)
+  if("vdk" IN_LIST rvbl_runners)
     add_test(
       NAME vdk.example.${example_name}.elf
       COMMAND
         ${rvbl_rave_local} run --toolchain ${rvbl_toolchain_moniker} --machine
         ${rvbl_machine_moniker} --runner quintauris_internal.vdk-elf --file
         ${CMAKE_CURRENT_BINARY_DIR}/${example_name}.${CMAKE_EXECUTABLE_SUFFIX_C}
-        -- ${rvbl_vdk_settings})
+    )
     set_tests_properties(
       vdk.example.${example_name}.elf PROPERTIES PASS_REGULAR_EXPRESSION
                                                  ${example_expected_output})
@@ -103,7 +99,7 @@ if(example_test_timeout AND example_expected_output)
       COMMAND
         ${rvbl_rave_local} run --toolchain ${rvbl_toolchain_moniker} --machine
         ${rvbl_machine_moniker} --runner quintauris_internal.vdk-bin --file
-        ${CMAKE_CURRENT_BINARY_DIR}/${example_name}.bin -- ${rvbl_vdk_settings})
+        ${CMAKE_CURRENT_BINARY_DIR}/${example_name}.bin)
     set_tests_properties(
       vdk.example.${example_name}.bin PROPERTIES PASS_REGULAR_EXPRESSION
                                                  ${example_expected_output})
@@ -111,7 +107,7 @@ if(example_test_timeout AND example_expected_output)
                          PROPERTIES TIMEOUT ${example_test_timeout})
   endif()
 
-  if(rvbl_t32_settings)
+  if("t32" IN_LIST rvbl_runners)
     add_test(
       NAME t32.example.${example_name}.elf
       COMMAND
@@ -119,7 +115,7 @@ if(example_test_timeout AND example_expected_output)
         ${rvbl_machine_moniker} --runner lauterbach.t32 --delay 8 --dump-file
         output.txt --file
         ${CMAKE_CURRENT_BINARY_DIR}/test_${arg_NAME}${CMAKE_EXECUTABLE_SUFFIX_C}
-        -- ${rvbl_t32_settings})
+    )
     set_tests_properties(
       t32.example.${example_name}.elf PROPERTIES PASS_REGULAR_EXPRESSION
                                                  ${example_expected_output})

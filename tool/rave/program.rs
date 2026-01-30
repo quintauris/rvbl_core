@@ -18,17 +18,13 @@ fn main() -> ExitCode {
     let root = path::layers_root().expect("Layers root path not found.");
     let configuration_file = path::configuration_file(&root);
     let mut elements: Vec<Element> = vec![];
-    let mut configuration = configuration::read(&configuration_file);
+    let mut configuration = configuration::read(&configuration_file).unwrap_or_default();
     let mut scanned = 0;
     let mut result = ExitCode::from(0);
     let extra_arguments_delimiter = std::env::args().find_position(|a| a == "--");
-    let common_arguments = match extra_arguments_delimiter {
+    let arguments = match extra_arguments_delimiter {
         Some((position, _)) => std::env::args().take(position).into_iter(),
         None => std::env::args().take(std::env::args().len()),
-    };
-    let extra_arguments = match extra_arguments_delimiter {
-        Some((position, _)) => std::env::args().skip(position + 1).into_iter(),
-        None => std::env::args().skip(std::env::args().len()),
     };
     let walker = WalkDir::new(&root).into_iter();
 
@@ -48,7 +44,7 @@ fn main() -> ExitCode {
         scanned = scanned + 1;
     }
 
-    match Arguments::parse_from(common_arguments) {
+    match Arguments::parse_from(arguments) {
         Arguments::List(args) => {
             if args.machines {
                 println!(
@@ -208,9 +204,11 @@ fn main() -> ExitCode {
             let machines = select::machines(&args.machine, &elements, &mut configuration);
             let toolchains = select::toolchains(&args.toolchain, &elements, &mut configuration);
             let runners = select::runners(&args.runner, &elements, &mut configuration);
-            let extra = extra_arguments.collect::<Vec<String>>();
 
             'machine_loop: for machine in machines {
+                let machine_configuration =
+                    configuration::machine(&machine.configuration()).unwrap_or_default();
+
                 for toolchain in toolchains.iter().into_iter() {
                     for runner in runners.iter().into_iter() {
                         match command::run(
@@ -223,7 +221,7 @@ fn main() -> ExitCode {
                             args.debug,
                             args.delay,
                             &args.dump_file,
-                            &extra,
+                            &machine_configuration,
                         ) {
                             Ok(code) => {
                                 if code != 0.into() {

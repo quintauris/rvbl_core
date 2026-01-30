@@ -62,6 +62,14 @@ impl Machine {
 
         result
     }
+
+    pub fn configuration(&self) -> PathBuf {
+        let mut path = self.element.path.clone();
+
+        path.push("machine.json");
+
+        path
+    }
 }
 
 impl fmt::Display for Machine {
