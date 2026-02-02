@@ -2,11 +2,11 @@ add_executable(${example_name} ${example_sources})
 target_link_options(${example_name} PRIVATE ${rvbl_linker_nostdlib})
 target_link_libraries(${example_name} PRIVATE rvbl_c rvbl_machine rvbl_semihost
                                               ${example_extra_libraries})
+
+# cmake-lint: disable=C0307
 set_target_properties(
-  ${example_name}
-  PROPERTIES LINKER_SCRIPT "${CMAKE_SOURCE_DIR}/linker/${rvbl_linker_id}.ld"
-             LINKER_INCLUDE_PATH_1 "${CMAKE_SOURCE_DIR}/../../../base/linker"
-             LINKER_INCLUDE_PATH_2 "${CMAKE_SOURCE_DIR}/generated")
+  ${example_name} PROPERTIES LINKER_SCRIPT
+                             "${CMAKE_SOURCE_DIR}/linker/${rvbl_linker_id}.ld")
 
 add_custom_command(
   TARGET ${example_name}
@@ -135,9 +135,7 @@ if(example_build_for_flash)
   set_target_properties(
     ${example_name}
     PROPERTIES LINKER_SCRIPT
-               "${CMAKE_SOURCE_DIR}/linker/${rvbl_linker_id}_flash.ld"
-               LINKER_INCLUDE_PATH_1 "${CMAKE_SOURCE_DIR}/../../../base/linker"
-               LINKER_INCLUDE_PATH_2 "${CMAKE_SOURCE_DIR}/generated")
+               "${CMAKE_SOURCE_DIR}/linker/${rvbl_linker_id}_flash.ld")
 
   add_custom_command(
     TARGET ${example_name}

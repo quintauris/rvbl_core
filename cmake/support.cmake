@@ -70,7 +70,8 @@ function(rvbl_run_generators)
   set(vendor_path "${CMAKE_SOURCE_DIR}/../../..")
   set(generated_path "${CMAKE_CURRENT_SOURCE_DIR}/generated")
   set(documentation_path "${CMAKE_CURRENT_SOURCE_DIR}/generated/doc")
-  file(MAKE_DIRECTORY ${generated_path} ${documentation_path})
+  set(linker_path "${CMAKE_CURRENT_SOURCE_DIR}/generated/linker")
+  file(MAKE_DIRECTORY ${generated_path} ${documentation_path} ${linker_path})
 
   # Compute model dependencies
   execute_process(
@@ -121,7 +122,7 @@ model.json ..."
       "${GENERATOR_LINKER}" "${CMAKE_CURRENT_SOURCE_DIR}/model/model.json"
       "${vendor_path}/quintauris/meta/machine.schema.json" "${vendor_path}"
       --dry
-    WORKING_DIRECTORY "${generated_path}"
+    WORKING_DIRECTORY "${generated_path}/linker"
     OUTPUT_VARIABLE generated_files_linker
     # COMMAND_ECHO STDOUT ECHO_OUTPUT_VARIABLE
   )
@@ -135,7 +136,7 @@ model.json ..."
       "${GENERATOR_LINKER}" "${CMAKE_CURRENT_SOURCE_DIR}/model/model.json"
       "${vendor_path}/quintauris/meta/machine.schema.json" "${vendor_path}"
     DEPENDS "${model_files}"
-    WORKING_DIRECTORY ${generated_path}
+    WORKING_DIRECTORY "${generated_path}/linker"
     COMMENT "Generating linker files from ${CMAKE_CURRENT_SOURCE_DIR}/model/\
 model.json ..."
     # COMMAND_ECHO STDOUT ECHO_OUTPUT_VARIABLE
@@ -264,9 +265,7 @@ function(rvbl_test)
                              $<LIST:TRANSFORM,${arg_LIBRARIES},PREPEND,rvbl_>)
   set_target_properties(
     test_${arg_NAME}
-    PROPERTIES LINKER_SCRIPT "${CMAKE_SOURCE_DIR}/linker/${rvbl_linker_id}.ld"
-               LINKER_INCLUDE_PATH_1 "${CMAKE_SOURCE_DIR}/../../../base/linker"
-               LINKER_INCLUDE_PATH_2 "${CMAKE_SOURCE_DIR}/generated")
+    PROPERTIES LINKER_SCRIPT "${CMAKE_SOURCE_DIR}/linker/${rvbl_linker_id}.ld")
 
   if("qemu" IN_LIST rvbl_runners)
     add_test(
