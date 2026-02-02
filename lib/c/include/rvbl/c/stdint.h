@@ -53,7 +53,7 @@ typedef rvbl_uint64_t uint64_t;
 
 /// == Type `uintmax_t`
 /// Maximum-width unsigned integer type.
-typedef rvbl_int64_t uintmax_t;
+typedef rvbl_uint64_t uintmax_t;
 
 /// == Type `uintptr_t`
 /// Unsigned integer type capable of holding a pointer to void.
