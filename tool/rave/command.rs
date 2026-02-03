@@ -15,6 +15,7 @@ use crate::{
 };
 
 fn execute<I, S>(
+    root: &PathBuf,
     program: &str,
     parameters: I,
     toolchain: &Toolchain,
@@ -26,7 +27,21 @@ where
 {
     let mut command = if docker {
         let mut result = Command::new("docker");
-        result.args(["exec", "--interactive", "--tty", &toolchain.container()]);
+        result.args([
+            "exec",
+            "--interactive",
+            "--tty",
+            "--env",
+            &format!(
+                "RVBL_TOOL={}",
+                toolchain
+                    .tools_path(root, docker)
+                    .as_os_str()
+                    .to_str()
+                    .unwrap()
+            ),
+            &toolchain.container(),
+        ]);
         result.arg(program);
         result
     } else {
@@ -72,21 +87,13 @@ pub fn configure(
     toolchain_path.push("riscv32_ilp32.cmake");
 
     execute(
+        root,
         "cmake",
         [
             "-S",
             machine.element.path.as_os_str().to_str().unwrap(),
             "-B",
             build_path.as_os_str().to_str().unwrap(),
-            "-D",
-            &format!(
-                "host_tools={}",
-                toolchain
-                    .tools_path(root, docker)
-                    .as_os_str()
-                    .to_str()
-                    .unwrap()
-            ),
             "-D",
             &format!("CMAKE_BUILD_TYPE={}", build_type),
             "--toolchain",
@@ -107,6 +114,7 @@ pub fn build(
     let build_path = machine.build_path(root, machine, toolchain, docker);
 
     execute(
+        root,
         "cmake",
         [
             "--build",
@@ -128,6 +136,7 @@ pub fn test(
     let build_path = machine.build_path(root, machine, toolchain, docker);
 
     execute(
+        root,
         "ctest",
         ["--test-dir", build_path.as_os_str().to_str().unwrap()],
         toolchain,
@@ -135,8 +144,9 @@ pub fn test(
     )
 }
 
-pub fn provision(toolchain: &Toolchain) -> std::io::Result<ExitCode> {
+pub fn provision(root: &PathBuf, toolchain: &Toolchain) -> std::io::Result<ExitCode> {
     execute(
+        root,
         "docker",
         [
             "build",
@@ -157,6 +167,7 @@ fn provision_tools(root: &PathBuf, toolchain: &Toolchain) -> std::io::Result<Exi
     generators_manifest_path.push("quintauris/tool/Cargo.toml");
 
     execute(
+        root,
         "cargo",
         [
             "build",
@@ -174,6 +185,7 @@ fn provision_tools(root: &PathBuf, toolchain: &Toolchain) -> std::io::Result<Exi
         true,
     )?;
     execute(
+        root,
         "cargo",
         [
             "build",
@@ -215,6 +227,7 @@ pub fn up(root: &PathBuf, toolchain: &Toolchain) -> std::io::Result<ExitCode> {
                     toolchain.container()
                 );
                 execute(
+                    root,
                     "docker",
                     [
                         "run",
@@ -237,8 +250,14 @@ pub fn up(root: &PathBuf, toolchain: &Toolchain) -> std::io::Result<ExitCode> {
     }
 }
 
-pub fn down(toolchain: &Toolchain) -> std::io::Result<ExitCode> {
-    execute("docker", ["stop", &toolchain.container()], toolchain, false)
+pub fn down(root: &PathBuf, toolchain: &Toolchain) -> std::io::Result<ExitCode> {
+    execute(
+        root,
+        "docker",
+        ["stop", &toolchain.container()],
+        toolchain,
+        false,
+    )
 }
 
 fn extract_parameters(
@@ -326,7 +345,13 @@ pub fn run(
                     .map(|p| p.replace("$machine_path", &machine.element.path.to_str().unwrap()))
                     .map(|p| p.replace("$machine", &machine.element.slug()));
 
-                result = execute(&program_replaced, parameters_replaced, toolchain, docker);
+                result = execute(
+                    root,
+                    &program_replaced,
+                    parameters_replaced,
+                    toolchain,
+                    docker,
+                );
 
                 if delay != 0 {
                     sleep(time::Duration::from_secs(delay.into()));

@@ -154,7 +154,7 @@ fn main() -> ExitCode {
                         toolchain.element.moniker(),
                     );
 
-                    match command::provision(&toolchain) {
+                    match command::provision(&root, &toolchain) {
                         Ok(code) => {
                             if code != 0.into() {
                                 result = code;
@@ -186,7 +186,7 @@ fn main() -> ExitCode {
                         "Winding down Docker container for toolchain {} ...",
                         toolchain.element.moniker(),
                     );
-                    match command::down(&toolchain) {
+                    match command::down(&root, &toolchain) {
                         Ok(code) => {
                             if code != 0.into() {
                                 result = code;

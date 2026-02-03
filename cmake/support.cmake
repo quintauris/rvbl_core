@@ -5,42 +5,49 @@ function(rvbl_machine)
   cmake_parse_arguments(PARSE_ARGV 0 arg "${options}" "${oneValueArgs}"
                         "${multiValueArgs}")
 
+  if(DEFINED ENV{RVBL_TOOL})
+    set(rvbl_tool $ENV{RVBL_TOOL})
+  else()
+    message(FATAL_ERROR "Environment variable RVBL_TOOL not defined, please \
+source \"bootstrap.sh\".")
+  endif()
+
   find_program(ASCIIDOCTOR NAMES asciidoctor REQUIRED)
 
   find_program(
     EXTRACTOR_ASCIIDOC
     NAMES asciidoc_extractor
-    HINTS ${host_tools} ${host_tools}/release ${host_tools}/debug REQUIRED
+    HINTS ${rvbl_tool} REQUIRED
     NO_DEFAULT_PATH)
 
   find_program(
     GENERATOR_ASCIIDOC
     NAMES generator_asciidoc
-    HINTS ${host_tools} ${host_tools}/release ${host_tools}/debug REQUIRED
+    HINTS ${rvbl_tool} REQUIRED
     NO_DEFAULT_PATH)
 
   find_program(
     GENERATOR_LINKER
     NAMES generator_linker
-    HINTS ${host_tools} ${host_tools}/release ${host_tools}/debug REQUIRED
+    HINTS ${rvbl_tool} REQUIRED
     NO_DEFAULT_PATH)
 
   find_program(
     GENERATOR_C
     NAMES generator_c
-    HINTS ${host_tools} ${host_tools}/release ${host_tools}/debug REQUIRED
+    HINTS ${rvbl_tool} REQUIRED
     NO_DEFAULT_PATH)
 
   find_program(
     MODEL_PARSER
     NAMES parser
-    HINTS ${host_tools} ${host_tools}/release ${host_tools}/debug REQUIRED
+    HINTS ${rvbl_tool} REQUIRED
     NO_DEFAULT_PATH)
 
   find_program(
     RAVE
     NAMES rave
-    HINTS ${host_tools} ${host_tools}/release ${host_tools}/debug REQUIRED
+    HINTS ${rvbl_tool} REQUIRED
     NO_DEFAULT_PATH)
 
   # Setup rvbl_toolchain_moniker global property
@@ -64,6 +71,9 @@ function(rvbl_machine)
   # Setup rvbl_rave_local global property
   string(REGEX REPLACE "docker/[^/]+/" "local/" rvbl_rave_local ${RAVE})
   set_property(GLOBAL PROPERTY rvbl_rave_local ${rvbl_rave_local})
+
+  # Setup rvbl_tool global property
+  set_property(GLOBAL PROPERTY rvbl_tool ${rvbl_tool})
 endfunction()
 
 function(rvbl_run_generators)
