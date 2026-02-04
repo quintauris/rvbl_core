@@ -40,6 +40,8 @@ where
                     .to_str()
                     .unwrap()
             ),
+            "--env",
+            &format!("RVBL_ROOT={}", root.as_os_str().to_str().unwrap()),
             &toolchain.container(),
         ]);
         result.arg(program);

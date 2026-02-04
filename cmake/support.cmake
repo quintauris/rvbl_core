@@ -1,9 +1,12 @@
 function(rvbl_machine)
-  set(options "")
-  set(oneValueArgs "")
-  set(multiValueArgs RUNNERS)
-  cmake_parse_arguments(PARSE_ARGV 0 arg "${options}" "${oneValueArgs}"
-                        "${multiValueArgs}")
+  cmake_parse_arguments(PARSE_ARGV 0 arg "" "" "LIBRARIES;RUNNERS")
+
+  if(DEFINED ENV{RVBL_ROOT})
+    set(rvbl_root $ENV{RVBL_ROOT})
+  else()
+    message(FATAL_ERROR "Environment variable RVBL_ROOT not defined, please \
+source \"bootstrap.sh\".")
+  endif()
 
   if(DEFINED ENV{RVBL_TOOL})
     set(rvbl_tool $ENV{RVBL_TOOL})
@@ -72,121 +75,175 @@ source \"bootstrap.sh\".")
   string(REGEX REPLACE "docker/[^/]+/" "local/" rvbl_rave_local ${RAVE})
   set_property(GLOBAL PROPERTY rvbl_rave_local ${rvbl_rave_local})
 
-  # Setup rvbl_tool global property
-  set_property(GLOBAL PROPERTY rvbl_tool ${rvbl_tool})
-
   # Setup rvbl_toolchain_dir global property
   cmake_path(GET CMAKE_TOOLCHAIN_FILE PARENT_PATH rvbl_toolchain_dir)
   set_property(GLOBAL PROPERTY rvbl_toolchain_dir ${rvbl_toolchain_dir})
 
-  # Setup rvbl_machine_dir global property
-  set_property(GLOBAL PROPERTY rvbl_machine_dir ${CMAKE_CURRENT_SOURCE_DIR})
-endfunction()
+  # Setup various common global properties
+  set_property(GLOBAL PROPERTY rvbl_root ${rvbl_root})
+  set_property(GLOBAL PROPERTY rvbl_tool ${rvbl_tool})
+  set(rvbl_machine_dir ${CMAKE_CURRENT_SOURCE_DIR})
+  set_property(GLOBAL PROPERTY rvbl_machine_dir ${rvbl_machine_dir})
 
-function(rvbl_run_generators)
-  set(vendor_path "${CMAKE_SOURCE_DIR}/../../..")
-  set(generated_path "${CMAKE_CURRENT_SOURCE_DIR}/generated")
-  set(documentation_path "${CMAKE_CURRENT_SOURCE_DIR}/generated/doc")
-  set(linker_path "${CMAKE_CURRENT_SOURCE_DIR}/generated/linker")
+  # Run generators
+  set(model_path ${rvbl_machine_dir}/model/model.json)
+  set(generated_path ${rvbl_machine_dir}/generated)
+  set(linker_path ${generated_path}/linker)
+  set(documentation_path ${generated_path}/doc)
+
   file(MAKE_DIRECTORY ${generated_path} ${documentation_path} ${linker_path})
 
-  # Compute model dependencies
+  rvbl_compute_model_dependencies(MODEL ${model_path} OUTPUT_VARIABLE
+                                  model_files)
+  rvbl_generate_c_files(
+    MODEL
+    ${model_path}
+    PATH
+    ${generated_path}
+    DEPENDENCIES
+    ${model_files}
+    OUTPUT_VARIABLE
+    generated_files_c)
+  rvbl_generate_linker_files(
+    MODEL
+    ${model_path}
+    PATH
+    ${linker_path}
+    DEPENDENCIES
+    ${model_files}
+    OUTPUT_VARIABLE
+    generated_files_linker)
+  rvbl_generate_machine_documentation(
+    MODEL ${model_path} PATH ${documentation_path} DEPENDENCIES
+    ${generated_files_c})
+
+  # Configure machine library
+  add_library(
+    rvbl_machine STATIC
+    ${generated_files_c} ${rvbl_machine_dir}/source/rvbl_configuration.c
+    ${rvbl_machine_dir}/source/rvbl_test.c)
+  target_include_directories(rvbl_machine
+                             PUBLIC ${rvbl_machine_dir}/generated/include)
+  target_link_libraries(
+    rvbl_machine PUBLIC rvbl_core rvbl_boot
+                        $<LIST:TRANSFORM,${arg_LIBRARIES},PREPEND,rvbl_>)
+endfunction()
+
+function(rvbl_compute_model_dependencies)
+  cmake_parse_arguments(PARSE_ARGV 0 arg "" "MODEL;OUTPUT_VARIABLE" "")
+  get_property(rvbl_root GLOBAL PROPERTY rvbl_root)
+
   execute_process(
     COMMAND
-      "${MODEL_PARSER}" "${CMAKE_CURRENT_SOURCE_DIR}/model/model.json"
-      "${vendor_path}/quintauris/meta/machine.schema.json" "${vendor_path}"
+      ${MODEL_PARSER} ${arg_MODEL}
+      ${rvbl_root}/quintauris/meta/machine.schema.json ${rvbl_root}
       --dependencies
     OUTPUT_VARIABLE model_files
     # COMMAND_ECHO STDOUT ECHO_OUTPUT_VARIABLE
   )
   string(STRIP "${model_files}" model_files)
-  list(TRANSFORM model_files PREPEND "${vendor_path}/")
-  list(APPEND model_files "${CMAKE_CURRENT_SOURCE_DIR}/model/model.json")
+  list(TRANSFORM model_files PREPEND "${rvbl_root}/")
+  list(APPEND model_files ${arg_MODEL})
   set_property(
     DIRECTORY
     APPEND
     PROPERTY CMAKE_CONFIGURE_DEPENDS "${model_files}")
 
-  # Compute C generator outputs
+  set(${arg_OUTPUT_VARIABLE} ${model_files})
+
+  return(PROPAGATE ${arg_OUTPUT_VARIABLE})
+endfunction()
+
+function(rvbl_generate_c_files)
+  cmake_parse_arguments(PARSE_ARGV 0 arg "" "MODEL;PATH;OUTPUT_VARIABLE"
+                        "DEPENDENCIES")
+  get_property(rvbl_root GLOBAL PROPERTY rvbl_root)
+
   execute_process(
-    COMMAND
-      "${GENERATOR_C}" "${CMAKE_CURRENT_SOURCE_DIR}/model/model.json"
-      "${vendor_path}/quintauris/meta/machine.schema.json" "${vendor_path}"
-      --dry
-    WORKING_DIRECTORY "${generated_path}"
+    COMMAND ${GENERATOR_C} ${arg_MODEL}
+            ${rvbl_root}/quintauris/meta/machine.schema.json ${rvbl_root} --dry
+    WORKING_DIRECTORY ${arg_PATH}
     OUTPUT_VARIABLE generated_files
     # COMMAND_ECHO STDOUT ECHO_OUTPUT_VARIABLE
   )
   string(STRIP "${generated_files}" generated_files)
-  list(TRANSFORM generated_files PREPEND "${generated_path}/")
+  list(TRANSFORM generated_files PREPEND ${arg_PATH}/)
 
-  # Generate C files
   add_custom_command(
     OUTPUT ${generated_files}
-    COMMAND
-      "${GENERATOR_C}" "${CMAKE_CURRENT_SOURCE_DIR}/model/model.json"
-      "${vendor_path}/quintauris/meta/machine.schema.json" "${vendor_path}"
-    DEPENDS ${model_files}
-    WORKING_DIRECTORY ${generated_path}
-    COMMENT "Generating machine headers from ${CMAKE_CURRENT_SOURCE_DIR}/model/\
-model.json ..."
-    # COMMAND_ECHO STDOUT ECHO_OUTPUT_VARIABLE
-  )
+    COMMAND ${GENERATOR_C} ${arg_MODEL}
+            ${rvbl_root}/quintauris/meta/machine.schema.json ${rvbl_root}
+    DEPENDS ${arg_DEPENDENCIES}
+    WORKING_DIRECTORY ${arg_PATH}
+    COMMENT "Generating machine headers from ${arg_MODEL} ...")
 
-  # Compute Linker generator outputs
+  message("${generated_files}")
+
+  add_custom_target(machine_c_files ALL DEPENDS ${generated_files})
+
+  set(${arg_OUTPUT_VARIABLE} ${generated_files})
+
+  return(PROPAGATE ${arg_OUTPUT_VARIABLE})
+endfunction()
+
+function(rvbl_generate_linker_files)
+  cmake_parse_arguments(PARSE_ARGV 0 arg "" "MODEL;PATH;OUTPUT_VARIABLE"
+                        "DEPENDENCIES")
+  get_property(rvbl_root GLOBAL PROPERTY rvbl_root)
+
   execute_process(
-    COMMAND
-      "${GENERATOR_LINKER}" "${CMAKE_CURRENT_SOURCE_DIR}/model/model.json"
-      "${vendor_path}/quintauris/meta/machine.schema.json" "${vendor_path}"
-      --dry
-    WORKING_DIRECTORY "${generated_path}/linker"
-    OUTPUT_VARIABLE generated_files_linker
+    COMMAND ${GENERATOR_LINKER} ${arg_MODEL}
+            ${rvbl_root}/quintauris/meta/machine.schema.json ${rvbl_root} --dry
+    WORKING_DIRECTORY ${arg_PATH}
+    OUTPUT_VARIABLE generated_files
     # COMMAND_ECHO STDOUT ECHO_OUTPUT_VARIABLE
   )
-  string(STRIP "${generated_files_linker}" generated_files_linker)
-  list(TRANSFORM generated_files_linker PREPEND "${generated_path}/")
+  string(STRIP "${generated_files}" generated_files)
+  list(TRANSFORM generated_files PREPEND "${arg_PATH}/")
 
-  # Generate Linker files
   add_custom_command(
-    OUTPUT ${generated_files_linker}
-    COMMAND
-      "${GENERATOR_LINKER}" "${CMAKE_CURRENT_SOURCE_DIR}/model/model.json"
-      "${vendor_path}/quintauris/meta/machine.schema.json" "${vendor_path}"
-    DEPENDS "${model_files}"
-    WORKING_DIRECTORY "${generated_path}/linker"
-    COMMENT "Generating linker files from ${CMAKE_CURRENT_SOURCE_DIR}/model/\
-model.json ..."
+    OUTPUT ${generated_files}
+    COMMAND ${GENERATOR_LINKER} ${arg_MODEL}
+            ${rvbl_root}/quintauris/meta/machine.schema.json ${rvbl_root}
+    DEPENDS ${arg_DEPENDENCIES}
+    WORKING_DIRECTORY ${arg_PATH}
+    COMMENT "Generating linker files from ${arg_MODEL} ..."
     # COMMAND_ECHO STDOUT ECHO_OUTPUT_VARIABLE
   )
-  add_custom_target(linker_files ALL DEPENDS ${generated_files_linker})
+
+  add_custom_target(machine_linker_files ALL DEPENDS ${generated_files})
+
+  set(${arg_OUTPUT_VARIABLE} ${generated_files})
+
+  return(PROPAGATE ${arg_OUTPUT_VARIABLE})
+endfunction()
+
+function(rvbl_generate_machine_documentation)
+  cmake_parse_arguments(PARSE_ARGV 0 arg "" "MODEL;PATH" "DEPENDENCIES")
+  get_property(rvbl_root GLOBAL PROPERTY rvbl_root)
 
   # Model documentation
   add_custom_command(
-    OUTPUT "${documentation_path}/model.adoc" "${documentation_path}/model.html"
-    COMMAND
-      "${GENERATOR_ASCIIDOC}" "${CMAKE_CURRENT_SOURCE_DIR}/model/model.json"
-      "${vendor_path}/quintauris/meta/machine.schema.json" "${vendor_path}"
-    COMMAND "${ASCIIDOCTOR}" -o "${documentation_path}/model.html"
-            "${documentation_path}/model.adoc"
-    WORKING_DIRECTORY "${documentation_path}"
-    DEPENDS "${model_files}"
-    COMMENT
-      "Generating model documentation from ${CMAKE_CURRENT_SOURCE_DIR}/model/\
-model.json ...")
-  add_custom_target(model_doc ALL DEPENDS "${documentation_path}/model.html")
+    OUTPUT ${arg_PATH}/model.adoc ${arg_PATH}/model.html
+    COMMAND ${GENERATOR_ASCIIDOC} ${arg_MODEL}
+            ${rvbl_root}/quintauris/meta/machine.schema.json ${rvbl_root}
+    COMMAND ${ASCIIDOCTOR} -o ${arg_PATH}/model.html ${arg_PATH}/model.adoc
+    WORKING_DIRECTORY ${arg_PATH}
+    DEPENDS ${arg_DEPENDENCIES}
+    COMMENT "Generating model documentation from ${arg_MODEL} ...")
+  add_custom_target(model_doc ALL DEPENDS ${arg_PATH}/model.html)
 
   # Machine library documentation
-  set(rvbl_machine_sources ${generated_files})
   set(machine_list "")
   set(counter "0")
 
-  foreach(source ${rvbl_machine_sources})
+  foreach(source ${arg_DEPENDENCIES})
     get_filename_component(source_name_we ${source} NAME_WE)
-    set(adoc_output "${documentation_path}/${source_name_we}.adoc")
+    set(adoc_output ${arg_PATH}/${source_name_we}.adoc)
 
     if(${adoc_output} IN_LIST machine_list)
-      string(APPEND source_name_we "_${counter}")
-      set(adoc_output "${documentation_path}/${source_name_we}.adoc")
+      string(APPEND source_name_we _${counter})
+      set(adoc_output ${arg_PATH}/${source_name_we}.adoc)
       math(EXPR counter "${counter} + 1")
     endif()
 
@@ -198,22 +255,16 @@ model.json ...")
   endforeach()
 
   add_custom_command(
-    OUTPUT "${documentation_path}/rvbl/machine/rvbl_machine.html"
-    COMMAND
-      "${ASCIIDOCTOR}" -o "${documentation_path}/rvbl/machine/rvbl_machine.html"
-      "${documentation_path}/rvbl_machine.adoc"
+    OUTPUT ${arg_PATH}/rvbl/machine/rvbl_machine.html
+    COMMAND ${ASCIIDOCTOR} -o {arg_PATH}/rvbl/machine/rvbl_machine.html
+            ${arg_PATH}/rvbl_machine.adoc
     DEPENDS ${machine_list}
-    COMMENT
-      "Generating source documentation from ${CMAKE_CURRENT_SOURCE_DIR}/model/\
-model.json ...")
-  add_custom_target(
-    machine_doc ALL
-    DEPENDS "${documentation_path}/rvbl/machine/rvbl_machine.html")
-
-  return(PROPAGATE generated_files)
+    COMMENT "Generating source documentation from ${arg_MODEL} ...")
+  add_custom_target(machine_doc_files ALL
+                    DEPENDS ${arg_PATH}/rvbl/machine/rvbl_machine.html)
 endfunction()
 
-function(rvbl_documentation module)
+function(rvbl_library_documentation module)
   set(generated_path "${CMAKE_CURRENT_SOURCE_DIR}/generated")
   set(documentation_path "${CMAKE_CURRENT_SOURCE_DIR}/generated")
   file(MAKE_DIRECTORY ${generated_path} ${documentation_path})
@@ -244,7 +295,7 @@ function(rvbl_interface_library)
   target_link_libraries(
     rvbl_${arg_NAME} INTERFACE $<LIST:TRANSFORM,${arg_LIBRARIES},PREPEND,rvbl_>)
 
-  rvbl_documentation(${arg_NAME})
+  rvbl_library_documentation(${arg_NAME})
 endfunction()
 
 function(rvbl_static_library)
@@ -259,7 +310,7 @@ function(rvbl_static_library)
   target_link_libraries(rvbl_${arg_NAME}
                         PUBLIC $<LIST:TRANSFORM,${arg_LIBRARIES},PREPEND,rvbl_>)
 
-  rvbl_documentation(${arg_NAME})
+  rvbl_library_documentation(${arg_NAME})
 endfunction()
 
 function(rvbl_test)
@@ -346,3 +397,12 @@ ${rvbl_machine_dir}/generated/linker")
                  SKIP_REGULAR_EXPRESSION "SKIP")
   endif()
 endfunction()
+
+macro(rvbl_use)
+  get_property(rvbl_root GLOBAL PROPERTY rvbl_root)
+
+  foreach(parameter ${ARGV})
+    add_subdirectory(${rvbl_root}/${parameter}
+                     ${CMAKE_CURRENT_BINARY_DIR}/${parameter})
+  endforeach()
+endmacro()
