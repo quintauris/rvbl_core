@@ -53,6 +53,8 @@ source \"bootstrap.sh\".")
     HINTS ${rvbl_tool} REQUIRED
     NO_DEFAULT_PATH)
 
+  find_program(TRUNCATE NAMES truncate)
+
   # Setup rvbl_toolchain_moniker global property
   cmake_path(GET CMAKE_TOOLCHAIN_FILE PARENT_PATH cmake_toolchain_path)
   execute_process(COMMAND ${RAVE} moniker ${cmake_toolchain_path}
@@ -177,8 +179,6 @@ function(rvbl_generate_c_files)
     WORKING_DIRECTORY ${arg_PATH}
     COMMENT "Generating machine headers from ${arg_MODEL} ...")
 
-  message("${generated_files}")
-
   add_custom_target(machine_c_files ALL DEPENDS ${generated_files})
 
   set(${arg_OUTPUT_VARIABLE} ${generated_files})
@@ -284,11 +284,7 @@ function(rvbl_library_documentation module)
 endfunction()
 
 function(rvbl_interface_library)
-  set(options "")
-  set(oneValueArgs NAME)
-  set(multiValueArgs SOURCES INCLUDES LIBRARIES)
-  cmake_parse_arguments(PARSE_ARGV 0 arg "${options}" "${oneValueArgs}"
-                        "${multiValueArgs}")
+  cmake_parse_arguments(PARSE_ARGV 0 arg "" "NAME" "SOURCES;INCLUDES;LIBRARIES")
 
   add_library(rvbl_${arg_NAME} INTERFACE ${arg_SOURCES})
   target_include_directories(rvbl_${arg_NAME} INTERFACE ${arg_INCLUDES})
@@ -299,11 +295,7 @@ function(rvbl_interface_library)
 endfunction()
 
 function(rvbl_static_library)
-  set(options "")
-  set(oneValueArgs NAME)
-  set(multiValueArgs SOURCES INCLUDES LIBRARIES)
-  cmake_parse_arguments(PARSE_ARGV 0 arg "${options}" "${oneValueArgs}"
-                        "${multiValueArgs}")
+  cmake_parse_arguments(PARSE_ARGV 0 arg "" "NAME" "SOURCES;INCLUDES;LIBRARIES")
 
   add_library(rvbl_${arg_NAME} STATIC ${arg_SOURCES})
   target_include_directories(rvbl_${arg_NAME} PUBLIC ${arg_INCLUDES})
@@ -313,89 +305,224 @@ function(rvbl_static_library)
   rvbl_library_documentation(${arg_NAME})
 endfunction()
 
-function(rvbl_test)
-  set(options "")
-  set(oneValueArgs NAME)
-  set(multiValueArgs LIBRARIES DEVICES)
-  cmake_parse_arguments(PARSE_ARGV 0 arg "${options}" "${oneValueArgs}"
-                        "${multiValueArgs}")
+function(rvbl_executable)
+  cmake_parse_arguments(
+    PARSE_ARGV 0 arg "TEST;BINARY;FLASH"
+    "NAME;TEST_TIMEOUT;TEST_EXPECTED_OUTPUT;BINARY_SIZE"
+    "SOURCES;LIBRARIES;LIBRARIES_EXTERNAL;DEFINITIONS;INCLUDES")
 
+  get_property(rvbl_machine_dir GLOBAL PROPERTY rvbl_machine_dir)
+  get_property(rvbl_toolchain_dir GLOBAL PROPERTY rvbl_toolchain_dir)
   get_property(rvbl_rave_local GLOBAL PROPERTY rvbl_rave_local)
   get_property(rvbl_toolchain_moniker GLOBAL PROPERTY rvbl_toolchain_moniker)
   get_property(rvbl_machine_moniker GLOBAL PROPERTY rvbl_machine_moniker)
   get_property(rvbl_runners GLOBAL PROPERTY rvbl_runners)
-  get_property(rvbl_toolchain_dir GLOBAL PROPERTY rvbl_toolchain_dir)
-  get_property(rvbl_machine_dir GLOBAL PROPERTY rvbl_machine_dir)
 
-  add_executable(test_${arg_NAME}
-                 "${init}" "${CMAKE_CURRENT_SOURCE_DIR}/tests/${arg_NAME}.c")
-  target_link_options(test_${arg_NAME} PRIVATE ${rvbl_linker_nostdlib})
+  add_executable(${arg_NAME} ${arg_SOURCES})
+  target_link_options(${arg_NAME} PRIVATE ${rvbl_linker_nostdlib})
   target_link_libraries(
-    test_${arg_NAME} PRIVATE rvbl_test
-                             $<LIST:TRANSFORM,${arg_LIBRARIES},PREPEND,rvbl_>)
+    ${arg_NAME} PRIVATE ${arg_LIBRARIES_EXTERNAL}
+                        $<LIST:TRANSFORM,${arg_LIBRARIES},PREPEND,rvbl_>)
+  target_compile_definitions(${arg_NAME} PRIVATE ${arg_DEFINITIONS})
+  target_include_directories(${arg_NAME} PRIVATE ${arg_INCLUDES})
   set_target_properties(
-    test_${arg_NAME}
+    ${arg_NAME}
     PROPERTIES LINKER_SCRIPT "${rvbl_machine_dir}/linker/\
 ${rvbl_linker_id}.ld" LINKER_SEARCH_DIRECTORIES "${rvbl_toolchain_dir};\
 ${rvbl_machine_dir}/generated/linker")
 
-  if("qemu" IN_LIST rvbl_runners)
-    add_test(
-      NAME qemu.${arg_NAME}
-      COMMAND
-        ${rvbl_rave_local} run --toolchain ${rvbl_toolchain_moniker} --machine
-        ${rvbl_machine_moniker} --runner qemu.system32-elf --file
-        ${CMAKE_CURRENT_BINARY_DIR}/test_${arg_NAME}${CMAKE_EXECUTABLE_SUFFIX_C}
-    )
-    set_tests_properties(qemu.${arg_NAME} PROPERTIES SKIP_RETURN_CODE 2)
+  if(arg_BINARY)
+    add_custom_command(
+      TARGET ${arg_NAME}
+      POST_BUILD
+      COMMAND ${OBJCOPY} $<TARGET_FILE:${arg_NAME}> ${rvbl_elf_copy_parameters}
+              ${CMAKE_CURRENT_BINARY_DIR}/${arg_NAME}.bin
+      BYPRODUCTS ${CMAKE_CURRENT_BINARY_DIR}/${arg_NAME}.bin
+      COMMENT "Converting $<TARGET_FILE:${arg_NAME}> to binary image...")
+
+    if(arg_BINARY_SIZE)
+      if(TRUNCATE)
+        add_custom_command(
+          TARGET ${arg_NAME}
+          POST_BUILD
+          COMMAND ${TRUNCATE} -s ${arg_BINARY_SIZE}
+                  ${CMAKE_CURRENT_BINARY_DIR}/${arg_NAME}.bin
+          COMMENT "Resizing ${CMAKE_CURRENT_BINARY_DIR}/${arg_NAME}.bin ...")
+      else()
+        message(WARNING "No \"truncate\" executable found, ${arg_NAME}.bin \
+shall be manually resized to ${arg_BINARY_SIZE}.")
+      endif()
+    endif()
   endif()
 
-  if("jrun" IN_LIST rvbl_runners)
-    add_test(
-      NAME jrun.${arg_NAME}
-      COMMAND
-        ${rvbl_rave_local} run --toolchain ${rvbl_toolchain_moniker} --machine
-        ${rvbl_machine_moniker} --runner segger.jrun --dump-file
-        ${CMAKE_CURRENT_BINARY_DIR}/:tt --file
-        ${CMAKE_CURRENT_BINARY_DIR}/test_${arg_NAME}${CMAKE_EXECUTABLE_SUFFIX_C}
-    )
-    set_tests_properties(jrun.${arg_NAME} PROPERTIES SKIP_RETURN_CODE 2)
+  if(arg_TEST)
+    if("qemu" IN_LIST rvbl_runners)
+      set(test_list "")
+
+      add_test(
+        NAME qemu.${arg_NAME}
+        COMMAND
+          ${rvbl_rave_local} run --toolchain ${rvbl_toolchain_moniker}
+          --machine ${rvbl_machine_moniker} --runner qemu.system32-elf --file
+          ${CMAKE_CURRENT_BINARY_DIR}/${arg_NAME}${CMAKE_EXECUTABLE_SUFFIX_C})
+      list(APPEND test_list qemu.${arg_NAME})
+
+      if(arg_BINARY)
+        add_test(
+          NAME qemu.${arg_NAME}.bin
+          COMMAND
+            ${rvbl_rave_local} run --toolchain ${rvbl_toolchain_moniker}
+            --machine ${rvbl_machine_moniker} --runner qemu.system32-bin --file
+            ${CMAKE_CURRENT_BINARY_DIR}/${arg_NAME}.bin)
+        list(APPEND test_list qemu.${arg_NAME}.bin)
+      endif()
+
+      if(arg_TEST_EXPECTED_OUTPUT)
+        set_tests_properties(
+          ${test_list} PROPERTIES PASS_REGULAR_EXPRESSION
+                                  ${arg_TEST_EXPECTED_OUTPUT})
+      endif()
+
+      if(arg_TEST_TIMEOUT)
+        set_tests_properties(${test_list} PROPERTIES TIMEOUT
+                                                     ${arg_TEST_TIMEOUT})
+      endif()
+
+      set_tests_properties(qemu.${arg_NAME} PROPERTIES SKIP_RETURN_CODE 2)
+    endif()
+
+    if("jrun" IN_LIST rvbl_runners)
+      set(test_list "")
+
+      add_test(
+        NAME jrun.${arg_NAME}
+        COMMAND
+          ${rvbl_rave_local} run --toolchain ${rvbl_toolchain_moniker}
+          --machine ${rvbl_machine_moniker} --runner segger.jrun --dump-file
+          ${CMAKE_CURRENT_BINARY_DIR}/:tt --file
+          ${CMAKE_CURRENT_BINARY_DIR}/${arg_NAME}${CMAKE_EXECUTABLE_SUFFIX_C})
+      list(APPEND test_list jrun.${arg_NAME})
+
+      if(arg_TEST_EXPECTED_OUTPUT)
+        set_tests_properties(
+          ${test_list} PROPERTIES PASS_REGULAR_EXPRESSION
+                                  ${arg_TEST_EXPECTED_OUTPUT})
+      endif()
+
+      if(arg_TEST_TIMEOUT)
+        set_tests_properties(${test_list} PROPERTIES TIMEOUT
+                                                     ${arg_TEST_TIMEOUT})
+      endif()
+
+      set_tests_properties(jrun.${arg_NAME} PROPERTIES SKIP_RETURN_CODE 2)
+    endif()
+
+    if("vdk" IN_LIST rvbl_runners)
+      set(test_list "")
+
+      add_test(
+        NAME vdk.${arg_NAME}
+        COMMAND
+          ${rvbl_rave_local} run --toolchain ${rvbl_toolchain_moniker}
+          --machine ${rvbl_machine_moniker} --runner
+          quintauris_internal.vdk-elf --file
+          ${CMAKE_CURRENT_BINARY_DIR}/${arg_NAME}${CMAKE_EXECUTABLE_SUFFIX_C})
+      list(APPEND test_list vdk.${arg_NAME})
+
+      if(arg_TEST_EXPECTED_OUTPUT)
+        message(WARNING "Ignoring TEST_EXPECTED_OUTPUT parameter in VDK tests.")
+      endif()
+
+      if(arg_TEST_TIMEOUT)
+        message(WARNING "Ignoring TEST_TIMEOUT parameter in VDK tests.")
+      endif()
+
+      set_tests_properties(
+        ${test_list}
+        PROPERTIES PASS_REGULAR_EXPRESSION
+                   "PASS"
+                   FAIL_REGULAR_EXPRESSION
+                   "FAIL"
+                   SKIP_REGULAR_EXPRESSION
+                   "SKIP"
+                   TIMEOUT
+                   120)
+    endif()
+
+    if("t32" IN_LIST rvbl_runners)
+      set(test_list "")
+
+      add_test(
+        NAME t32.${arg_NAME}
+        COMMAND
+          ${rvbl_rave_local} run --toolchain ${rvbl_toolchain_moniker}
+          --machine ${rvbl_machine_moniker} --runner lauterbach.t32 --delay 8
+          --dump-file output.txt --file
+          ${CMAKE_CURRENT_BINARY_DIR}/${arg_NAME}${CMAKE_EXECUTABLE_SUFFIX_C})
+      list(APPEND test_list vdk.${arg_NAME})
+
+      if(arg_TEST_EXPECTED_OUTPUT)
+        message(WARNING "Ignoring TEST_EXPECTED_OUTPUT parameter in T32 tests.")
+      endif()
+
+      if(arg_TEST_TIMEOUT)
+        message(WARNING "Ignoring TEST_TIMEOUT parameter in T32 tests.")
+      endif()
+
+      set_tests_properties(
+        t32.${arg_NAME}
+        PROPERTIES PASS_REGULAR_EXPRESSION "PASS" FAIL_REGULAR_EXPRESSION
+                   "FAIL" SKIP_REGULAR_EXPRESSION "SKIP")
+    endif()
   endif()
 
-  if("vdk" IN_LIST rvbl_runners)
-    add_test(
-      NAME vdk.${arg_NAME}
-      COMMAND
-        ${rvbl_rave_local} run --toolchain ${rvbl_toolchain_moniker} --machine
-        ${rvbl_machine_moniker} --runner quintauris_internal.vdk-elf --file
-        ${CMAKE_CURRENT_BINARY_DIR}/test_${arg_NAME}${CMAKE_EXECUTABLE_SUFFIX_C}
-    )
-    set_tests_properties(
-      vdk.${arg_NAME}
-      PROPERTIES PASS_REGULAR_EXPRESSION
-                 "PASS"
-                 FAIL_REGULAR_EXPRESSION
-                 "FAIL"
-                 SKIP_REGULAR_EXPRESSION
-                 "SKIP"
-                 TIMEOUT
-                 120)
-  endif()
+  if(arg_FLASH)
+    set(flash_executable_name "${arg_NAME}_flash")
 
-  if("t32" IN_LIST rvbl_runners)
-    add_test(
-      NAME t32.${arg_NAME}
-      COMMAND
-        ${rvbl_rave_local} run --toolchain ${rvbl_toolchain_moniker} --machine
-        ${rvbl_machine_moniker} --runner lauterbach.t32 --delay 8 --dump-file
-        output.txt --file
-        ${CMAKE_CURRENT_BINARY_DIR}/test_${arg_NAME}${CMAKE_EXECUTABLE_SUFFIX_C}
-    )
-    set_tests_properties(
-      t32.${arg_NAME}
-      PROPERTIES PASS_REGULAR_EXPRESSION "PASS" FAIL_REGULAR_EXPRESSION "FAIL"
-                 SKIP_REGULAR_EXPRESSION "SKIP")
+    add_executable(${flash_executable_name} ${arg_SOURCES})
+    target_link_options(${flash_executable_name} PRIVATE
+                        ${rvbl_linker_nostdlib})
+    target_link_libraries(
+      ${flash_executable_name}
+      PRIVATE $<LIST:TRANSFORM,${arg_LIBRARIES},PREPEND,rvbl_>
+              ${arg_LIBRARIES_EXTERNAL})
+    target_compile_definitions(${flash_executable_name}
+                               PRIVATE RVBL_BUILD_FLASH ${arg_DEFINITIONS})
+    target_include_directories(${flash_executable_name} PRIVATE ${arg_INCLUDES})
+    set_target_properties(
+      ${flash_executable_name}
+      PROPERTIES LINKER_SCRIPT "${rvbl_machine_dir}/linker/\
+${rvbl_linker_id}_flash.ld" LINKER_SEARCH_DIRECTORIES "${rvbl_toolchain_dir};\
+${rvbl_machine_dir}/generated/linker")
+
+    if(arg_BINARY)
+      add_custom_command(
+        TARGET ${flash_executable_name}
+        POST_BUILD
+        COMMAND
+          ${OBJCOPY} $<TARGET_FILE:${flash_executable_name}>
+          ${rvbl_elf_copy_parameters}
+          ${CMAKE_CURRENT_BINARY_DIR}/${flash_executable_name}.bin
+        BYPRODUCTS ${CMAKE_CURRENT_BINARY_DIR}/${flash_executable_name}.bin
+        COMMENT "Converting $<TARGET_FILE:${flash_executable_name}> to binary \
+image...")
+    endif()
   endif()
+endfunction()
+
+function(rvbl_test)
+  cmake_parse_arguments(PARSE_ARGV 0 arg "" "NAME;TIMEOUT;EXPECTED_OUTPUT"
+                        "LIBRARIES")
+
+  rvbl_executable(
+    NAME
+    test_${arg_NAME}
+    SOURCES
+    ${CMAKE_CURRENT_SOURCE_DIR}/tests/${arg_NAME}.c
+    LIBRARIES
+    test
+    ${arg_LIBRARIES}
+    TEST)
 endfunction()
 
 macro(rvbl_use)
