@@ -58,7 +58,7 @@ source \"bootstrap.sh\".")
   set_property(GLOBAL PROPERTY rvbl_toolchain_moniker ${rvbl_toolchain_moniker})
 
   # Setup rvbl_machine_moniker global property
-  execute_process(COMMAND ${RAVE} moniker ${CMAKE_SOURCE_DIR}
+  execute_process(COMMAND ${RAVE} moniker ${CMAKE_CURRENT_SOURCE_DIR}
                   OUTPUT_VARIABLE rvbl_machine_moniker)
   string(STRIP "${rvbl_machine_moniker}" rvbl_machine_moniker)
   set_property(GLOBAL PROPERTY rvbl_machine_moniker ${rvbl_machine_moniker})
@@ -74,6 +74,13 @@ source \"bootstrap.sh\".")
 
   # Setup rvbl_tool global property
   set_property(GLOBAL PROPERTY rvbl_tool ${rvbl_tool})
+
+  # Setup rvbl_toolchain_dir global property
+  cmake_path(GET CMAKE_TOOLCHAIN_FILE PARENT_PATH rvbl_toolchain_dir)
+  set_property(GLOBAL PROPERTY rvbl_toolchain_dir ${rvbl_toolchain_dir})
+
+  # Setup rvbl_machine_dir global property
+  set_property(GLOBAL PROPERTY rvbl_machine_dir ${CMAKE_CURRENT_SOURCE_DIR})
 endfunction()
 
 function(rvbl_run_generators)
@@ -266,6 +273,8 @@ function(rvbl_test)
   get_property(rvbl_toolchain_moniker GLOBAL PROPERTY rvbl_toolchain_moniker)
   get_property(rvbl_machine_moniker GLOBAL PROPERTY rvbl_machine_moniker)
   get_property(rvbl_runners GLOBAL PROPERTY rvbl_runners)
+  get_property(rvbl_toolchain_dir GLOBAL PROPERTY rvbl_toolchain_dir)
+  get_property(rvbl_machine_dir GLOBAL PROPERTY rvbl_machine_dir)
 
   add_executable(test_${arg_NAME}
                  "${init}" "${CMAKE_CURRENT_SOURCE_DIR}/tests/${arg_NAME}.c")
@@ -275,7 +284,9 @@ function(rvbl_test)
                              $<LIST:TRANSFORM,${arg_LIBRARIES},PREPEND,rvbl_>)
   set_target_properties(
     test_${arg_NAME}
-    PROPERTIES LINKER_SCRIPT "${CMAKE_SOURCE_DIR}/linker/${rvbl_linker_id}.ld")
+    PROPERTIES LINKER_SCRIPT "${rvbl_machine_dir}/linker/\
+${rvbl_linker_id}.ld" LINKER_SEARCH_DIRECTORIES "${rvbl_toolchain_dir};\
+${rvbl_machine_dir}/generated/linker")
 
   if("qemu" IN_LIST rvbl_runners)
     add_test(

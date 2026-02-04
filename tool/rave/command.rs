@@ -11,7 +11,7 @@ use which::which;
 use crate::configuration::{self};
 use crate::{
     console::{info, line, spawning, warning},
-    element::{Machine, Runner, Toolchain},
+    element::{Runner, Target, Toolchain},
 };
 
 fn execute<I, S>(
@@ -75,12 +75,12 @@ where
 
 pub fn configure(
     root: &PathBuf,
-    machine: &Machine,
+    target: &Target,
     toolchain: &Toolchain,
     build_type: &String,
     docker: bool,
 ) -> std::io::Result<ExitCode> {
-    let build_path = machine.build_path(root, machine, toolchain, docker);
+    let build_path = target.build_path(root, target, toolchain, docker);
     let mut toolchain_path = toolchain.element.path.clone();
 
     std::fs::create_dir_all(&build_path).expect("Can't create build directory");
@@ -91,7 +91,7 @@ pub fn configure(
         "cmake",
         [
             "-S",
-            machine.element.path.as_os_str().to_str().unwrap(),
+            target.element.path.as_os_str().to_str().unwrap(),
             "-B",
             build_path.as_os_str().to_str().unwrap(),
             "-D",
@@ -106,12 +106,12 @@ pub fn configure(
 
 pub fn build(
     root: &PathBuf,
-    machine: &Machine,
+    target: &Target,
     toolchain: &Toolchain,
     jobs: u32,
     docker: bool,
 ) -> std::io::Result<ExitCode> {
-    let build_path = machine.build_path(root, machine, toolchain, docker);
+    let build_path = target.build_path(root, target, toolchain, docker);
 
     execute(
         root,
@@ -129,11 +129,11 @@ pub fn build(
 
 pub fn test(
     root: &PathBuf,
-    machine: &Machine,
+    target: &Target,
     toolchain: &Toolchain,
     docker: bool,
 ) -> std::io::Result<ExitCode> {
-    let build_path = machine.build_path(root, machine, toolchain, docker);
+    let build_path = target.build_path(root, target, toolchain, docker);
 
     execute(
         root,
@@ -262,27 +262,27 @@ pub fn down(root: &PathBuf, toolchain: &Toolchain) -> std::io::Result<ExitCode> 
 
 fn extract_parameters(
     runner: &Runner,
-    machine_configuration: &crate::configuration::Machine,
+    target_configuration: &crate::configuration::Target,
     runner_configuration: &crate::configuration::Runner,
     debug: bool,
 ) -> Vec<String> {
     let mut result: Vec<String> = vec![];
-    let mut machine_runner_parameters: &Vec<String> = &vec![];
+    let mut target_runner_parameters: &Vec<String> = &vec![];
     let mut runner_parameters: &Vec<String> = &vec![];
-    let mut append_machine_runner_parameters = false;
+    let mut append_target_runner_parameters = false;
 
-    for (key, machine_runner) in &machine_configuration.runners {
+    for (key, target_runner) in &target_configuration.runners {
         if let Ok(regex) = Regex::new(key) {
             if regex.is_match(&runner.element.moniker()) {
                 if debug {
-                    if let Some(parameters) = machine_runner.debug.as_ref() {
-                        machine_runner_parameters = &parameters;
+                    if let Some(parameters) = target_runner.debug.as_ref() {
+                        target_runner_parameters = &parameters;
                     }
                 } else {
-                    machine_runner_parameters = &machine_runner.default;
+                    target_runner_parameters = &target_runner.default;
                 }
 
-                append_machine_runner_parameters = machine_runner.append.unwrap_or(false);
+                append_target_runner_parameters = target_runner.append.unwrap_or(false);
 
                 break;
             }
@@ -297,11 +297,11 @@ fn extract_parameters(
         runner_parameters = &runner_configuration.parameters.default;
     }
 
-    if append_machine_runner_parameters {
+    if append_target_runner_parameters {
         result.extend_from_slice(runner_parameters);
-        result.extend_from_slice(machine_runner_parameters);
+        result.extend_from_slice(target_runner_parameters);
     } else {
-        result.extend_from_slice(machine_runner_parameters);
+        result.extend_from_slice(target_runner_parameters);
         result.extend_from_slice(runner_parameters);
     }
 
@@ -310,7 +310,7 @@ fn extract_parameters(
 
 pub fn run(
     root: &PathBuf,
-    machine: &Machine,
+    target: &Target,
     toolchain: &Toolchain,
     runner: &Runner,
     docker: bool,
@@ -318,59 +318,60 @@ pub fn run(
     debug: bool,
     delay: u32,
     dump_file: &Option<PathBuf>,
-    machine_configuration: &crate::configuration::Machine,
+    target_configuration: &crate::configuration::Target,
 ) -> std::io::Result<ExitCode> {
     let mut result = Ok(ExitCode::from(0));
 
     if let Some(runner_configuration) = configuration::runner(&runner.configuration()) {
         for program in runner_configuration.programs.iter() {
-            let program_replaced = program.replace("$machine", &machine.element.slug());
+            let program_replaced = program.replace("$machine", &target.element.slug());
 
             if which(&program_replaced).is_ok() {
-                let parameters = extract_parameters(
-                    runner,
-                    &machine_configuration,
-                    &runner_configuration,
-                    debug,
-                );
-                let mut file_path = root.clone();
+                if file.exists() {
+                    let parameters = extract_parameters(
+                        runner,
+                        &target_configuration,
+                        &runner_configuration,
+                        debug,
+                    );
 
-                file_path.push(machine.build_path(root, machine, toolchain, docker));
-                file_path.push(file);
+                    let parameters_replaced = parameters
+                        .iter()
+                        .map(|p| p.replace("$file_path", file.parent().unwrap().to_str().unwrap()))
+                        .map(|p| p.replace("$file", file.to_str().unwrap()))
+                        .map(|p| p.replace("$machine_path", &target.element.path.to_str().unwrap()))
+                        .map(|p| p.replace("$machine", &target.element.slug()));
 
-                let parameters_replaced = parameters
-                    .iter()
-                    .map(|p| p.replace("$file_path", file_path.parent().unwrap().to_str().unwrap()))
-                    .map(|p| p.replace("$file", file_path.to_str().unwrap()))
-                    .map(|p| p.replace("$machine_path", &machine.element.path.to_str().unwrap()))
-                    .map(|p| p.replace("$machine", &machine.element.slug()));
+                    result = execute(
+                        root,
+                        &program_replaced,
+                        parameters_replaced,
+                        toolchain,
+                        docker,
+                    );
 
-                result = execute(
-                    root,
-                    &program_replaced,
-                    parameters_replaced,
-                    toolchain,
-                    docker,
-                );
-
-                if delay != 0 {
-                    sleep(time::Duration::from_secs(delay.into()));
-                }
-
-                if let Some(dump) = dump_file {
-                    let mut dump_path = root.clone();
-
-                    dump_path.push(machine.build_path(root, machine, toolchain, docker));
-                    dump_path.push(dump);
-
-                    if let Ok(data) = fs::read(&dump_path) {
-                        let _ = stdout().write(&data);
-
-                        println!();
-                    } else {
-                        warning!("File \"{}\" not found.", dump.to_str().unwrap());
-                        result = Err(std::io::Error::from(std::io::ErrorKind::NotFound))
+                    if delay != 0 {
+                        sleep(time::Duration::from_secs(delay.into()));
                     }
+
+                    if let Some(dump) = dump_file {
+                        let mut dump_path = root.clone();
+
+                        dump_path.push(target.build_path(root, target, toolchain, docker));
+                        dump_path.push(dump);
+
+                        if let Ok(data) = fs::read(&dump_path) {
+                            let _ = stdout().write(&data);
+
+                            println!();
+                        } else {
+                            warning!("File \"{}\" not found.", dump.to_str().unwrap());
+                            result = Err(std::io::Error::from(std::io::ErrorKind::NotFound))
+                        }
+                    }
+                } else {
+                    warning!("Executable file \"{}\" not found.", file.to_str().unwrap());
+                    result = Err(std::io::Error::from(std::io::ErrorKind::NotFound))
                 }
 
                 break;

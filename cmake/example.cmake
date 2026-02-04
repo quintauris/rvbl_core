@@ -3,10 +3,14 @@ target_link_options(${example_name} PRIVATE ${rvbl_linker_nostdlib})
 target_link_libraries(${example_name} PRIVATE rvbl_c rvbl_machine rvbl_semihost
                                               ${example_extra_libraries})
 
-# cmake-lint: disable=C0307
+get_property(rvbl_toolchain_dir GLOBAL PROPERTY rvbl_toolchain_dir)
+get_property(rvbl_machine_dir GLOBAL PROPERTY rvbl_machine_dir)
+
 set_target_properties(
-  ${example_name} PROPERTIES LINKER_SCRIPT
-                             "${CMAKE_SOURCE_DIR}/linker/${rvbl_linker_id}.ld")
+  ${example_name}
+  PROPERTIES LINKER_SCRIPT "${rvbl_machine_dir}/linker/${rvbl_linker_id}.ld"
+             LINKER_SEARCH_DIRECTORIES "${rvbl_toolchain_dir};\
+${rvbl_machine_dir}/generated/linker")
 
 add_custom_command(
   TARGET ${example_name}
@@ -134,8 +138,9 @@ if(example_build_for_flash)
   target_compile_definitions(${example_name} PRIVATE RVBL_BUILD_FLASH)
   set_target_properties(
     ${example_name}
-    PROPERTIES LINKER_SCRIPT
-               "${CMAKE_SOURCE_DIR}/linker/${rvbl_linker_id}_flash.ld")
+    PROPERTIES LINKER_SCRIPT "${rvbl_machine_dir}/linker/\
+${rvbl_linker_id}_flash.ld" LINKER_SEARCH_DIRECTORIES "${rvbl_toolchain_dir};\
+${rvbl_machine_dir}/generated/linker")
 
   add_custom_command(
     TARGET ${example_name}

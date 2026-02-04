@@ -41,15 +41,15 @@ impl fmt::Display for ElementPath {
     }
 }
 
-pub struct Machine {
+pub struct Target {
     pub element: ElementPath,
 }
 
-impl Machine {
+impl Target {
     pub fn build_path(
         &self,
         root: &PathBuf,
-        machine: &Machine,
+        target: &Target,
         toolchain: &Toolchain,
         docker: bool,
     ) -> PathBuf {
@@ -58,7 +58,7 @@ impl Machine {
         result.push("build");
         result.push(if docker { "docker" } else { "local" });
         result.push(toolchain.element.slug());
-        result.push(machine.element.slug());
+        result.push(target.element.slug());
 
         result
     }
@@ -72,7 +72,7 @@ impl Machine {
     }
 }
 
-impl fmt::Display for Machine {
+impl fmt::Display for Target {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         self.element.fmt(f)
     }
@@ -143,7 +143,7 @@ impl fmt::Display for Runner {
 
 pub enum Element {
     Toolchain(Toolchain),
-    Machine(Machine),
+    Target(Target),
     Runner(Runner),
     Unknown,
 }
@@ -156,7 +156,7 @@ impl Moniker for Element {
     fn moniker(&self) -> String {
         match self {
             Element::Toolchain(t) => t.element.moniker(),
-            Element::Machine(m) => m.element.moniker(),
+            Element::Target(m) => m.element.moniker(),
             Element::Runner(r) => r.element.moniker(),
             _ => String::from(""),
         }
@@ -173,7 +173,7 @@ impl Element {
     pub fn from(path: &PathBuf) -> Element {
         if path.iter().count() >= 3 {
             match path.iter().nth_back(1).unwrap().to_str().unwrap() {
-                "machine" => Element::Machine(Machine {
+                "machine" | "project" => Element::Target(Target {
                     element: ElementPath { path: path.clone() },
                 }),
                 "toolchain" => Element::Toolchain(Toolchain {

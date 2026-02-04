@@ -5,9 +5,9 @@ use clap::{Args, Parser};
 #[derive(Args)]
 #[command(version, about, long_about = None)]
 pub struct ListArgs {
-    /// List all machines
-    #[arg(short, long, alias = "machine")]
-    pub machines: bool,
+    /// List all targets
+    #[arg(short, long, aliases = ["target", "machine", "machines"])]
+    pub targets: bool,
 
     /// List all toolchains
     #[arg(short, long, alias = "toolchain")]
@@ -25,11 +25,11 @@ pub struct MakeArgs {
     #[arg(short, long, default_value_t = String::from("last"))]
     pub toolchain: String,
 
-    /// Machine(s) in <layer>.<name> form (e.g. qemu.virt), comma-separated
-    #[arg(short, long, default_value_t = String::from("last"))]
-    pub machine: String,
+    /// Target(s) in <layer>.<name> form (e.g. qemu.virt), comma-separated
+    #[arg(short, long, default_value_t = String::from("last"), aliases=["targets", "machine", "machines"])]
+    pub target: String,
 
-    /// Configure build for selected machine(s)
+    /// Configure build for selected target(s)
     #[arg(short, long)]
     pub configure: bool,
 
@@ -37,7 +37,7 @@ pub struct MakeArgs {
     #[arg(long, default_value_t = String::from("Release"), requires = "configure")]
     pub build_type: String,
 
-    /// Perform build for selected machine(s)
+    /// Perform build for selected target(s)
     #[arg(short, long)]
     pub build: bool,
 
@@ -45,7 +45,7 @@ pub struct MakeArgs {
     #[arg(short, long, default_value_t = 1, requires = "build")]
     pub jobs: u32,
 
-    /// Run tests for selected machine(s)
+    /// Run tests for selected target(s)
     #[arg(short, long)]
     pub test: bool,
 
@@ -81,9 +81,9 @@ pub struct RunArgs {
     #[arg(short, long, default_value_t = String::from("last"))]
     pub toolchain: String,
 
-    /// Machine(s) in <layer>.<name> form (e.g. qemu.virt), comma-separated
-    #[arg(short, long, default_value_t = String::from("last"))]
-    pub machine: String,
+    /// Target(s) in <layer>.<name> form (e.g. qemu.virt), comma-separated
+    #[arg(short, long, default_value_t = String::from("last"), alias="machine")]
+    pub target: String,
 
     /// Runners(s) in <layer>.<name> form (e.g. qemu.system32-elf), comma-separated
     #[arg(short, long, default_value_t = String::from("last"))]
@@ -93,7 +93,7 @@ pub struct RunArgs {
     #[arg(short, long)]
     pub docker: bool,
 
-    /// Executable image file to run, absolute or relative to build directory
+    /// Executable image file to run, absolute path
     #[arg(short, long)]
     pub file: PathBuf,
 
@@ -123,7 +123,7 @@ pub struct MonikerArgs {
 pub enum Arguments {
     /// List available elements of different kinds
     List(ListArgs),
-    /// Configure, build and test machines
+    /// Configure, build and test targets
     Make(MakeArgs),
     /// Manage Docker images and containers for toolchains
     Docker(DockerArgs),

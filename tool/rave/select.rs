@@ -1,7 +1,7 @@
 use itertools::Itertools;
 
 use crate::configuration::Configuration;
-use crate::element::{Element, Machine, Moniker, Runner, Toolchain};
+use crate::element::{Element, Moniker, Runner, Target, Toolchain};
 use crate::interactive;
 
 fn generic<'a, F>(filter: &str, elements: &'a Vec<Element>, f: F) -> Vec<&'a Element>
@@ -22,8 +22,8 @@ where
     }
 }
 
-fn is_machine(element: &&Element) -> bool {
-    matches!(element, Element::Machine(_))
+fn is_target(element: &&Element) -> bool {
+    matches!(element, Element::Target(_))
 }
 
 fn is_toolchain(element: &&Element) -> bool {
@@ -41,32 +41,32 @@ where
     elements.iter().filter(f).collect()
 }
 
-pub fn machines<'a>(
+pub fn targets<'a>(
     filter: &str,
     elements: &'a Vec<Element>,
     configuration: &mut Configuration,
-) -> Vec<&'a Machine> {
-    let all: Vec<String> = all(elements, is_machine)
+) -> Vec<&'a Target> {
+    let all: Vec<String> = all(elements, is_target)
         .iter()
         .map(|e| e.moniker())
         .collect();
     let input = match filter {
         "all" => all.iter().join(","),
-        "last" => configuration.last_machines.join(","),
-        "ask" => interactive::choose("machine", &all).expect("No option chosen"),
+        "last" => configuration.last_targets.join(","),
+        "ask" => interactive::choose("target", &all).expect("No option chosen"),
         _ => filter.to_string(),
     };
-    let machines = generic(&input, elements, |e| matches!(e, Element::Machine(_)));
-    let result: Vec<&Machine> = machines
+    let targets = generic(&input, elements, |e| matches!(e, Element::Target(_)));
+    let result: Vec<&Target> = targets
         .iter()
         .map(|e| match e {
-            Element::Machine(m) => Some(m),
+            Element::Target(m) => Some(m),
             _ => None,
         })
         .flatten()
         .collect();
 
-    configuration.last_machines = result.iter().map(|m| m.element.moniker()).collect();
+    configuration.last_targets = result.iter().map(|m| m.element.moniker()).collect();
 
     result
 }

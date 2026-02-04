@@ -35,7 +35,7 @@ fn main() -> ExitCode {
         let element = Element::from(&entry.path().to_path_buf());
 
         match element {
-            Element::Machine(_) | Element::Toolchain(_) | Element::Runner(_) => {
+            Element::Target(_) | Element::Toolchain(_) | Element::Runner(_) => {
                 elements.push(element)
             }
             Element::Unknown => {}
@@ -46,10 +46,10 @@ fn main() -> ExitCode {
 
     match Arguments::parse_from(arguments) {
         Arguments::List(args) => {
-            if args.machines {
+            if args.targets {
                 println!(
                     "{}",
-                    select::machines("all", &elements, &mut configuration)
+                    select::targets("all", &elements, &mut configuration)
                         .iter()
                         .format("\n")
                 );
@@ -73,25 +73,25 @@ fn main() -> ExitCode {
                 );
             }
 
-            if !args.machines && !args.toolchains && !args.runners {
+            if !args.targets && !args.toolchains && !args.runners {
                 println!("{}", elements.iter().format("\n"));
             }
         }
         Arguments::Make(args) => {
-            let machines = select::machines(&args.machine, &elements, &mut configuration);
+            let targets = select::targets(&args.target, &elements, &mut configuration);
             let toolchains = select::toolchains(&args.toolchain, &elements, &mut configuration);
 
-            'machine_loop: for machine in machines {
+            'target_loop: for target in targets {
                 for toolchain in toolchains.iter().into_iter() {
                     if args.configure {
                         console::info!(
                             "Configuring machine {} with toolchain {} ...",
-                            machine.element.moniker(),
+                            target.element.moniker(),
                             toolchain.element.moniker(),
                         );
                         match command::configure(
                             &root,
-                            &machine,
+                            &target,
                             &toolchain,
                             &args.build_type,
                             args.docker,
@@ -99,7 +99,7 @@ fn main() -> ExitCode {
                             Ok(code) => {
                                 if code != 0.into() {
                                     result = code;
-                                    break 'machine_loop;
+                                    break 'target_loop;
                                 }
                             }
                             Err(_) => result = ExitCode::from(254),
@@ -109,14 +109,14 @@ fn main() -> ExitCode {
                     if args.build {
                         console::info!(
                             "Building machine {} with toolchain {} ...",
-                            machine.element.moniker(),
+                            target.element.moniker(),
                             toolchain.element.moniker(),
                         );
-                        match command::build(&root, &machine, &toolchain, args.jobs, args.docker) {
+                        match command::build(&root, &target, &toolchain, args.jobs, args.docker) {
                             Ok(code) => {
                                 if code != 0.into() {
                                     result = code;
-                                    break 'machine_loop;
+                                    break 'target_loop;
                                 }
                             }
                             Err(_) => result = ExitCode::from(254),
@@ -126,14 +126,14 @@ fn main() -> ExitCode {
                     if args.test {
                         console::info!(
                             "Testing machine {} with toolchain {} ...",
-                            machine.element.moniker(),
+                            target.element.moniker(),
                             toolchain.element.moniker(),
                         );
-                        match command::test(&root, &machine, &toolchain, args.docker) {
+                        match command::test(&root, &target, &toolchain, args.docker) {
                             Ok(code) => {
                                 if code != 0.into() {
                                     result = code;
-                                    break 'machine_loop;
+                                    break 'target_loop;
                                 }
                             }
                             Err(_) => result = ExitCode::from(254),
@@ -201,19 +201,19 @@ fn main() -> ExitCode {
             configuration::write(&configuration_file, &configuration);
         }
         Arguments::Run(args) => {
-            let machines = select::machines(&args.machine, &elements, &mut configuration);
+            let targets = select::targets(&args.target, &elements, &mut configuration);
             let toolchains = select::toolchains(&args.toolchain, &elements, &mut configuration);
             let runners = select::runners(&args.runner, &elements, &mut configuration);
 
-            'machine_loop: for machine in machines {
-                let machine_configuration =
-                    configuration::machine(&machine.configuration()).unwrap_or_default();
+            'target_loop: for target in targets {
+                let target_configuration =
+                    configuration::target(&target.configuration()).unwrap_or_default();
 
                 for toolchain in toolchains.iter().into_iter() {
                     for runner in runners.iter().into_iter() {
                         match command::run(
                             &root,
-                            machine,
+                            target,
                             toolchain,
                             runner,
                             args.docker,
@@ -221,12 +221,12 @@ fn main() -> ExitCode {
                             args.debug,
                             args.delay,
                             &args.dump_file,
-                            &machine_configuration,
+                            &target_configuration,
                         ) {
                             Ok(code) => {
                                 if code != 0.into() {
                                     result = code;
-                                    break 'machine_loop;
+                                    break 'target_loop;
                                 }
                             }
                             Err(_) => result = ExitCode::from(254),
@@ -254,7 +254,7 @@ fn main() -> ExitCode {
             console::info!("Layers root: {}", root.as_os_str().to_str().unwrap());
             console::info!("Configuration: {:?}", configuration);
             console::info!(
-                "Scanned {scanned} filesystem entries, found {} machines(s) and toolchain(s).",
+                "Scanned {scanned} filesystem entries, found {} element(s).",
                 elements.len()
             );
         }

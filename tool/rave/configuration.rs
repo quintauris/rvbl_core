@@ -7,7 +7,7 @@ use std::path::PathBuf;
 #[derive(Serialize, Deserialize, Debug, Default)]
 pub struct Configuration {
     pub last_toolchains: Vec<String>,
-    pub last_machines: Vec<String>,
+    pub last_targets: Vec<String>,
     pub last_runners: Vec<String>,
 }
 
@@ -61,10 +61,10 @@ pub fn runner(path: &PathBuf) -> Option<Runner> {
 }
 
 #[derive(Serialize, Deserialize, Debug, Default)]
-pub struct Machine {
+pub struct Target {
     pub runners: HashMap<String, Parameters>,
 }
 
-pub fn machine(path: &PathBuf) -> Option<Machine> {
+pub fn target(path: &PathBuf) -> Option<Target> {
     deserialize(path)
 }
