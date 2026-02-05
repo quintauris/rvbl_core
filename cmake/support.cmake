@@ -179,7 +179,7 @@ function(rvbl_generate_c_files)
     WORKING_DIRECTORY ${arg_PATH}
     COMMENT "Generating machine headers from ${arg_MODEL} ...")
 
-  add_custom_target(machine_c_files ALL DEPENDS ${generated_files})
+  add_custom_target(machine_c_files DEPENDS ${generated_files})
 
   set(${arg_OUTPUT_VARIABLE} ${generated_files})
 
@@ -211,7 +211,7 @@ function(rvbl_generate_linker_files)
     # COMMAND_ECHO STDOUT ECHO_OUTPUT_VARIABLE
   )
 
-  add_custom_target(machine_linker_files ALL DEPENDS ${generated_files})
+  add_custom_target(machine_linker_files DEPENDS ${generated_files})
 
   set(${arg_OUTPUT_VARIABLE} ${generated_files})
 
@@ -234,14 +234,15 @@ function(rvbl_generate_machine_documentation)
   add_custom_target(model_doc ALL DEPENDS ${arg_PATH}/model.html)
 
   # Machine library documentation
-  set(machine_list "")
+  set(adoc_list "")
+  set(html_list "")
   set(counter "0")
 
   foreach(source ${arg_DEPENDENCIES})
     get_filename_component(source_name_we ${source} NAME_WE)
     set(adoc_output ${arg_PATH}/${source_name_we}.adoc)
 
-    if(${adoc_output} IN_LIST machine_list)
+    if(${adoc_output} IN_LIST adoc_list)
       string(APPEND source_name_we _${counter})
       set(adoc_output ${arg_PATH}/${source_name_we}.adoc)
       math(EXPR counter "${counter} + 1")
@@ -250,18 +251,26 @@ function(rvbl_generate_machine_documentation)
     add_custom_command(
       OUTPUT ${adoc_output}
       COMMAND ${EXTRACTOR_ASCIIDOC} ${source} ${adoc_output}
-      DEPENDS ${source})
-    list(APPEND machine_list ${adoc_output})
+      DEPENDS ${source}
+      COMMENT "Generating AsciiDoc documentation from ${source} ...")
+
+    list(APPEND adoc_list ${adoc_output})
   endforeach()
 
-  add_custom_command(
-    OUTPUT ${arg_PATH}/rvbl/machine/rvbl_machine.html
-    COMMAND ${ASCIIDOCTOR} -o {arg_PATH}/rvbl/machine/rvbl_machine.html
-            ${arg_PATH}/rvbl_machine.adoc
-    DEPENDS ${machine_list}
-    COMMENT "Generating source documentation from ${arg_MODEL} ...")
-  add_custom_target(machine_doc_files ALL
-                    DEPENDS ${arg_PATH}/rvbl/machine/rvbl_machine.html)
+  foreach(source ${adoc_list})
+    get_filename_component(source_name_we ${source} NAME_WE)
+    set(html_output ${arg_PATH}/${source_name_we}.html)
+
+    add_custom_command(
+      OUTPUT ${html_output}
+      COMMAND ${ASCIIDOCTOR} ${source} -o ${html_output}
+      DEPENDS ${adoc_list}
+      COMMENT "Generating HTML documentation from ${source} ...")
+
+    list(APPEND html_list ${html_output})
+  endforeach()
+
+  add_custom_target(machine_doc_files ALL DEPENDS ${html_list})
 endfunction()
 
 function(rvbl_library_documentation module)
@@ -330,6 +339,7 @@ function(rvbl_executable)
     PROPERTIES LINKER_SCRIPT "${rvbl_machine_dir}/linker/\
 ${rvbl_linker_id}.ld" LINKER_SEARCH_DIRECTORIES "${rvbl_toolchain_dir};\
 ${rvbl_machine_dir}/generated/linker")
+  add_dependencies(${arg_NAME} machine_c_files machine_linker_files)
 
   if(arg_BINARY)
     add_custom_command(
