@@ -1,0 +1,21 @@
+<style>
+#toc img.logo {
+  padding: 16px
+/*  width: 20%;
+  height: 20%;*/
+}
+</style>
+
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    var image = document.createElement('img')
+    image.setAttribute('src', 'quintauris_black.png')
+    image.setAttribute('alt', 'Quintuairs')
+    image.setAttribute('href', 'www.quintauris.com')
+    image.classList.add('logo')
+    var toc = document.querySelector('#toc')
+    if (toc) {
+      toc.insertAdjacentElement('afterbegin', image)
+    }
+  });
+</script>
