@@ -1,0 +1,12 @@
+Quintauris <www.quintauris.com>
+:toc: left
+:stylesheet: stylesheet.css
+:doctype: book
+:docinfo: shared
+:nofooter:
+:project: RISC-V Base Layer
+:cmake: https://cmake.org[CMake]
+:git: https://git-scm.com[Git]
+:json: https://json.org[JSON]
+:json-schema: https://json-schema.org[JSON-Schema]
+:docker: https://www.docker.com[Docker]

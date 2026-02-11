@@ -1,4 +1,5 @@
 = Architecture
+include::common.adoc[]
 
 == Overview
 
@@ -16,9 +17,9 @@ The {project} project comes toghether as a set of independent but coherently ass
 
 ==== Essential layers
 
-Essential layers conform the functional core of the {project}, and there's two of them:
+Essential layers conform the functional core of the {project}, and there's three of them:
 
-* `base`:
+* `core`:
 ** {cmake} support files
 ** Host tools
 ** Project-wide documentation (including this manual)
@@ -50,7 +51,7 @@ Optional layers exist above and depend upon the aforementioned layers, providing
 
 As shown in the previous chapter, many layers contain <<arch_model>>s. These are text-based and human-readable files describing structural aspects of devices and machines. Models are also generally easier to construct, update, reason about, and process with automated tools than code in most well-supported programming languages.
 
-For all these reasons the RISC-V base layer is designed around a machine meta-model (sometimes referred to as _MM_ or _M2_) and a set of compliant models (sometimes generally referred to as _M1_):
+For all these reasons the {project} is designed around a machine meta-model (sometimes referred to as _MM_ or _M2_) and a set of compliant models (sometimes generally referred to as _M1_):
 
 * The *Machine Meta-model* (M2 or MM) is described in {json-schema}
 * The *Machine Models* (M1) are described in {json}
@@ -76,7 +77,7 @@ in favour of:
 
 A *Layer* is a discrete software package representing assets maintained by, or related to, a single well-known entity, such as a company, a vendors, a community, an organization or a consortium.
 
-The only exception is, of course, the `base` layer, which corresponds to no particular real-world entity and instead represents the infrastructure necessary for other layers to exist and operate.
+The only exception is, of course, the `core` layer, which corresponds to no particular real-world entity and instead represents the infrastructure necessary for other layers to exist and operate.
 
 A Layer is represented as a {git} repository which contains, and eventually expands into filesystem directory structure adhering to the following structural and lexical conventions:
 
