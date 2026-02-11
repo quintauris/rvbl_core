@@ -1,7 +1,7 @@
 #ifndef RVBL_UART_H
 #define RVBL_UART_H
 
-#include "rvbl/core/rvbl_types.h"
+#include "rvbl/type/rvbl_types.h"
 
 /// = UART Device Library
 /// Quintauris GmbH

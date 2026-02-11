@@ -1,8 +1,8 @@
 #ifndef RVBL_TEST_H
 #define RVBL_TEST_H
 
-#include "rvbl/core/rvbl_types.h"
 #include "rvbl/semihost/rvbl_semihost.h"
+#include "rvbl/type/rvbl_types.h"
 
 typedef enum TestResult
 {

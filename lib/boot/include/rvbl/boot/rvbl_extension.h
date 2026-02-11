@@ -1,8 +1,8 @@
 #ifndef RVBL_EXTENSION_H
 #define RVBL_EXTENSION_H
 
-#include "rvbl/core/rvbl_types.h"
 #include "rvbl/machine/rvbl_machine.h"
+#include "rvbl/type/rvbl_types.h"
 
 /// == Function `rvbl_extension_present`
 /// Returns whether a particular RISC-V extension is available.

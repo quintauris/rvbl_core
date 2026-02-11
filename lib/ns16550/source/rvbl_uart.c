@@ -1,5 +1,5 @@
 #include "rvbl/uart/rvbl_uart.h"
-#include "rvbl/core/rvbl_types.h"
+#include "rvbl/type/rvbl_types.h"
 #include "rvbl/uart/rvbl_uart_ns16550.h"
 
 #include "rvbl/machine/rvbl_uart_ns16550.h"

@@ -1,7 +1,7 @@
 #ifndef RVBL_BOOT_H
 #define RVBL_BOOT_H
 
-#include "rvbl/core/rvbl_types.h"
+#include "rvbl/type/rvbl_types.h"
 
 typedef enum rvbl_boot_action
 {

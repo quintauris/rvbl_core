@@ -1,5 +1,5 @@
-#include "rvbl/core/rvbl_types.h"
 #include "rvbl/test/rvbl_test.h"
+#include "rvbl/type/rvbl_types.h"
 
 #include "rvbl/uart/rvbl_uart.h"
 

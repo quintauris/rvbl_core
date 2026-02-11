@@ -2,7 +2,7 @@ rvbl_interface_library(
   NAME
   core
   SOURCES
-  "${CMAKE_CURRENT_SOURCE_DIR}/include/rvbl/core/rvbl_types.h"
+  "${CMAKE_CURRENT_SOURCE_DIR}/include/rvbl/type/rvbl_types.h"
   INCLUDES
   "${CMAKE_CURRENT_SOURCE_DIR}/include"
   LIBRARIES

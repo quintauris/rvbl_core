@@ -1,7 +1,7 @@
 #ifndef RVBL_STDINT_H
 #define RVBL_STDINT_H
 
-#include "rvbl/core/rvbl_types.h"
+#include "rvbl/type/rvbl_types.h"
 
 /// == Type `int8_t`
 /// Signed 8-bit integer.

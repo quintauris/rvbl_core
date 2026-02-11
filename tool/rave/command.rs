@@ -165,7 +165,7 @@ fn provision_tools(root: &PathBuf, toolchain: &Toolchain) -> std::io::Result<Exi
     let mut tools_manifest_path = root.clone();
     let mut generators_manifest_path = root.clone();
 
-    tools_manifest_path.push("base/tool/Cargo.toml");
+    tools_manifest_path.push("core/tool/Cargo.toml");
     generators_manifest_path.push("quintauris/tool/Cargo.toml");
 
     execute(

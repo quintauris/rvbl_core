@@ -1,5 +1,5 @@
 add_subdirectory(compiler)
-add_subdirectory(core)
+add_subdirectory(type)
 add_subdirectory(boot)
 add_subdirectory(c)
 add_subdirectory(uart)

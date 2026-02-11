@@ -1,5 +1,5 @@
 #include "rvbl/uart/rvbl_uart.h"
-#include "rvbl/core/rvbl_types.h"
+#include "rvbl/type/rvbl_types.h"
 
 void rvbl_buffered_uart_init(rvbl_buffered_uart *const self)
 {
