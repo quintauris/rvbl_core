@@ -8,7 +8,7 @@ pub fn layers_root() -> Option<PathBuf> {
         .expect("Can't canonicalize executable path");
 
     while path.pop() {
-        path.push("base");
+        path.push("core");
 
         if path.exists() {
             path.pop();
