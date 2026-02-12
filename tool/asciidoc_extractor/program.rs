@@ -1,34 +1,61 @@
+use log::{error, info, warn};
 use std::{
-    env::args,
     fs::{File, read_to_string},
     io::prelude::*,
+    process::ExitCode,
 };
 
-fn main() -> Result<(), std::io::Error> {
-    let arguments = args().collect::<Vec<String>>();
+fn main() -> ExitCode {
+    let parameters: Vec<String> = std::env::args().collect();
 
-    if arguments.len() >= 3 {
-        let mut target = File::create(&arguments.last().unwrap())?;
+    colog::init();
 
-        for input_path in arguments[1..arguments.len() - 1].iter() {
-            let source = read_to_string(&input_path)?;
-            let mut block_length: usize = 0;
+    if parameters.len() >= 3 {
+        let output_path = parameters.last().unwrap();
+        let mut errors = 0;
 
-            for line in source.lines() {
-                let trimmed = line.trim();
+        match File::create(output_path) {
+            Ok(mut target) => {
+                for input_path in parameters[1..parameters.len() - 1].iter() {
+                    match read_to_string(&input_path) {
+                        Ok(source) => {
+                            let mut block_length: usize = 0;
 
-                if trimmed.starts_with("///") {
-                    target.write_fmt(format_args!("{}\n", &trimmed[3..].trim_start()))?;
-                    block_length += 1;
-                } else if block_length != 0 {
-                    target.write_all("\n".as_bytes())?;
-                    block_length = 0;
+                            for line in source.lines() {
+                                let trimmed = line.trim();
+                                let status = if trimmed.starts_with("///") {
+                                    block_length += 1;
+                                    target
+                                        .write_fmt(format_args!("{}\n", &trimmed[3..].trim_start()))
+                                } else if block_length != 0 {
+                                    block_length = 0;
+                                    target.write_all("\n".as_bytes())
+                                } else {
+                                    Ok(())
+                                };
+
+                                if let Err(error) = status {
+                                    warn!("Error writing to {output_path}: {error}");
+                                    errors = errors + 1;
+                                }
+                            }
+                        }
+                        Err(error) => {
+                            warn!("Unable to open input file {input_path}: {error}");
+                            errors = errors + 1;
+                        }
+                    }
                 }
+            }
+            Err(error) => {
+                error!("Unable to open output file {output_path}: {error}");
+                errors = errors + 1;
             }
         }
 
-        Ok(())
+        ExitCode::from(errors)
     } else {
-        Err(std::io::ErrorKind::InvalidInput.into())
+        info!("Usage: <input> ... <input> <output>");
+        ExitCode::from(1)
     }
 }
