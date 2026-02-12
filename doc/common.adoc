@@ -1,5 +1,6 @@
 Quintauris <www.quintauris.com>
 :toc: left
+:toclevels: 3
 :stylesheet: stylesheet.css
 :doctype: book
 :docinfo: shared

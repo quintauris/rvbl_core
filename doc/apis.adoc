@@ -1,0 +1,3 @@
+= Library APIs
+include::common.adoc[]
+include::generated/api.adoc[leveloffset=+1]

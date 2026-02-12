@@ -1,20 +1,25 @@
+/// = Compiler Abstraction Library
+/// Quintauris GmbH
+///
+/// Implements Compiler Abstraction macros.
+
 #ifndef _RVBL_COMPILER_H_
 #define _RVBL_COMPILER_H_
 
-/// = RISC-V Base Layer Compiler Abstraction Library
-/// Quintauris GmbH
-/// :toc: left
-///
-/// Implements Compiler Abstraction macros.
+/// == <rvbl_compiler.h>
 
 #define __xstr(x) #x
 #define __str(x) __xstr(x)
 
-/// == Macro `RVBL_BEGIN_DISABLE_OPTIMIZATION`
+/// === Macro `RVBL_INLINE`
+///
+/// Begins function that will be always inlined.
+///
+/// === Macro `RVBL_BEGIN_DISABLE_OPTIMIZATION`
 ///
 /// Begins code section where the compiler shall perform no optimization.
 ///
-/// == Macro `RVBL_END_DISABLE_OPTIMIZATION`
+/// === Macro `RVBL_END_DISABLE_OPTIMIZATION`
 ///
 /// Ends code section where the compiler shall perform no optimization.
 #ifdef __clang__
@@ -36,12 +41,12 @@
 #define RVBL_END_DISABLE_OPTIMIZATION() _Pragma("optimize=balanced medium")
 #endif
 
-/// == Macro `XLEN`
+/// === Macro `XLEN`
 ///
 /// Native machine word size (32, 64 or 128-bits).
 #define XLEN (sizeof(long) * 8)
 
-/// == Macro `NULL`
+/// === Macro `NULL`
 ///
 /// Pointer to `0x00000000`.
 #ifndef NULL

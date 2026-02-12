@@ -15,7 +15,7 @@ The {project} is a collaborative effort devoted to building a common low-level s
 * A hardware (e.g. devices, machines, etc) meta-model definition
 * Basic device and machine models
 * Model to code generation tools
-* A build management tool to wrangle all of the above
+* A build management tool to wrangle all of the above (`rave`)
 
 === What's NOT in the {project}
 
@@ -25,4 +25,9 @@ The {project} is a collaborative effort devoted to building a common low-level s
 
 == Index
 
-* xref:architecture.adoc[Architecture]
+* 🏛️ xref:architecture.adoc[Architecture]
+* 🚧 Bootstrap and Build System
+* 📦 `core` layer
+** 🧩 xref:models.adoc[Models]
+** 🧑🏽‍💻 xref:apis.adoc[Library APIs]
+** 🔗 xref:third_party.adoc[Third-party]

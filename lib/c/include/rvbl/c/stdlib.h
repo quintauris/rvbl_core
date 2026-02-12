@@ -1,23 +1,25 @@
 #ifndef RVBL_STDLIB_H
 #define RVBL_STDLIB_H
 
-/// == Function `abs`
+/// == <stdlib.h>
+
+/// === Function `abs`
 /// Computes the absolute value of an integer number.
 ///
-/// === Parameters
+/// ==== Parameters
 /// `int`:: Integer value.
 ///
-/// === Return value
+/// ==== Return value
 /// `int`:: The absolute value.
 int abs(int n);
 
-/// == Function `abs`
+/// === Function `labs`
 /// Computes the absolute value of an integer number.
 ///
-/// === Parameters
+/// ==== Parameters
 /// `long`:: Integer value.
 ///
-/// === Return value
+/// ==== Return value
 /// `long`:: The absolute value.
 long labs(long n);
 

@@ -543,3 +543,82 @@ macro(rvbl_use)
                      ${CMAKE_CURRENT_BINARY_DIR}/${parameter})
   endforeach()
 endmacro()
+
+function(rvbl_layer_documentation)
+  cmake_parse_arguments(PARSE_ARGV 0 arg "" "SOURCE_DIR;TARGET_DIR;RVBL_ROOT"
+                        "")
+
+  make_directory(${arg_TARGET_DIR})
+  set(temp_dir ${arg_SOURCE_DIR}/generated)
+  make_directory(${temp_dir})
+
+  find_program(ASCIIDOCTOR NAMES asciidoctor REQUIRED)
+  find_program(EXTRACTOR_ASCIIDOC NAMES asciidoc_extractor REQUIRED)
+  find_program(GENERATOR_ASCIIDOC NAMES generator_asciidoc REQUIRED)
+
+  # Libraries
+  file(
+    GLOB_RECURSE inputs
+    LIST_DIRECTORIES false
+    RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}
+    "../lib/*.h")
+  list(SORT inputs)
+  set(temp_api ${temp_dir}/api.adoc)
+  set(outputs_api ${arg_TARGET_DIR}/api.html)
+
+  add_custom_command(
+    OUTPUT ${outputs_api}
+    COMMAND ${EXTRACTOR_ASCIIDOC} ${inputs} ${temp_api}
+    COMMAND ${ASCIIDOCTOR} --doctype book -D ${arg_TARGET_DIR} ${temp_api}
+    COMMAND_EXPAND_LISTS
+    DEPENDS ${inputs}
+    WORKING_DIRECTORY ${arg_SOURCE_DIR}
+    COMMENT "Generating API documentation...")
+
+  # Models
+  file(
+    GLOB_RECURSE inputs
+    LIST_DIRECTORIES false
+    "../model/example.json")
+  set(outputs_model "")
+
+  foreach(input ${inputs})
+    get_filename_component(model_name ${input} DIRECTORY)
+    get_filename_component(model_name ${model_name} NAME)
+    set(output_adoc ${temp_dir}/${model_name}.adoc)
+    set(output_html ${arg_TARGET_DIR}/${model_name}.html)
+    list(APPEND outputs_model ${output_html})
+
+    add_custom_command(
+      OUTPUT ${output_html}
+      COMMAND
+        ${GENERATOR_ASCIIDOC} ${input}
+        ${arg_RVBL_ROOT}/quintauris/meta/machine.schema.json ${arg_RVBL_ROOT}
+      COMMAND ${CMAKE_COMMAND} -E rename ${temp_dir}/model.adoc ${output_adoc}
+      COMMAND ${ASCIIDOCTOR} --doctype book -D ${arg_TARGET_DIR} ${output_adoc}
+      DEPENDS ${input}
+      WORKING_DIRECTORY ${temp_dir}
+      COMMENT "Generating model ${model_name} documentation...")
+  endforeach()
+
+  # Main documents and common files
+  file(GLOB inputs "${arg_SOURCE_DIR}/*.adoc")
+  set(outputs_doc "")
+
+  foreach(input ${inputs})
+    get_filename_component(file_name_we ${input} NAME_WE)
+    list(APPEND outputs_doc ${arg_TARGET_DIR}/${file_name_we}.html)
+  endforeach()
+
+  add_custom_command(
+    OUTPUT ${outputs_doc}
+    COMMAND ${ASCIIDOCTOR} --doctype book -D ${arg_TARGET_DIR} ${inputs}
+    DEPENDS ${inputs} ${outputs_api} ${outputs_model}
+    COMMENT "Generating documentation...")
+
+  file(GLOB glob "${arg_SOURCE_DIR}/*.html" "${arg_SOURCE_DIR}/*.png")
+  file(COPY ${glob} DESTINATION ${arg_TARGET_DIR})
+
+  add_custom_target(docs ALL DEPENDS ${outputs_doc} ${outputs_api}
+                                     ${outputs_model})
+endfunction()
