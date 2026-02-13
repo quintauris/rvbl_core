@@ -5,13 +5,13 @@ use clap::{Args, Parser};
 #[derive(Args)]
 #[command(version, about, long_about = None)]
 pub struct ListArgs {
+    /// List all toolchains
+    #[arg(long, alias = "toolchain")]
+    pub toolchains: bool,
+
     /// List all targets
     #[arg(short, long, aliases = ["target", "machine", "machines"])]
     pub targets: bool,
-
-    /// List all toolchains
-    #[arg(short, long, alias = "toolchain")]
-    pub toolchains: bool,
 
     /// List all runners
     #[arg(short, long, alias = "runner")]
@@ -22,7 +22,7 @@ pub struct ListArgs {
 #[command(version, about, long_about = None)]
 pub struct MakeArgs {
     /// Toolchain(s) in <layer>.<name> form (e.g. gnu.gcc), comma-sepparated
-    #[arg(short, long, default_value_t = String::from("last"))]
+    #[arg(long, default_value_t = String::from("last"))]
     pub toolchain: String,
 
     /// Target(s) in <layer>.<name> form (e.g. qemu.virt), comma-separated
@@ -78,7 +78,7 @@ pub struct DockerArgs {
 #[command(version, about, long_about = None)]
 pub struct RunArgs {
     /// Toolchain(s) in <layer>.<name> form (e.g. gnu.gcc), comma-sepparated
-    #[arg(short, long, default_value_t = String::from("last"))]
+    #[arg(long, default_value_t = String::from("last"))]
     pub toolchain: String,
 
     /// Target(s) in <layer>.<name> form (e.g. qemu.virt), comma-separated
@@ -114,7 +114,7 @@ pub struct RunArgs {
 #[command(version, about, long_about = None)]
 pub struct MonikerArgs {
     /// Path to output moniker for
-    pub path: Option<PathBuf>,
+    pub path: PathBuf,
 }
 
 /// RISC-V Base Layer build tool

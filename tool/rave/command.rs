@@ -1,6 +1,8 @@
 use core::time;
 use itertools::Itertools;
+use log::{info, trace, warn};
 use regex::Regex;
+use std::fmt::Display;
 use std::fs;
 use std::io::{Write, stdout};
 use std::path::PathBuf;
@@ -9,10 +11,25 @@ use std::thread::sleep;
 use which::which;
 
 use crate::configuration::{self};
-use crate::{
-    console::{info, line, spawning, warning},
-    element::{Runner, Target, Toolchain},
-};
+use crate::element::{Runner, Target, Toolchain};
+
+pub enum Error {
+    IoError(std::io::Error),
+    ConfigurationFileError(configuration::Error),
+    ProgramError(which::Error),
+}
+
+impl Display for Error {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Error::IoError(error) => error.fmt(f),
+            Error::ConfigurationFileError(error) => error.fmt(f),
+            Error::ProgramError(error) => error.fmt(f),
+        }
+    }
+}
+
+type Result<T> = std::result::Result<T, Error>;
 
 fn execute<I, S>(
     root: &PathBuf,
@@ -20,13 +37,14 @@ fn execute<I, S>(
     parameters: I,
     toolchain: &Toolchain,
     docker: bool,
-) -> std::io::Result<ExitCode>
+) -> Result<ExitCode>
 where
     I: IntoIterator<Item = S>,
     S: AsRef<std::ffi::OsStr>,
 {
     let mut command = if docker {
         let mut result = Command::new("docker");
+
         result.args([
             "exec",
             "--interactive",
@@ -34,17 +52,14 @@ where
             "--env",
             &format!(
                 "RVBL_TOOL={}",
-                toolchain
-                    .tools_path(root, docker)
-                    .as_os_str()
-                    .to_str()
-                    .unwrap()
+                toolchain.tools_path(root, docker).to_str().unwrap()
             ),
             "--env",
-            &format!("RVBL_ROOT={}", root.as_os_str().to_str().unwrap()),
+            &format!("RVBL_ROOT={}", root.to_str().unwrap()),
             &toolchain.container(),
+            program,
         ]);
-        result.arg(program);
+
         result
     } else {
         Command::new(program)
@@ -55,10 +70,10 @@ where
     command.stdin(Stdio::inherit());
     command.stderr(Stdio::inherit());
 
-    spawning!(
-        "> {} {}",
+    trace!(
+        "{}\n{}",
         command.get_program().to_str().unwrap(),
-        command.get_args().map(|a| a.to_str()).flatten().join(" ")
+        command.get_args().map(|a| a.to_str()).flatten().join("\n")
     );
 
     match command.output() {
@@ -67,11 +82,14 @@ where
                 info!("Command completed successfully");
                 Ok(ExitCode::from(0))
             } else {
-                warning!("Command completed unsuccessfully");
+                warn!(
+                    "Command completed unsuccessfully with code: {:#?}",
+                    o.status.code()
+                );
                 Ok(ExitCode::from(o.status.code().unwrap_or(255) as u8))
             }
         }
-        Err(e) => Err(e),
+        Err(e) => Err(Error::IoError(e)),
     }
 }
 
@@ -81,25 +99,24 @@ pub fn configure(
     toolchain: &Toolchain,
     build_type: &String,
     docker: bool,
-) -> std::io::Result<ExitCode> {
+) -> Result<ExitCode> {
     let build_path = target.build_path(root, target, toolchain, docker);
-    let mut toolchain_path = toolchain.element.path.clone();
+    let toolchain_path = toolchain.path().join("riscv32_ilp32.cmake");
 
-    std::fs::create_dir_all(&build_path).expect("Can't create build directory");
-    toolchain_path.push("riscv32_ilp32.cmake");
+    std::fs::create_dir_all(&build_path).map_err(|e| Error::IoError(e))?;
 
     execute(
         root,
         "cmake",
         [
             "-S",
-            target.element.path.as_os_str().to_str().unwrap(),
+            target.path().to_str().unwrap(),
             "-B",
-            build_path.as_os_str().to_str().unwrap(),
+            build_path.to_str().unwrap(),
             "-D",
             &format!("CMAKE_BUILD_TYPE={}", build_type),
             "--toolchain",
-            toolchain_path.as_os_str().to_str().unwrap(),
+            toolchain_path.to_str().unwrap(),
         ],
         toolchain,
         docker,
@@ -112,7 +129,7 @@ pub fn build(
     toolchain: &Toolchain,
     jobs: u32,
     docker: bool,
-) -> std::io::Result<ExitCode> {
+) -> Result<ExitCode> {
     let build_path = target.build_path(root, target, toolchain, docker);
 
     execute(
@@ -120,7 +137,7 @@ pub fn build(
         "cmake",
         [
             "--build",
-            build_path.as_os_str().to_str().unwrap(),
+            build_path.to_str().unwrap(),
             "--parallel",
             &jobs.to_string(),
         ],
@@ -134,19 +151,19 @@ pub fn test(
     target: &Target,
     toolchain: &Toolchain,
     docker: bool,
-) -> std::io::Result<ExitCode> {
+) -> Result<ExitCode> {
     let build_path = target.build_path(root, target, toolchain, docker);
 
     execute(
         root,
         "ctest",
-        ["--test-dir", build_path.as_os_str().to_str().unwrap()],
+        ["--test-dir", build_path.to_str().unwrap()],
         toolchain,
         false,
     )
 }
 
-pub fn provision(root: &PathBuf, toolchain: &Toolchain) -> std::io::Result<ExitCode> {
+pub fn provision(root: &PathBuf, toolchain: &Toolchain) -> Result<ExitCode> {
     execute(
         root,
         "docker",
@@ -154,19 +171,16 @@ pub fn provision(root: &PathBuf, toolchain: &Toolchain) -> std::io::Result<ExitC
             "build",
             "-t",
             &toolchain.image(),
-            toolchain.element.path.as_os_str().to_str().unwrap(),
+            toolchain.path().to_str().unwrap(),
         ],
         toolchain,
         false,
     )
 }
 
-fn provision_tools(root: &PathBuf, toolchain: &Toolchain) -> std::io::Result<ExitCode> {
-    let mut tools_manifest_path = root.clone();
-    let mut generators_manifest_path = root.clone();
-
-    tools_manifest_path.push("core/tool/Cargo.toml");
-    generators_manifest_path.push("quintauris/tool/Cargo.toml");
+fn provision_tools(root: &PathBuf, toolchain: &Toolchain) -> Result<ExitCode> {
+    let tools_manifest_path = root.join("core/tool/Cargo.toml");
+    let generators_manifest_path = root.join("quintauris/tool/Cargo.toml");
 
     execute(
         root,
@@ -175,13 +189,9 @@ fn provision_tools(root: &PathBuf, toolchain: &Toolchain) -> std::io::Result<Exi
             "build",
             "--release",
             "--manifest-path",
-            &tools_manifest_path.as_os_str().to_str().unwrap(),
+            &tools_manifest_path.to_str().unwrap(),
             "--target-dir",
-            &toolchain
-                .tools_build_path(root, true)
-                .as_os_str()
-                .to_str()
-                .unwrap(),
+            &toolchain.tools_build_path(root, true).to_str().unwrap(),
         ],
         toolchain,
         true,
@@ -193,29 +203,25 @@ fn provision_tools(root: &PathBuf, toolchain: &Toolchain) -> std::io::Result<Exi
             "build",
             "--release",
             "--manifest-path",
-            &generators_manifest_path.as_os_str().to_str().unwrap(),
+            &generators_manifest_path.to_str().unwrap(),
             "--target-dir",
-            &toolchain
-                .tools_build_path(root, true)
-                .as_os_str()
-                .to_str()
-                .unwrap(),
+            &toolchain.tools_build_path(root, true).to_str().unwrap(),
         ],
         toolchain,
         true,
     )
 }
 
-pub fn up(root: &PathBuf, toolchain: &Toolchain) -> std::io::Result<ExitCode> {
+pub fn up(root: &PathBuf, toolchain: &Toolchain) -> Result<ExitCode> {
     let mut inspect = Command::new("docker");
-    let root_string = root.as_os_str().to_str().unwrap();
+    let root_string = root.to_str().unwrap();
 
     inspect.args(["inspect", "-f", "{{.State.Status}}", &toolchain.container()]);
 
-    spawning!(
-        "> {} {:?}",
+    trace!(
+        "{}\n{}",
         inspect.get_program().to_str().unwrap(),
-        inspect.get_args().map(|a| a.to_str()).flatten().join(" ")
+        inspect.get_args().map(|a| a.to_str()).flatten().join("\n")
     );
 
     match inspect.output() {
@@ -224,7 +230,7 @@ pub fn up(root: &PathBuf, toolchain: &Toolchain) -> std::io::Result<ExitCode> {
                 info!("Container {} already running", toolchain.container());
                 provision_tools(root, toolchain)
             } else {
-                warning!(
+                warn!(
                     "Container {} not running, spinning it up...",
                     toolchain.container()
                 );
@@ -248,11 +254,11 @@ pub fn up(root: &PathBuf, toolchain: &Toolchain) -> std::io::Result<ExitCode> {
                 provision_tools(root, toolchain)
             }
         }
-        Err(e) => Err(e),
+        Err(e) => Err(Error::IoError(e)),
     }
 }
 
-pub fn down(root: &PathBuf, toolchain: &Toolchain) -> std::io::Result<ExitCode> {
+pub fn down(root: &PathBuf, toolchain: &Toolchain) -> Result<ExitCode> {
     execute(
         root,
         "docker",
@@ -321,14 +327,16 @@ pub fn run(
     delay: u32,
     dump_file: &Option<PathBuf>,
     target_configuration: &crate::configuration::Target,
-) -> std::io::Result<ExitCode> {
+) -> Result<ExitCode> {
     let mut result = Ok(ExitCode::from(0));
+    let runner_configuration = configuration::runner(&runner.configuration())
+        .map_err(|e| Error::ConfigurationFileError(e))?;
 
-    if let Some(runner_configuration) = configuration::runner(&runner.configuration()) {
-        for program in runner_configuration.programs.iter() {
-            let program_replaced = program.replace("$machine", &target.element.slug());
+    for program in runner_configuration.programs.iter() {
+        let program_replaced = program.replace("$machine", &target.element.slug());
 
-            if which(&program_replaced).is_ok() {
+        match which(&program_replaced) {
+            Ok(_) => {
                 if file.exists() {
                     let parameters = extract_parameters(
                         runner,
@@ -336,12 +344,11 @@ pub fn run(
                         &runner_configuration,
                         debug,
                     );
-
                     let parameters_replaced = parameters
                         .iter()
                         .map(|p| p.replace("$file_path", file.parent().unwrap().to_str().unwrap()))
                         .map(|p| p.replace("$file", file.to_str().unwrap()))
-                        .map(|p| p.replace("$machine_path", &target.element.path.to_str().unwrap()))
+                        .map(|p| p.replace("$machine_path", &target.path().to_str().unwrap()))
                         .map(|p| p.replace("$machine", &target.element.slug()));
 
                     result = execute(
@@ -357,33 +364,25 @@ pub fn run(
                     }
 
                     if let Some(dump) = dump_file {
-                        let mut dump_path = root.clone();
+                        let dump_path = root
+                            .join(target.build_path(root, target, toolchain, docker))
+                            .join(dump);
 
-                        dump_path.push(target.build_path(root, target, toolchain, docker));
-                        dump_path.push(dump);
-
-                        if let Ok(data) = fs::read(&dump_path) {
-                            let _ = stdout().write(&data);
-
-                            println!();
-                        } else {
-                            warning!("File \"{}\" not found.", dump.to_str().unwrap());
-                            result = Err(std::io::Error::from(std::io::ErrorKind::NotFound))
-                        }
+                        stdout()
+                            .write_all(&fs::read(&dump_path).map_err(|e| Error::IoError(e))?)
+                            .map_err(|e| Error::IoError(e))?;
+                        println!();
                     }
                 } else {
-                    warning!("Executable file \"{}\" not found.", file.to_str().unwrap());
-                    result = Err(std::io::Error::from(std::io::ErrorKind::NotFound))
+                    result = Err(Error::IoError(std::io::Error::from(
+                        std::io::ErrorKind::NotFound,
+                    )));
                 }
-
-                break;
-            } else {
-                warning!("Program \"{}\" not found.", program_replaced);
-                result = Err(std::io::Error::from(std::io::ErrorKind::NotFound))
+            }
+            Err(error) => {
+                result = Err(Error::ProgramError(error));
             }
         }
-    } else {
-        result = Err(std::io::Error::from(std::io::ErrorKind::InvalidData))
     }
 
     result

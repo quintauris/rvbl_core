@@ -1,7 +1,6 @@
 mod argument;
 mod command;
 mod configuration;
-mod console;
 mod element;
 mod interactive;
 mod path;
@@ -9,27 +8,27 @@ mod select;
 
 use argument::Arguments;
 use clap::Parser;
+use configuration::Configuration;
 use element::Element;
 use itertools::Itertools;
-use std::process::ExitCode;
+use log::{error, info, warn};
+use std::{path::PathBuf, process::ExitCode};
 use walkdir::WalkDir;
 
 fn main() -> ExitCode {
-    let root = path::layers_root().expect("Layers root path not found.");
-    let configuration_file = path::configuration_file(&root);
+    let root = match initialize() {
+        Ok(root) => root,
+        Err(_) => return ExitCode::from(1),
+    };
     let mut elements: Vec<Element> = vec![];
-    let mut configuration = configuration::read(&configuration_file).unwrap_or_default();
+    let mut configuration =
+        configuration::read(&path::configuration_file(&root)).unwrap_or_default();
     let mut scanned = 0;
     let mut result = ExitCode::from(0);
-    let extra_arguments_delimiter = std::env::args().find_position(|a| a == "--");
-    let arguments = match extra_arguments_delimiter {
-        Some((position, _)) => std::env::args().take(position).into_iter(),
-        None => std::env::args().take(std::env::args().len()),
-    };
-    let walker = WalkDir::new(&root).into_iter();
 
-    for entry in
-        walker.filter_entry(|e| !path::is_hidden(e) && path::is_directory(e) && !path::is_build(e))
+    for entry in WalkDir::new(&root)
+        .into_iter()
+        .filter_entry(|e| !path::is_hidden(e) && path::is_directory(e) && !path::is_build(e))
     {
         let entry = entry.unwrap();
         let element = Element::from(&entry.path().to_path_buf());
@@ -44,37 +43,40 @@ fn main() -> ExitCode {
         scanned = scanned + 1;
     }
 
-    match Arguments::parse_from(arguments) {
+    match Arguments::parse_from(std::env::args()) {
         Arguments::List(args) => {
-            if args.targets {
-                println!(
-                    "{}",
-                    select::targets("all", &elements, &mut configuration)
-                        .iter()
-                        .format("\n")
-                );
-            }
-
-            if args.toolchains {
-                println!(
-                    "{}",
-                    select::toolchains("all", &elements, &mut configuration)
-                        .iter()
-                        .format("\n")
-                );
-            }
-
-            if args.runners {
-                println!(
-                    "{}",
-                    select::runners("all", &elements, &mut configuration)
-                        .iter()
-                        .format("\n")
-                );
-            }
-
-            if !args.targets && !args.toolchains && !args.runners {
+            if ![args.targets, args.toolchains, args.runners]
+                .iter()
+                .any(|x| *x)
+            {
                 println!("{}", elements.iter().format("\n"));
+            } else {
+                if args.targets {
+                    println!(
+                        "{}",
+                        select::targets("all", &elements, &mut configuration)
+                            .iter()
+                            .format("\n")
+                    );
+                }
+
+                if args.toolchains {
+                    println!(
+                        "{}",
+                        select::toolchains("all", &elements, &mut configuration)
+                            .iter()
+                            .format("\n")
+                    );
+                }
+
+                if args.runners {
+                    println!(
+                        "{}",
+                        select::runners("all", &elements, &mut configuration)
+                            .iter()
+                            .format("\n")
+                    );
+                }
             }
         }
         Arguments::Make(args) => {
@@ -84,7 +86,7 @@ fn main() -> ExitCode {
             'target_loop: for target in targets {
                 for toolchain in toolchains.iter().into_iter() {
                     if args.configure {
-                        console::info!(
+                        info!(
                             "Configuring machine {} with toolchain {} ...",
                             target.element.moniker(),
                             toolchain.element.moniker(),
@@ -102,12 +104,15 @@ fn main() -> ExitCode {
                                     break 'target_loop;
                                 }
                             }
-                            Err(_) => result = ExitCode::from(254),
+                            Err(error) => {
+                                warn!("Configure failed: {error}");
+                                result = ExitCode::from(254)
+                            }
                         };
                     }
 
                     if args.build {
-                        console::info!(
+                        info!(
                             "Building machine {} with toolchain {} ...",
                             target.element.moniker(),
                             toolchain.element.moniker(),
@@ -119,12 +124,15 @@ fn main() -> ExitCode {
                                     break 'target_loop;
                                 }
                             }
-                            Err(_) => result = ExitCode::from(254),
+                            Err(error) => {
+                                warn!("Build failed: {error}");
+                                result = ExitCode::from(254)
+                            }
                         };
                     }
 
                     if args.test {
-                        console::info!(
+                        info!(
                             "Testing machine {} with toolchain {} ...",
                             target.element.moniker(),
                             toolchain.element.moniker(),
@@ -136,20 +144,23 @@ fn main() -> ExitCode {
                                     break 'target_loop;
                                 }
                             }
-                            Err(_) => result = ExitCode::from(254),
+                            Err(error) => {
+                                warn!("Test failed: {error}");
+                                result = ExitCode::from(254)
+                            }
                         };
                     }
                 }
             }
 
-            configuration::write(&configuration_file, &configuration);
+            update_configuration(&root, &configuration);
         }
         Arguments::Docker(args) => {
             let toolchains = select::toolchains(&args.toolchain, &elements, &mut configuration);
 
             for toolchain in toolchains.iter().into_iter() {
                 if args.provision {
-                    console::info!(
+                    info!(
                         "Provisioning Docker toolchain {} ...",
                         toolchain.element.moniker(),
                     );
@@ -161,12 +172,15 @@ fn main() -> ExitCode {
                                 break;
                             }
                         }
-                        Err(_) => result = ExitCode::from(254),
+                        Err(error) => {
+                            warn!("Provision failed: {error}");
+                            result = ExitCode::from(254)
+                        }
                     }
                 }
 
                 if args.up {
-                    console::info!(
+                    info!(
                         "Spinning up Docker container for toolchain {} ...",
                         toolchain.element.moniker(),
                     );
@@ -177,12 +191,15 @@ fn main() -> ExitCode {
                                 break;
                             }
                         }
-                        Err(_) => result = ExitCode::from(254),
+                        Err(error) => {
+                            warn!("Up failed: {error}");
+                            result = ExitCode::from(254)
+                        }
                     }
                 }
 
                 if args.down {
-                    console::info!(
+                    info!(
                         "Winding down Docker container for toolchain {} ...",
                         toolchain.element.moniker(),
                     );
@@ -193,12 +210,15 @@ fn main() -> ExitCode {
                                 break;
                             }
                         }
-                        Err(_) => result = ExitCode::from(254),
+                        Err(error) => {
+                            warn!("Down failed: {error}");
+                            result = ExitCode::from(254)
+                        }
                     }
                 }
             }
 
-            configuration::write(&configuration_file, &configuration);
+            update_configuration(&root, &configuration);
         }
         Arguments::Run(args) => {
             let targets = select::targets(&args.target, &elements, &mut configuration);
@@ -229,36 +249,78 @@ fn main() -> ExitCode {
                                     break 'target_loop;
                                 }
                             }
-                            Err(_) => result = ExitCode::from(254),
+                            Err(error) => {
+                                warn!("Run failed: {error}");
+                                result = ExitCode::from(254)
+                            }
                         }
                     }
                 }
             }
 
-            configuration::write(&configuration_file, &configuration);
+            update_configuration(&root, &configuration);
         }
-        Arguments::Moniker(args) => {
-            let path = match args.path {
-                Some(p) => p,
-                None => root,
-            };
-
-            match Element::from(&path) {
-                Element::Unknown => result = ExitCode::from(1),
-                x => {
-                    println!("{}", x);
-                }
+        Arguments::Moniker(args) => match Element::from(&args.path) {
+            Element::Unknown => {
+                error!("Unable to extract moniker from {:?}", args.path);
+                result = ExitCode::from(1)
             }
-        }
+            x => println!("{}", x),
+        },
         Arguments::Diagnostic => {
-            console::info!("Layers root: {}", root.as_os_str().to_str().unwrap());
-            console::info!("Configuration: {:?}", configuration);
-            console::info!(
-                "Scanned {scanned} filesystem entries, found {} element(s).",
-                elements.len()
-            );
+            diagnostic();
         }
     };
 
     result
+}
+
+fn initialize() -> std::io::Result<PathBuf> {
+    unsafe { std::env::set_var("RUST_LOG", "trace") };
+    colog::init();
+
+    match path::layers_root() {
+        Ok(path) => Ok(path),
+        Err(error) => {
+            error!("Unable to locate distribution root path: {}", error);
+            diagnostic();
+            Err(error)
+        }
+    }
+}
+
+fn diagnostic() {
+    let check = |v: &str| -> bool {
+        match std::env::var(v) {
+            Ok(value) => {
+                info!("{v}: \"{value}\"");
+                true
+            }
+            Err(error) => {
+                error!("{v} is NOT set: \"{error}\"");
+                true
+            }
+        }
+    };
+
+    if check("RVBL_ROOT") && check("RVBL_BUILD") && check("RVBL_TOOL") {
+        match path::layers_root() {
+            Ok(path) => {
+                info!("Distribution root is: {path:#?}");
+
+                match configuration::read(&path::configuration_file(&path)) {
+                    Ok(configuration) => info!("{:#?}", configuration),
+                    Err(error) => error!("Unable to read configuration: {error}"),
+                }
+            }
+            Err(error) => error!("Unable to identify distribution root: {error}"),
+        }
+    }
+}
+
+fn update_configuration(root: &PathBuf, configuration: &Configuration) {
+    match configuration::write(&path::configuration_file(root), &configuration) {
+        Ok(_) => (),
+        Err(error) => error!("Unable to store configuration: {error}"),
+    }
 }

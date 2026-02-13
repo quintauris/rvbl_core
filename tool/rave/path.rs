@@ -1,32 +1,33 @@
 use std::path::PathBuf;
 use walkdir::DirEntry;
 
-pub fn layers_root() -> Option<PathBuf> {
-    let mut path = std::env::current_exe()
-        .expect("Can't determine executable path")
-        .canonicalize()
-        .expect("Can't canonicalize executable path");
+pub fn layers_root() -> std::io::Result<PathBuf> {
+    let is_layers_root = |p: &PathBuf| p.join("core").exists();
+    let not_found = std::io::Error::from(std::io::ErrorKind::NotFound);
 
-    while path.pop() {
-        path.push("core");
+    if let Ok(rvbl_root) = std::env::var("RVBL_ROOT") {
+        let path = PathBuf::from(rvbl_root);
 
-        if path.exists() {
-            path.pop();
-
-            return Some(path);
+        if is_layers_root(&path) {
+            Ok(path)
         } else {
-            path.pop();
+            Err(not_found)
         }
-    }
+    } else {
+        let mut path = std::env::current_exe()?.canonicalize()?;
 
-    return None;
+        while path.pop() {
+            if is_layers_root(&path) {
+                return Ok(path);
+            }
+        }
+
+        Err(not_found)
+    }
 }
 
 pub fn configuration_file(root: &PathBuf) -> PathBuf {
-    let mut result = root.clone();
-
-    result.push(".config.json");
-    result
+    root.join(".config.json")
 }
 
 pub fn is_hidden(entry: &DirEntry) -> bool {

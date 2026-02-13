@@ -2,28 +2,33 @@ use std::fmt;
 use std::path::PathBuf;
 
 pub struct ElementPath {
-    pub path: PathBuf,
+    path: PathBuf,
 }
 
 impl ElementPath {
-    pub fn vendor(&self) -> String {
-        self.path
-            .iter()
-            .nth_back(2)
-            .unwrap()
-            .to_str()
-            .unwrap()
-            .to_string()
+    pub fn new(path: PathBuf) -> Option<Self> {
+        match path.to_str() {
+            Some(_) => {
+                if path.iter().count() >= 3 {
+                    Some(Self { path })
+                } else {
+                    None
+                }
+            }
+            None => None,
+        }
     }
 
-    pub fn name(&self) -> String {
-        self.path
-            .iter()
-            .nth_back(0)
-            .unwrap()
-            .to_str()
-            .unwrap()
-            .to_string()
+    pub fn vendor(&self) -> &str {
+        self.path.iter().nth_back(2).unwrap().to_str().unwrap()
+    }
+
+    pub fn kind(&self) -> &str {
+        self.path.iter().nth_back(1).unwrap().to_str().unwrap()
+    }
+
+    pub fn name(&self) -> &str {
+        self.path.iter().nth_back(0).unwrap().to_str().unwrap()
     }
 
     pub fn slug(&self) -> String {
@@ -53,22 +58,18 @@ impl Target {
         toolchain: &Toolchain,
         docker: bool,
     ) -> PathBuf {
-        let mut result = root.clone();
-
-        result.push("build");
-        result.push(if docker { "docker" } else { "local" });
-        result.push(toolchain.element.slug());
-        result.push(target.element.slug());
-
-        result
+        root.join("build")
+            .join(if docker { "docker" } else { "local" })
+            .join(toolchain.element.slug())
+            .join(target.element.slug())
     }
 
     pub fn configuration(&self) -> PathBuf {
-        let mut path = self.element.path.clone();
+        self.element.path.join("machine.json")
+    }
 
-        path.push("machine.json");
-
-        path
+    pub fn path(&self) -> PathBuf {
+        self.element.path.clone()
     }
 }
 
@@ -92,26 +93,21 @@ impl Toolchain {
     }
 
     pub fn tools_build_path(&self, root: &PathBuf, docker: bool) -> PathBuf {
-        let mut result = root.clone();
-
-        result.push("build");
-        result.push(if docker { "docker" } else { "local" });
-
-        if docker {
-            result.push(self.element.slug());
-        }
-
-        result.push("tool");
-
-        result
+        root.join("build")
+            .join(if docker {
+                PathBuf::from("docker").join(self.element.slug())
+            } else {
+                PathBuf::from("local")
+            })
+            .join("tool")
     }
 
     pub fn tools_path(&self, root: &PathBuf, docker: bool) -> PathBuf {
-        let mut result = self.tools_build_path(root, docker);
+        self.tools_build_path(root, docker).join("release")
+    }
 
-        result.push("release");
-
-        result
+    pub fn path(&self) -> PathBuf {
+        self.element.path.clone()
     }
 }
 
@@ -127,11 +123,7 @@ pub struct Runner {
 
 impl Runner {
     pub fn configuration(&self) -> PathBuf {
-        let mut path = self.element.path.clone();
-
-        path.push("runner.json");
-
-        path
+        self.element.path.join("runner.json")
     }
 }
 
@@ -158,7 +150,7 @@ impl Moniker for Element {
             Element::Toolchain(t) => t.element.moniker(),
             Element::Target(m) => m.element.moniker(),
             Element::Runner(r) => r.element.moniker(),
-            _ => String::from(""),
+            _ => String::from("Unknown"),
         }
     }
 }
@@ -171,21 +163,14 @@ impl fmt::Display for Element {
 
 impl Element {
     pub fn from(path: &PathBuf) -> Element {
-        if path.iter().count() >= 3 {
-            match path.iter().nth_back(1).unwrap().to_str().unwrap() {
-                "machine" | "project" => Element::Target(Target {
-                    element: ElementPath { path: path.clone() },
-                }),
-                "toolchain" => Element::Toolchain(Toolchain {
-                    element: ElementPath { path: path.clone() },
-                }),
-                "runner" => Element::Runner(Runner {
-                    element: ElementPath { path: path.clone() },
-                }),
+        match ElementPath::new(path.clone()) {
+            Some(element) => match element.kind() {
+                "machine" | "project" => Element::Target(Target { element }),
+                "toolchain" => Element::Toolchain(Toolchain { element }),
+                "runner" => Element::Runner(Runner { element }),
                 _ => Element::Unknown,
-            }
-        } else {
-            Element::Unknown
+            },
+            None => Element::Unknown,
         }
     }
 }
