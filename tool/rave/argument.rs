@@ -52,6 +52,10 @@ pub struct MakeArgs {
     /// Run selected actions in Docker container(s)
     #[arg(short, long)]
     pub docker: bool,
+
+    /// Set --user to desired value when invoking Docker
+    #[arg(long)]
+    pub docker_user: Option<String>,
 }
 
 #[derive(Args)]
@@ -72,6 +76,10 @@ pub struct DockerArgs {
     /// Wind-down Docker image for selected toolchain(s)
     #[arg(short, long)]
     pub down: bool,
+
+    /// Set --user to desired value when invoking Docker
+    #[arg(long)]
+    pub docker_user: Option<String>,
 }
 
 #[derive(Args)]

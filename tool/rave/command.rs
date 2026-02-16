@@ -37,6 +37,7 @@ fn execute<I, S>(
     parameters: I,
     toolchain: &Toolchain,
     docker: bool,
+    docker_user: &Option<String>,
 ) -> Result<ExitCode>
 where
     I: IntoIterator<Item = S>,
@@ -56,9 +57,16 @@ where
             ),
             "--env",
             &format!("RVBL_ROOT={}", root.to_str().unwrap()),
-            &toolchain.container(),
-            program,
         ]);
+
+        match docker_user {
+            Some(user) => {
+                result.args(["--user", &user]);
+            }
+            None => {}
+        }
+
+        result.args([&toolchain.container(), program]);
 
         result
     } else {
@@ -99,6 +107,7 @@ pub fn configure(
     toolchain: &Toolchain,
     build_type: &String,
     docker: bool,
+    docker_user: &Option<String>,
 ) -> Result<ExitCode> {
     let build_path = target.build_path(root, target, toolchain, docker);
     let toolchain_path = toolchain.path().join("riscv32_ilp32.cmake");
@@ -120,6 +129,7 @@ pub fn configure(
         ],
         toolchain,
         docker,
+        docker_user,
     )
 }
 
@@ -129,6 +139,7 @@ pub fn build(
     toolchain: &Toolchain,
     jobs: u32,
     docker: bool,
+    docker_user: &Option<String>,
 ) -> Result<ExitCode> {
     let build_path = target.build_path(root, target, toolchain, docker);
 
@@ -143,6 +154,7 @@ pub fn build(
         ],
         toolchain,
         docker,
+        docker_user,
     )
 }
 
@@ -151,6 +163,7 @@ pub fn test(
     target: &Target,
     toolchain: &Toolchain,
     docker: bool,
+    docker_user: &Option<String>,
 ) -> Result<ExitCode> {
     let build_path = target.build_path(root, target, toolchain, docker);
 
@@ -160,10 +173,15 @@ pub fn test(
         ["--test-dir", build_path.to_str().unwrap()],
         toolchain,
         false,
+        &docker_user,
     )
 }
 
-pub fn provision(root: &PathBuf, toolchain: &Toolchain) -> Result<ExitCode> {
+pub fn provision(
+    root: &PathBuf,
+    toolchain: &Toolchain,
+    docker_user: &Option<String>,
+) -> Result<ExitCode> {
     execute(
         root,
         "docker",
@@ -175,10 +193,15 @@ pub fn provision(root: &PathBuf, toolchain: &Toolchain) -> Result<ExitCode> {
         ],
         toolchain,
         false,
+        docker_user,
     )
 }
 
-fn provision_tools(root: &PathBuf, toolchain: &Toolchain) -> Result<ExitCode> {
+fn provision_tools(
+    root: &PathBuf,
+    toolchain: &Toolchain,
+    docker_user: &Option<String>,
+) -> Result<ExitCode> {
     let tools_manifest_path = root.join("core/tool/Cargo.toml");
     let generators_manifest_path = root.join("quintauris/tool/Cargo.toml");
 
@@ -195,6 +218,7 @@ fn provision_tools(root: &PathBuf, toolchain: &Toolchain) -> Result<ExitCode> {
         ],
         toolchain,
         true,
+        docker_user,
     )?;
     execute(
         root,
@@ -209,10 +233,11 @@ fn provision_tools(root: &PathBuf, toolchain: &Toolchain) -> Result<ExitCode> {
         ],
         toolchain,
         true,
+        docker_user,
     )
 }
 
-pub fn up(root: &PathBuf, toolchain: &Toolchain) -> Result<ExitCode> {
+pub fn up(root: &PathBuf, toolchain: &Toolchain, docker_user: &Option<String>) -> Result<ExitCode> {
     let mut inspect = Command::new("docker");
     let root_string = root.to_str().unwrap();
 
@@ -228,43 +253,57 @@ pub fn up(root: &PathBuf, toolchain: &Toolchain) -> Result<ExitCode> {
         Ok(o) => {
             if o.status.success() && String::from_utf8(o.stdout).unwrap() == "running" {
                 info!("Container {} already running", toolchain.container());
-                provision_tools(root, toolchain)
+                provision_tools(root, toolchain, docker_user)
             } else {
+                let container = toolchain.container();
+                let volume = format!("{root_string}:{root_string}");
+                let image = toolchain.image();
+                let mut parameters = vec![
+                    "run",
+                    "--interactive",
+                    "--tty",
+                    "--detach",
+                    "--name",
+                    &container,
+                    "--volume",
+                    &volume,
+                ];
+
                 warn!(
                     "Container {} not running, spinning it up...",
                     toolchain.container()
                 );
-                execute(
-                    root,
-                    "docker",
-                    [
-                        "run",
-                        "--interactive",
-                        "--tty",
-                        "--detach",
-                        "--name",
-                        &toolchain.container(),
-                        "--volume",
-                        &format!("{root_string}:{root_string}"),
-                        &toolchain.image(),
-                    ],
-                    toolchain,
-                    false,
-                )?;
-                provision_tools(root, toolchain)
+
+                match docker_user {
+                    Some(user) => {
+                        parameters.push("--user");
+                        parameters.push(&user);
+                    }
+                    None => {}
+                }
+
+                parameters.push(&image);
+
+                execute(root, "docker", parameters, toolchain, false, docker_user)?;
+                provision_tools(root, toolchain, docker_user)
             }
         }
         Err(e) => Err(Error::IoError(e)),
     }
 }
 
-pub fn down(root: &PathBuf, toolchain: &Toolchain) -> Result<ExitCode> {
+pub fn down(
+    root: &PathBuf,
+    toolchain: &Toolchain,
+    docker_user: &Option<String>,
+) -> Result<ExitCode> {
     execute(
         root,
         "docker",
         ["stop", &toolchain.container()],
         toolchain,
         false,
+        docker_user,
     )
 }
 
@@ -327,6 +366,7 @@ pub fn run(
     delay: u32,
     dump_file: &Option<PathBuf>,
     target_configuration: &crate::configuration::Target,
+    docker_user: &Option<String>,
 ) -> Result<ExitCode> {
     let mut result = Ok(ExitCode::from(0));
     let runner_configuration = configuration::runner(&runner.configuration())
@@ -357,6 +397,7 @@ pub fn run(
                         parameters_replaced,
                         toolchain,
                         docker,
+                        docker_user,
                     );
 
                     if delay != 0 {
@@ -378,9 +419,12 @@ pub fn run(
                         std::io::ErrorKind::NotFound,
                     )));
                 }
+
+                break;
             }
             Err(error) => {
                 result = Err(Error::ProgramError(error));
+                continue;
             }
         }
     }

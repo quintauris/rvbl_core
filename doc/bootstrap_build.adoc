@@ -166,6 +166,7 @@ Configures, builds and tests with CMake.
 `--test`:: Execute tests (`ctest ...`)
 `--jobs <n>`:: Number of build jobs (`--parallel <n>`), use with `--build`
 `--docker`:: Execute commands in {docker} container `rvbl.<layer.toolchain_name>` (container must be provisioned and up, see <<command_docker>>)
+`--docker-user`:: User to pass {docker} invokations in form `user:group` or `uid:gid`
 
 ===== Examples
 
@@ -206,6 +207,7 @@ Manages toolchain containers with {docker}.
 `--provision`:: Build {docker} image for selected toolchain(s)
 `--up`:: Start (and keep running) container for selected toolchain (image must have been built with `--provision` before)
 `--down`:: Stop (but not remove) container for selected toolchain
+`--docker-user`:: User to pass {docker} invokations in form `user:group` or `uid:gid`
 
 ===== Examples
 
