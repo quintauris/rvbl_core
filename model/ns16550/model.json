@@ -1,32 +1,38 @@
 {
-    "$schema": "../../meta/device.schema.json",
+    "$schema": "../../../quintauris/meta/device.schema.json",
     "name": "uart_ns16550",
     "instance": "$INSTANCE",
+    "description": "Simple (write-only) Hardware-Software Interface model for https://en.wikipedia.org/wiki/16550_UART[NS16550] UART.",
     "memory_regions": [
         {
             "name": "registers",
+            "description": "Address space for control and data registers.",
             "base": "$BASE",
             "size": "1K",
             "registers": [
                 {
                     "name": "data",
+                    "description": "Receiver/Transmitter Holding register.",
                     "class": "memory_mapped",
                     "offset": "0x0",
                     "width": 32
                 },
                 {
                     "name": "line_status",
+                    "description": "Line Status register.",
                     "class": "memory_mapped",
                     "offset": "0x5",
                     "width": 8,
                     "fields": [
                         {
                             "name": "data_ready",
+                            "description": "Data Ready indicator.",
                             "position": 0,
                             "length": 1
                         },
                         {
                             "name": "thr_empty",
+                            "description": "THR (Transmitter Holding Register) Ready indicator.",
                             "position": 5,
                             "length": 1
                         }

@@ -1,3 +1,4 @@
 = Models
 include::common.adoc[]
+:toclevels: 4
 include::generated/ns16550.adoc[leveloffset=0]
