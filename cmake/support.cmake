@@ -24,8 +24,14 @@ source \"bootstrap.sh\".")
     NO_DEFAULT_PATH)
 
   find_program(
-    GENERATOR_ASCIIDOC
-    NAMES generator_asciidoc
+    GENERATOR_ASCIIDOC_MACHINE
+    NAMES generator_asciidoc_machine
+    HINTS ${rvbl_tool} REQUIRED
+    NO_DEFAULT_PATH)
+
+  find_program(
+    GENERATOR_ASCIIDOC_DEVICE
+    NAMES generator_asciidoc_device
     HINTS ${rvbl_tool} REQUIRED
     NO_DEFAULT_PATH)
 
@@ -234,7 +240,7 @@ function(rvbl_generate_machine_documentation)
   add_custom_command(
     OUTPUT ${arg_PATH}/model.adoc ${arg_PATH}/model.html
     COMMAND
-      ${GENERATOR_ASCIIDOC} --input ${arg_MODEL} --meta-model
+      ${GENERATOR_ASCIIDOC_MACHINE} --input ${arg_MODEL} --meta-model
       ${rvbl_root}/quintauris/meta/machine.schema.json --search-path
       ${rvbl_root}
     COMMAND ${ASCIIDOCTOR} -o ${arg_PATH}/model.html ${arg_PATH}/model.adoc
@@ -564,7 +570,8 @@ function(rvbl_layer_documentation)
 
   find_program(ASCIIDOCTOR NAMES asciidoctor REQUIRED)
   find_program(EXTRACTOR_ASCIIDOC NAMES asciidoc_extractor REQUIRED)
-  find_program(GENERATOR_ASCIIDOC NAMES generator_asciidoc REQUIRED)
+  find_program(GENERATOR_ASCIIDOC_DEVICE NAMES generator_asciidoc_device
+                                               REQUIRED)
 
   # Libraries
   file(
@@ -589,7 +596,7 @@ function(rvbl_layer_documentation)
   file(
     GLOB_RECURSE inputs
     LIST_DIRECTORIES false
-    "../model/example.json")
+    "../model/*.json")
   set(outputs_model "")
 
   foreach(input ${inputs})
@@ -602,8 +609,8 @@ function(rvbl_layer_documentation)
     add_custom_command(
       OUTPUT ${output_html}
       COMMAND
-        ${GENERATOR_ASCIIDOC} --input ${input} --meta-model
-        ${arg_RVBL_ROOT}/quintauris/meta/machine.schema.json --search-path
+        ${GENERATOR_ASCIIDOC_DEVICE} --input ${input} --meta-model
+        ${arg_RVBL_ROOT}/quintauris/meta/device.schema.json --search-path
         ${arg_RVBL_ROOT}
       COMMAND ${CMAKE_COMMAND} -E rename ${temp_dir}/model.adoc ${output_adoc}
       COMMAND ${ASCIIDOCTOR} --doctype book -D ${arg_TARGET_DIR} ${output_adoc}
