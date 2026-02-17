@@ -3,12 +3,12 @@ include::common.adoc[]
 
 == Overview
 
-After a successful {project} xref:architecture.adoc#arch_distribution[Distribution] had been `clone` d with {git}, the workflow continues as follows:
+After a successful {project} xref:architecture.adoc#arch_distribution[Distribution] had been cloned with {git}, the workflow continues as follows:
 
 1. xref:architecture.adoc#_bootstrap[Bootstrap] the distribution
 2. Use xref:architecture.adoc#_rave[`rave`] to build one or more targets
 
-NOTE: Bootstrapping the distribution sets certain environment variables needed by `rave` to work (also adds it to `PATH`), thus step (1) is not required in every terminal/console session that uses `rave`.
+NOTE: Bootstrapping the distribution sets certain environment variables needed by `rave` to work (also adds it to `PATH`), thus step (1) is not required in every terminal/console session that uses `rave`. Fortunately, `bootstrap` runs in matter of seconds.
 
 NOTE: Updating one or more layers may update the `bootstrap` script, `rave` or other tools, so it is recommended to repeat step (1) every time a xref:architecture.adoc#arch_distribution[Distribution], or layers within it, are updated.
 
@@ -72,7 +72,7 @@ Options:
   ...
 ```
 
-`rave`'s command line parameters are structured with the following syntax:
+`rave` command line parameters are structured with the following syntax:
 
 ```
 rave [command] <flags>

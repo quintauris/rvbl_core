@@ -3,13 +3,13 @@ include::common.adoc[]
 
 == Overview
 
-The layer-based design of the {project} aims at achieving honorable software traditions such as https://en.wikipedia.org/wiki/Loose_coupling[loose coupling] and https://en.wikipedia.org/wiki/Cohesion_(computer_science)[high cohesion], while automating traditionally rudimentary and error-prone aspects of low-level software development and integration.
+The design of the {project} aims at realizing honorable software patterns such as https://en.wikipedia.org/wiki/Loose_coupling[loose coupling] and https://en.wikipedia.org/wiki/Cohesion_(computer_science)[high cohesion], while automating traditionally rudimentary and error-prone aspects of low-level software development and integration.
 
-For readers not willing to read further in this chapter, the following three design take-aways are offered:
+For readers not willing to read further in this document, the following three design take-aways are offered:
 
-* This architecture is *Layer*-ed
-* This architecture is *Model*-driven
-* This architecture is *Code*-first
+* This design is *Layer*-ed
+* This design is *Model*-driven
+* This design is *Code*-first
 
 === Layer-oriented
 
@@ -22,9 +22,9 @@ Essential layers conform the functional core of the {project}, and there's three
 * `core`:
 ** {cmake} support files
 ** Host tools
-** Project-wide documentation (including this manual)
+** Project-wide documentation (including xref:index.adoc[this manual])
 ** Essential run-time libraries
-** Essential and common device models
+** Common device models
 ** References to essential and common third-pary run-time components
 * `riscv`:
 ** Model files for RISC-V standard ISA and devices
@@ -45,13 +45,15 @@ The following layers are not as foundational as those above, but toghether with 
 
 ==== Optional layers
 
-Optional layers exist above and depend upon the aforementioned layers, providing support for OEM products of all kinds, such as boards, toolchains, debuggers, etc. Essential, recommended and optional layers maybe combined to produce <<arch_distribution>>s.
+Optional layers exist beyond the aforementioned layers, providing support for OEM products of all kinds, such as boards, toolchains, debuggers, etc. Optional layers may complement or even replace the recommended layers described above. For example, a certain hardware and toolchain vendor may provide its own layer with <<arch_toolchain>>, <<arch_machine>> and <<arch_runner>> definitions.
+
+Essential, recommended and optional layers maybe combined to produce <<arch_distribution>>s.
 
 === Model-driven
 
-As shown in the previous chapter, many layers contain <<arch_model>>s. These are text-based and human-readable files describing structural aspects of devices and machines. Models are also generally easier to construct, update, reason about, and process with automated tools than code in most well-supported programming languages.
+As shown in the previous chapter, many layers contain <<arch_model>>s. These are text-based and human-readable files describing structural aspects of devices and machines. Models are also generally easier to construct, update, reason about, and process with automated tools than code in most programming languages.
 
-For all these reasons the {project} is designed around a machine meta-model (sometimes referred to as _MM_ or _M2_) and a set of compliant models (sometimes generally referred to as _M1_):
+For all these reasons, the {project} is designed around a machine meta-model (sometimes referred to as _MM_ or _M2_) and a set of compliant models (sometimes generally referred to as _M1_):
 
 * The *Machine Meta-model* (M2 or MM) is described in {json-schema}
 * The *Machine Models* (M1) are described in {json}
@@ -62,24 +64,24 @@ For all these reasons the {project} is designed around a machine meta-model (som
 
 Following recent (also ancient, but perhaps _for too long_ out of fashion) trends in the software industry, the {project} design explicitly avoids:
 
-- Relying on GUI-centric tools (hard or impossible to automate)
+- Relying on GUI tools (hard or impossible to automate)
 - Proprietary binary formats (hard to share and work collaboratively upon)
 
 in favour of:
 
 - Command-line tools
-- Open, text-based, human-readable formats.
+- Open, text-based and human-readable formats
 
 == Concepts
 
 [[arch_layer]]
 === Layer
 
-A *Layer* is a discrete software package representing assets maintained by, or related to, a single well-known entity, such as a company, a vendors, a community, an organization or a consortium.
+A *Layer* is a discrete software package representing assets maintained by, or related to, a single well-known entity, such as a company, vendor, community, organization or  consortium.
 
 The only exception is, of course, the `core` layer, which corresponds to no particular real-world entity and instead represents the infrastructure necessary for other layers to exist and operate.
 
-A Layer is represented as a {git} repository which contains, and eventually expands into filesystem directory structure adhering to the following structural and lexical conventions:
+A Layer is represented as a {git} repository which adheres to the following structural and lexical conventions:
 
 * (repo) `rvbl_<name>`: name of the entity
 ** (sub-directory) `doc`: Layer documentation
@@ -91,7 +93,7 @@ A Layer is represented as a {git} repository which contains, and eventually expa
 ** (sub-directory) `machine`: Machines provided by this layer
 ** (sub-directory) `third_party`: References to third-party components, as {git} Submodules
 
-NOTE: all of the sub-directories defined above are optional. Layers shall only include them if they have a use for them.
+NOTE: All of the sub-directories defined above are optional. Layers shall only include them if they have a use for them.
 
 [[arch_distribution]]
 === Distribution
@@ -165,14 +167,14 @@ or as <<arch_machine>> sub-elements:
 
 NOTE: At the time of writing this document, only libraries written in the C programming language are featured and supported.
 
-Many libraries rely upon and extend device Hardware-Software Interfaces automatically generated from device models with machine models, and thus can only by built in the context of a particular <<arch_machine>>.
+Many libraries rely upon and extend device Hardware-Software Interfaces (HSIs) automatically generated from device models with machine models, and thus can only by built in the context of a particular <<arch_machine>>.
 
 [[arch_model]]
 === Model
 
 As explained earlier, a *Model* is a way to synthesize structural aspects of a complex engineering component. In addition, communities and projects greatly benefit from using common human- and machine-friendly syntax and formats.
 
-Models also conform to a given meta-model which dictates in great detail what kind of entities may appear in them, what their attributes can be, and how they relate to each other. Like a https://en.wikipedia.org/wiki/Database_schema[database schema] or an https://en.wikipedia.org/wiki/XML_schema[XML schema].
+Models also conform to a given meta-model which dictates in great detail what kind of entities may appear in models, what their attributes can be, and how they relate to each other. Like a https://en.wikipedia.org/wiki/Database_schema[database schema] or an https://en.wikipedia.org/wiki/XML_schema[XML schema].
 
 In this particular context of the {project}, models are employed to define Hardware-Software Interfaces (HSIs), including but not limited to:
 
@@ -208,7 +210,7 @@ NOTE: In the {project}, {json} is the de-facto file format for models, while {js
 [[arch_machine]]
 === Machine
 
-A *Machine* packages a machine model, libraries, linker file, examples ancilliary source code, build scripts and other assets conforming a {project} for a particular machine:
+A *Machine* packages a machine model, libraries, linker files, examples, ancilliary source code, build scripts and other assets conforming a {project} for a particular machine:
 
 * (repo) `rvbl_<name>`:
 ** (sub-directory) `machine`: Machines provided by this layer
@@ -274,9 +276,16 @@ Since a <<arch_distribution>> is essentially a {git} repo representing the root 
 git clone --recurse-submodules <distribution_url>
 ```
 
+Pulling from and pushing to remote branches is certainly no different:
+
+```
+git pull --recurse-submodules=on-demand
+git push --recurse-submodules=on-demand
+```
+
 === CMake
 
-It should not be a surprise at this point that the {project} is configured, built and even tested using {cmake}. As with many large projects involving specialized build procedures and constraints, a thin utility layer of CMake functions is provided to ease the work of build engineers:
+It should not be a surprise at this point that the {project} is configured, built and even tested using {cmake}. As with many large projects involving specialized build procedures, a thin utility layer of CMake functions is provided to ease the work of build engineers:
 
 * (CMake function) `rvbl_machine()`
 * (CMake function) `rvbl_interface_library()`
@@ -284,12 +293,13 @@ It should not be a surprise at this point that the {project} is configured, buil
 * (CMake function) `rvbl_executable()`
 * (CMake function) `rvbl_test()`
 * (CMake function) `rvbl_use()`
+* (CMake function) `rvbl_layer_documentation()`
 
 <<arch_machine>> and <<arch_project>> `CMakeLists.txt` files make heavy use of these functions, which in turn rely on the well-defined directory structure defined for all the <<_concepts>> described in the previous section.
 
 === rave
 
-Still, managing toolchain files, source directories and build directories by hands may become exceptionally repetitive and error-prone, as the number of <<arch_machine>>s, <<arch_toolchain>>s and <<arch_project>>s one works with grows.
+Still, managing {cmake} toolchain files, source directories and build directories by hand may become exceptionally repetitive and error-prone, as the number of <<arch_machine>>s, <<arch_toolchain>>s and <<arch_project>>s one works with grows.
 
 To this end, `rave`, the {project} unified build tool, exists. `rave` is a command-line interface program that simplifies enumeration, construction, testing and execution of {project} <<arch_machine>>s and <<arch_project>>s with any set of <<arch_toolchain>>s.
 
@@ -366,5 +376,5 @@ As convenient and powerful as <<_rave>> is, there are a few things it can't or s
 For this purpose, _bootstrap_ scripts doing all of the above steps are provided for:
 
 * GNU bash and compatible shells (`bootstrap.sh`)
-* Windows Batch shell (`bootstrap.cmd`)
-* Windows PowerShell (`bootstrap.ps1`)
+* _(PLANNED)_ Windows Batch shell (`bootstrap.cmd`)
+* _(PLANNED)_ Windows PowerShell (`bootstrap.ps1`)
