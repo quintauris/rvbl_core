@@ -26,6 +26,7 @@ The {project} is a collaborative effort devoted to building a common _low-level_
 
 == Index
 
+* ⚡️ xref:quick_start.adoc[Quick Start]
 * 🏛️ xref:architecture.adoc[Architecture]
 * 🚧 xref:bootstrap_build.adoc[Bootstrap and Build System]
 * 📦 `core` layer

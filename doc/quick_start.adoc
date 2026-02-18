@@ -1,0 +1,76 @@
+= Quick Start
+include::common.adoc[]
+
+This short document steps you through the process for a typical build and test run using the {project}. More specifically, if you follow the steps listed below, you will:
+
+1. Configure a local build using GNU GCC toolchain, targeting QEmu's 32-bit RISC-V "virt" machine
+2. Run a test suite on the build from (1) above
+3. Provision and start a LLVM Clang toolchain container
+4. Repeat the configuration, build and test steps from (1) and (2), in the container from (3)
+
+We're done talking here... let's get to work.
+
+== Preparation
+
+Make sure the following tools are installed and available in your `PATH`:
+
+:pre-commit: https://pre-commit.com[pre-commit]
+:rustup: https://rustup.rs[rustup]
+
+* {pre-commit}
+* {rustup}
+
+== Check-out
+
+```
+git clone --recurse-submodules https://github.com/quintauris-tech/rvbl_internal.git
+cd rvbl_internal
+```
+
+== Bootstrapping
+
+```
+source bootstrap.sh
+```
+
+== Configure and Build (GNU GCC / QEmu "virt", local)
+
+```
+rave make --toolchain gnu.gcc --machine qemu.virt --configure --build
+```
+
+== Run Tests on (GNU GCC / QEmu "virt", local)
+
+```
+rave make --test
+```
+
+(`--configure ...` and `--build ...` can be omitted, which makes `rave` default to latest values used)
+
+== Provision and Start LLVM Clang container
+
+```
+rave docker --toolchain llvm.clang --provision --up
+```
+
+== Configure, Build and Test (LLVM Clang / QEmu "virt", container)
+
+```
+rave make --toolchain llvm.clang --docker --machine qemu.virt --configure --build --test
+```
+
+(note the extra `--docker` flag after `--toolchain ...`)
+
+== Bonus
+
+Happy? Let's light the candles on this cake by building a Dhrystone benchmark application:
+
+```
+rave make --toolchain gnu.gcc --target quintauris.dhrystone --configure --build
+```
+
+Then running it:
+
+```
+rave run --runner qemu.system32-elf --machine qemu.virt --file build/local/gnu_gcc/quintauris_dhrystone/dhrystone.elf
+```
