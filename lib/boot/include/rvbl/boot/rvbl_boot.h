@@ -1,7 +1,7 @@
 /// = Boot Library
 /// Quintauris GmbH
 ///
-/// Implements Core types and ABI-related functions.
+/// Provides bootstrapping types and functions.
 
 #ifndef RVBL_BOOT_H
 #define RVBL_BOOT_H
