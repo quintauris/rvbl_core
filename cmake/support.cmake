@@ -560,9 +560,43 @@ macro(rvbl_use)
   endforeach()
 endmacro()
 
+function(rvbl_layer_documentation_model)
+  cmake_parse_arguments(
+    PARSE_ARGV 0 arg "" "SOURCE_DIR;TARGET_DIR;RVBL_ROOT;GENERATOR"
+    "MODELS;PARAMETERS")
+
+  find_program(GENERATOR_ASCIIDOC_${arg_GENERATOR}
+               NAMES generator_asciidoc_${arg_GENERATOR} REQUIRED)
+
+  set(temp_dir ${arg_SOURCE_DIR}/generated)
+  set(outputs_model_${arg_GENERATOR} "")
+
+  foreach(input ${arg_MODELS})
+    get_filename_component(file_name ${input} NAME_WE)
+    get_filename_component(model_name ${input} DIRECTORY)
+    get_filename_component(model_name ${model_name} NAME)
+    set(output_adoc ${temp_dir}/${model_name}_${file_name}.adoc)
+    list(APPEND outputs_model_${arg_GENERATOR} ${output_adoc})
+
+    add_custom_command(
+      OUTPUT ${output_adoc}
+      COMMAND
+        ${GENERATOR_ASCIIDOC_${arg_GENERATOR}} --input ${input} --meta-model
+        ${arg_RVBL_ROOT}/quintauris/meta/${arg_GENERATOR}.schema.json
+        --search-path ${arg_RVBL_ROOT} $<$<BOOL:${arg_PARAMETERS}>:--parameter>
+        ${arg_PARAMETERS}
+      COMMAND ${CMAKE_COMMAND} -E rename ${temp_dir}/model.adoc ${output_adoc}
+      DEPENDS ${input}
+      WORKING_DIRECTORY ${temp_dir}
+      COMMENT "Generating model ${model_name}/${file_name} documentation...")
+  endforeach()
+
+  return(PROPAGATE outputs_model_${arg_GENERATOR})
+endfunction()
+
 function(rvbl_layer_documentation)
   cmake_parse_arguments(PARSE_ARGV 0 arg "" "SOURCE_DIR;TARGET_DIR;RVBL_ROOT"
-                        "")
+                        "DEVICE_MODELS;REGISTER_SET_MODELS;PARAMETERS")
 
   make_directory(${arg_TARGET_DIR})
   set(temp_dir ${arg_SOURCE_DIR}/generated)
@@ -570,8 +604,6 @@ function(rvbl_layer_documentation)
 
   find_program(ASCIIDOCTOR NAMES asciidoctor REQUIRED)
   find_program(EXTRACTOR_ASCIIDOC NAMES asciidoc_extractor REQUIRED)
-  find_program(GENERATOR_ASCIIDOC_DEVICE NAMES generator_asciidoc_device
-                                               REQUIRED)
 
   # Libraries
   file(
@@ -580,44 +612,43 @@ function(rvbl_layer_documentation)
     RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}
     "../lib/*.h")
   list(SORT inputs)
-  set(temp_api ${temp_dir}/api.adoc)
-  set(outputs_api ${arg_TARGET_DIR}/api.html)
+  set(outputs_api ${temp_dir}/api.adoc)
 
   add_custom_command(
     OUTPUT ${outputs_api}
-    COMMAND ${EXTRACTOR_ASCIIDOC} ${inputs} ${temp_api}
-    COMMAND ${ASCIIDOCTOR} --doctype book -D ${arg_TARGET_DIR} ${temp_api}
+    COMMAND ${EXTRACTOR_ASCIIDOC} ${inputs} ${outputs_api}
     COMMAND_EXPAND_LISTS
     DEPENDS ${inputs}
     WORKING_DIRECTORY ${arg_SOURCE_DIR}
     COMMENT "Generating API documentation...")
 
   # Models
-  file(
-    GLOB_RECURSE inputs
-    LIST_DIRECTORIES false
-    "../model/*.json")
-  set(outputs_model "")
-
-  foreach(input ${inputs})
-    get_filename_component(model_name ${input} DIRECTORY)
-    get_filename_component(model_name ${model_name} NAME)
-    set(output_adoc ${temp_dir}/${model_name}.adoc)
-    set(output_html ${arg_TARGET_DIR}/${model_name}.html)
-    list(APPEND outputs_model ${output_html})
-
-    add_custom_command(
-      OUTPUT ${output_html}
-      COMMAND
-        ${GENERATOR_ASCIIDOC_DEVICE} --input ${input} --meta-model
-        ${arg_RVBL_ROOT}/quintauris/meta/device.schema.json --search-path
-        ${arg_RVBL_ROOT}
-      COMMAND ${CMAKE_COMMAND} -E rename ${temp_dir}/model.adoc ${output_adoc}
-      COMMAND ${ASCIIDOCTOR} --doctype book -D ${arg_TARGET_DIR} ${output_adoc}
-      DEPENDS ${input}
-      WORKING_DIRECTORY ${temp_dir}
-      COMMENT "Generating model ${model_name} documentation...")
-  endforeach()
+  rvbl_layer_documentation_model(
+    SOURCE_DIR
+    ${arg_SOURCE_DIR}
+    TARGET_DIR
+    ${arg_TARGET_DIR}
+    RVBL_ROOT
+    ${arg_RVBL_ROOT}
+    GENERATOR
+    device
+    MODELS
+    ${arg_DEVICE_MODELS}
+    PARAMETERS
+    ${arg_PARAMETERS})
+  rvbl_layer_documentation_model(
+    SOURCE_DIR
+    ${arg_SOURCE_DIR}
+    TARGET_DIR
+    ${arg_TARGET_DIR}
+    RVBL_ROOT
+    ${arg_RVBL_ROOT}
+    GENERATOR
+    register_set
+    MODELS
+    ${arg_REGISTER_SET_MODELS}
+    PARAMETERS
+    ${arg_PARAMETERS})
 
   # Main documents and common files
   file(GLOB inputs "${arg_SOURCE_DIR}/*.adoc")
@@ -637,6 +668,7 @@ function(rvbl_layer_documentation)
   file(GLOB glob "${arg_SOURCE_DIR}/*.html" "${arg_SOURCE_DIR}/*.png")
   file(COPY ${glob} DESTINATION ${arg_TARGET_DIR})
 
-  add_custom_target(docs ALL DEPENDS ${outputs_doc} ${outputs_api}
-                                     ${outputs_model})
+  add_custom_target(
+    docs ALL DEPENDS ${outputs_api} ${outputs_model_register_set}
+                     ${outputs_model_device} ${outputs_doc})
 endfunction()
