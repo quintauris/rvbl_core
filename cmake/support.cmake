@@ -595,8 +595,9 @@ function(rvbl_layer_documentation_model)
 endfunction()
 
 function(rvbl_layer_documentation)
-  cmake_parse_arguments(PARSE_ARGV 0 arg "" "SOURCE_DIR;TARGET_DIR;RVBL_ROOT"
-                        "DEVICE_MODELS;REGISTER_SET_MODELS;PARAMETERS")
+  cmake_parse_arguments(
+    PARSE_ARGV 0 arg "" "SOURCE_DIR;TARGET_DIR;RVBL_ROOT"
+    "DEVICE_MODELS;REGISTER_SET_MODELS;CPU_MODELS;PARAMETERS")
 
   make_directory(${arg_TARGET_DIR})
   set(temp_dir ${arg_SOURCE_DIR}/generated)
@@ -649,6 +650,19 @@ function(rvbl_layer_documentation)
     ${arg_REGISTER_SET_MODELS}
     PARAMETERS
     ${arg_PARAMETERS})
+  rvbl_layer_documentation_model(
+    SOURCE_DIR
+    ${arg_SOURCE_DIR}
+    TARGET_DIR
+    ${arg_TARGET_DIR}
+    RVBL_ROOT
+    ${arg_RVBL_ROOT}
+    GENERATOR
+    cpu
+    MODELS
+    ${arg_CPU_MODELS}
+    PARAMETERS
+    ${arg_PARAMETERS})
 
   # Main documents and common files
   file(GLOB inputs "${arg_SOURCE_DIR}/*.adoc")
@@ -669,6 +683,7 @@ function(rvbl_layer_documentation)
   file(COPY ${glob} DESTINATION ${arg_TARGET_DIR})
 
   add_custom_target(
-    docs ALL DEPENDS ${outputs_api} ${outputs_model_register_set}
-                     ${outputs_model_device} ${outputs_doc})
+    docs ALL
+    DEPENDS ${outputs_api} ${outputs_model_cpu} ${outputs_model_register_set}
+            ${outputs_model_device} ${outputs_doc})
 endfunction()
