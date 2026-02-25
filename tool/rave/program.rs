@@ -86,6 +86,12 @@ fn main() -> ExitCode {
             'target_loop: for target in targets {
                 for toolchain in toolchains.iter().into_iter() {
                     if args.configure {
+                        let toolchain_target = select::toolchain_target(
+                            &args.toolchain_target,
+                            toolchain,
+                            &mut configuration,
+                        );
+
                         info!(
                             "Configuring machine {} with toolchain {} ...",
                             target.element.moniker(),
@@ -95,6 +101,7 @@ fn main() -> ExitCode {
                             &root,
                             &target,
                             &toolchain,
+                            &toolchain_target,
                             &args.build_type,
                             args.docker,
                             &args.docker_user,

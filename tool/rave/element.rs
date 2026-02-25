@@ -1,5 +1,6 @@
-use std::fmt;
+use crate::path;
 use std::path::PathBuf;
+use std::{fmt, fs};
 
 pub struct ElementPath {
     path: PathBuf,
@@ -108,6 +109,25 @@ impl Toolchain {
 
     pub fn path(&self) -> PathBuf {
         self.element.path.clone()
+    }
+
+    pub fn targets(&self) -> Vec<String> {
+        let mut result: Vec<String> = vec![];
+
+        if let Ok(paths) = fs::read_dir(self.path()) {
+            for path in paths.flatten().filter(path::is_toolchain_target) {
+                result.push(
+                    path.path()
+                        .file_stem()
+                        .unwrap()
+                        .to_str()
+                        .unwrap()
+                        .to_string(),
+                );
+            }
+        }
+
+        result
     }
 }
 

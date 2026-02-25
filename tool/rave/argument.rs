@@ -25,6 +25,9 @@ pub struct MakeArgs {
     #[arg(long, default_value_t = String::from("last"))]
     pub toolchain: String,
 
+    #[arg(long, default_value_t = String::from("last"))]
+    pub toolchain_target: String,
+
     /// Target(s) in <layer>.<name> form (e.g. qemu.virt), comma-separated
     #[arg(short, long, default_value_t = String::from("last"), aliases=["targets", "machine", "machines"])]
     pub target: String,

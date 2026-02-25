@@ -101,6 +101,22 @@ pub fn toolchains<'a>(
     result
 }
 
+pub fn toolchain_target<'a>(
+    filter: &str,
+    toolchain: &Toolchain,
+    configuration: &mut Configuration,
+) -> String {
+    let input = match filter {
+        "last" => configuration.last_toolchain_target.clone(),
+        "ask" => interactive::choose("toolchain/target", &toolchain.targets()).expect(""),
+        _ => filter.to_string(),
+    };
+
+    configuration.last_toolchain_target = input.clone();
+
+    input
+}
+
 pub fn runners<'a>(
     filter: &str,
     elements: &'a Vec<Element>,

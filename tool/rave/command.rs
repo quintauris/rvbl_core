@@ -105,12 +105,13 @@ pub fn configure(
     root: &PathBuf,
     target: &Target,
     toolchain: &Toolchain,
+    toolchain_target: &str,
     build_type: &String,
     docker: bool,
     docker_user: &Option<String>,
 ) -> Result<ExitCode> {
     let build_path = target.build_path(root, target, toolchain, docker);
-    let toolchain_path = toolchain.path().join("riscv32_ilp32.cmake");
+    let toolchain_path = toolchain.path().join(format!("{toolchain_target}.cmake"));
 
     std::fs::create_dir_all(&build_path).map_err(|e| Error::IoError(e))?;
 

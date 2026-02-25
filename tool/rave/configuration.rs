@@ -8,6 +8,7 @@ use std::path::PathBuf;
 #[derive(Serialize, Deserialize, Debug, Default)]
 pub struct Configuration {
     pub last_toolchains: Vec<String>,
+    pub last_toolchain_target: String,
     pub last_targets: Vec<String>,
     pub last_runners: Vec<String>,
 }
