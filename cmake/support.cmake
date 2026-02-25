@@ -424,8 +424,7 @@ shall be manually resized to ${arg_BINARY_SIZE}.")
         NAME jrun.${arg_NAME}
         COMMAND
           ${rvbl_rave_local} run --toolchain ${rvbl_toolchain_moniker}
-          --machine ${rvbl_machine_moniker} --runner segger.jrun --dump-file
-          ${CMAKE_CURRENT_BINARY_DIR}/:tt --file
+          --machine ${rvbl_machine_moniker} --runner segger.jrun --file
           ${CMAKE_CURRENT_BINARY_DIR}/${arg_NAME}${CMAKE_EXECUTABLE_SUFFIX_C})
       list(APPEND test_list jrun.${arg_NAME})
 
