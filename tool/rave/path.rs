@@ -51,7 +51,6 @@ pub fn is_build(entry: &DirEntry) -> bool {
 }
 
 pub fn is_toolchain_target(entry: &std::fs::DirEntry) -> bool {
-    println!("{:?}", entry);
     !entry.path().is_dir()
         && entry.path().extension().unwrap_or_default() == "cmake"
         && entry.file_name().to_str().unwrap_or_default().contains("_")
