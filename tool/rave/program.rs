@@ -85,7 +85,7 @@ fn main() -> ExitCode {
 
             'target_loop: for target in targets {
                 let target_configuration =
-                    configuration::target(&target.path()).unwrap_or_default();
+                    configuration::target(&target.configuration()).unwrap_or_default();
 
                 for toolchain in toolchains.iter().into_iter() {
                     if args.configure {
