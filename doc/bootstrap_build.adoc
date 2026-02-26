@@ -159,6 +159,7 @@ Configures, builds and tests with CMake.
 ===== Flags
 
 `--toolchain <layer.toolchain_name>`:: Set build toolchain (one of `rave list --toolchains` output, `ask` for interactive selection, `last` to retrieve last value from configuration, `all` to iterate across all known toolchains)
+`--toolchain-target <target>`:: Set build toolchain target (`ask` for interactive selection, `last` to retrieve last value from configuration, `default` to use machine's default setting), use with `--configure`
 `--target <layer.target_name>`:: Set target to build (one of `rave list --targets` output, `ask` for interactive selection, `last` to retrieve last value from configuration, `all` to iterate across all known targets)
 `--configure`:: Configure build (`cmake ...`)
 `--build-type <type>`:: Build type to configure (`-DCMAKE_BUILD_TYPE=<type>`), use with `--configure`

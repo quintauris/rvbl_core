@@ -8,7 +8,7 @@ use std::path::PathBuf;
 #[derive(Serialize, Deserialize, Debug, Default)]
 pub struct Configuration {
     pub last_toolchains: Vec<String>,
-    pub last_toolchain_target: String,
+    pub last_toolchain_target: Option<String>,
     pub last_targets: Vec<String>,
     pub last_runners: Vec<String>,
 }
@@ -78,6 +78,7 @@ pub fn runner(path: &PathBuf) -> Result<Runner> {
 #[derive(Serialize, Deserialize, Debug, Default)]
 pub struct Target {
     pub runners: HashMap<String, Parameters>,
+    pub default_toolchain_target: Option<String>,
 }
 
 pub fn target(path: &PathBuf) -> Result<Target> {

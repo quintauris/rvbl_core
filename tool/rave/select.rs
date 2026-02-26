@@ -1,6 +1,6 @@
 use itertools::Itertools;
 
-use crate::configuration::Configuration;
+use crate::configuration;
 use crate::element::{Element, Moniker, Runner, Target, Toolchain};
 use crate::interactive;
 
@@ -44,7 +44,7 @@ where
 pub fn targets<'a>(
     filter: &str,
     elements: &'a Vec<Element>,
-    configuration: &mut Configuration,
+    configuration: &mut configuration::Configuration,
 ) -> Vec<&'a Target> {
     let all: Vec<String> = all(elements, is_target)
         .iter()
@@ -74,7 +74,7 @@ pub fn targets<'a>(
 pub fn toolchains<'a>(
     filter: &str,
     elements: &'a Vec<Element>,
-    configuration: &mut Configuration,
+    configuration: &mut configuration::Configuration,
 ) -> Vec<&'a Toolchain> {
     let all: Vec<String> = all(elements, is_toolchain)
         .iter()
@@ -104,15 +104,27 @@ pub fn toolchains<'a>(
 pub fn toolchain_target<'a>(
     filter: &str,
     toolchain: &Toolchain,
-    configuration: &mut Configuration,
+    target_configuration: &configuration::Target,
+    configuration: &mut configuration::Configuration,
 ) -> String {
+    let default = target_configuration
+        .default_toolchain_target
+        .as_ref()
+        .unwrap_or(&String::from("riscv32_ilp32"))
+        .clone();
+    let last = configuration
+        .last_toolchain_target
+        .as_ref()
+        .unwrap_or(&default)
+        .clone();
     let input = match filter {
-        "last" => configuration.last_toolchain_target.clone(),
+        "last" => last,
+        "default" => default,
         "ask" => interactive::choose("toolchain/target", &toolchain.targets()).expect(""),
         _ => filter.to_string(),
     };
 
-    configuration.last_toolchain_target = input.clone();
+    configuration.last_toolchain_target = Some(input.clone());
 
     input
 }
@@ -120,7 +132,7 @@ pub fn toolchain_target<'a>(
 pub fn runners<'a>(
     filter: &str,
     elements: &'a Vec<Element>,
-    configuration: &mut Configuration,
+    configuration: &mut configuration::Configuration,
 ) -> Vec<&'a Runner> {
     let all: Vec<String> = all(elements, is_runner)
         .iter()

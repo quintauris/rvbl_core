@@ -84,11 +84,15 @@ fn main() -> ExitCode {
             let toolchains = select::toolchains(&args.toolchain, &elements, &mut configuration);
 
             'target_loop: for target in targets {
+                let target_configuration =
+                    configuration::target(&target.path()).unwrap_or_default();
+
                 for toolchain in toolchains.iter().into_iter() {
                     if args.configure {
                         let toolchain_target = select::toolchain_target(
                             &args.toolchain_target,
                             toolchain,
+                            &target_configuration,
                             &mut configuration,
                         );
 
