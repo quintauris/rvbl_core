@@ -1,6 +1,6 @@
 use core::time;
 use itertools::Itertools;
-use log::{info, trace, warn};
+use log::{info, warn};
 use regex::Regex;
 use std::fmt::Display;
 use std::fs;
@@ -78,7 +78,7 @@ where
     command.stdin(Stdio::inherit());
     command.stderr(Stdio::inherit());
 
-    trace!(
+    warn!(
         "{}\n{}",
         command.get_program().to_str().unwrap(),
         command.get_args().map(|a| a.to_str()).flatten().join("\n")
@@ -244,7 +244,7 @@ pub fn up(root: &PathBuf, toolchain: &Toolchain, docker_user: &Option<String>) -
 
     inspect.args(["inspect", "-f", "{{.State.Status}}", &toolchain.container()]);
 
-    trace!(
+    warn!(
         "{}\n{}",
         inspect.get_program().to_str().unwrap(),
         inspect.get_args().map(|a| a.to_str()).flatten().join("\n")

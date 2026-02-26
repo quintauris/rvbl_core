@@ -302,7 +302,6 @@ fn main() -> ExitCode {
 }
 
 fn initialize() -> std::io::Result<PathBuf> {
-    unsafe { std::env::set_var("RUST_LOG", "trace") };
     colog::init();
 
     match path::layers_root() {
