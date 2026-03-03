@@ -15,4 +15,10 @@
 /// * `EINVAL` = `4`
 #define EINVAL 4
 
+/// * `EALREADY` = `5`
+#define EALREADY 5
+
+/// * `ECANCELED` = `6`
+#define ECANCELED 6
+
 #endif
