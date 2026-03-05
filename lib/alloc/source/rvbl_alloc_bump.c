@@ -35,8 +35,8 @@ static void *bump_allocate(const rvbl_alloc_area *area, rvbl_uword_t size, rvbl_
     bump_control *control = bump_control_get(area);
 
     if (size <= bump_free_bytes(area, control)) {
-        void *unaligned = area->base + control->offset;
-        void *aligned = rvbl_alloc_align(unaligned, alignment);
+        rvbl_uint8_t *unaligned = area->base + control->offset;
+        rvbl_uint8_t *aligned = rvbl_alloc_align(unaligned, alignment);
 
         control->offset += size + (aligned - unaligned);
 
