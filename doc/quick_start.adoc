@@ -16,9 +16,12 @@ Make sure the following tools are installed and available in your `PATH`:
 
 :pre-commit: https://pre-commit.com[pre-commit]
 :rustup: https://rustup.rs[rustup]
+:gcc: https://gcc.gnu.org[GNU GCC]
 
 * {pre-commit}
 * {rustup}
+* {cmake} (3.28 or higher)
+* {gcc} (13 or higher, gcc-riscv64-unknown-elf)
 
 == Check-out
 
