@@ -8,6 +8,7 @@
 
 /// == <rvbl_test.h>
 
+#include "rvbl/alloc/rvbl_alloc.h"
 #include "rvbl/semihost/rvbl_semihost.h"
 #include "rvbl/type/rvbl_types.h"
 
@@ -95,5 +96,9 @@ void rvbl_hang(void);
 /// ==== Parameters
 /// `rvbl_uint32_t`:: ID of HART that is allowed to continue.
 void rvbl_hart_hang_if_not(rvbl_uint32_t);
+
+/// === Global `rvbl_test_allocator`
+/// Provides a simple 1K allocator for tests.
+extern rvbl_alloc_allocator rvbl_test_allocator;
 
 #endif

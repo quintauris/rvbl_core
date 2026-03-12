@@ -15,8 +15,17 @@
 #define NANOPRINTF_VISIBILITY_STATIC 1
 #include <nanoprintf.h>
 
+#include "rvbl/alloc/rvbl_alloc_bump.h"
 #include "rvbl/c/string.h"
 #include "rvbl/machine/rvbl_machine.h"
+
+#define heap_size 1024
+static rvbl_uint8_t heap[heap_size];
+static rvbl_alloc_area heap_area = {.base = heap, .size = heap_size};
+
+rvbl_alloc_allocator rvbl_test_allocator = {
+    .implementation = &rvbl_alloc_bump_allocator, .area_count = 1, .areas = &heap_area
+};
 
 void rvbl_test_shutdown(const TestResult result)
 {

@@ -14,4 +14,5 @@ rvbl_test${rvbl_toolchain_specific_suffix}.s"
   core
   machine
   c
-  semihost)
+  semihost
+  alloc_bump)

@@ -8,7 +8,6 @@
 
 #include "rvbl/compiler/rvbl_compiler.h"
 #include "rvbl/type/rvbl_types.h"
-#include <stdint.h>
 
 /// === Type `rvbl_alloc_area`
 ///
