@@ -37,7 +37,8 @@ fn execute<I, S>(
     parameters: I,
     toolchain: &Toolchain,
     docker: bool,
-    docker_user: &Option<String>,
+    docker_container: Option<String>,
+    docker_user: Option<String>,
 ) -> Result<ExitCode>
 where
     I: IntoIterator<Item = S>,
@@ -66,7 +67,16 @@ where
             None => {}
         }
 
-        result.args([&toolchain.container(), program]);
+        match docker_container {
+            Some(container) => {
+                result.arg(container);
+            }
+            None => {
+                result.arg(toolchain.container());
+            }
+        }
+
+        result.arg(program);
 
         result
     } else {
@@ -108,7 +118,7 @@ pub fn configure(
     toolchain_target: &str,
     build_type: &String,
     docker: bool,
-    docker_user: &Option<String>,
+    docker_user: Option<String>,
 ) -> Result<ExitCode> {
     let build_path = target.build_path(root, target, toolchain, docker);
     let toolchain_path = toolchain.path().join(format!("{toolchain_target}.cmake"));
@@ -130,6 +140,7 @@ pub fn configure(
         ],
         toolchain,
         docker,
+        None,
         docker_user,
     )
 }
@@ -140,7 +151,7 @@ pub fn build(
     toolchain: &Toolchain,
     jobs: u32,
     docker: bool,
-    docker_user: &Option<String>,
+    docker_user: Option<String>,
 ) -> Result<ExitCode> {
     let build_path = target.build_path(root, target, toolchain, docker);
 
@@ -155,6 +166,7 @@ pub fn build(
         ],
         toolchain,
         docker,
+        None,
         docker_user,
     )
 }
@@ -164,7 +176,7 @@ pub fn test(
     target: &Target,
     toolchain: &Toolchain,
     docker: bool,
-    docker_user: &Option<String>,
+    docker_user: Option<String>,
 ) -> Result<ExitCode> {
     let build_path = target.build_path(root, target, toolchain, docker);
 
@@ -174,14 +186,15 @@ pub fn test(
         ["--test-dir", build_path.to_str().unwrap()],
         toolchain,
         false,
-        &docker_user,
+        None,
+        docker_user,
     )
 }
 
 pub fn provision(
     root: &PathBuf,
     toolchain: &Toolchain,
-    docker_user: &Option<String>,
+    docker_user: Option<String>,
 ) -> Result<ExitCode> {
     execute(
         root,
@@ -194,6 +207,7 @@ pub fn provision(
         ],
         toolchain,
         false,
+        None,
         docker_user,
     )
 }
@@ -201,7 +215,7 @@ pub fn provision(
 fn provision_tools(
     root: &PathBuf,
     toolchain: &Toolchain,
-    docker_user: &Option<String>,
+    docker_user: Option<String>,
 ) -> Result<ExitCode> {
     let tools_manifest_path = root.join("core/tool/Cargo.toml");
     let generators_manifest_path = root.join("quintauris/tool/Cargo.toml");
@@ -219,7 +233,8 @@ fn provision_tools(
         ],
         toolchain,
         true,
-        docker_user,
+        None,
+        docker_user.clone(),
     )?;
     execute(
         root,
@@ -234,11 +249,12 @@ fn provision_tools(
         ],
         toolchain,
         true,
+        None,
         docker_user,
     )
 }
 
-pub fn up(root: &PathBuf, toolchain: &Toolchain, docker_user: &Option<String>) -> Result<ExitCode> {
+pub fn up(root: &PathBuf, toolchain: &Toolchain, docker_user: Option<String>) -> Result<ExitCode> {
     let mut inspect = Command::new("docker");
     let root_string = root.to_str().unwrap();
 
@@ -259,15 +275,15 @@ pub fn up(root: &PathBuf, toolchain: &Toolchain, docker_user: &Option<String>) -
                 let container = toolchain.container();
                 let volume = format!("{root_string}:{root_string}");
                 let image = toolchain.image();
-                let mut parameters = vec![
-                    "run",
-                    "--interactive",
-                    "--tty",
-                    "--detach",
-                    "--name",
-                    &container,
-                    "--volume",
-                    &volume,
+                let mut parameters: Vec<String> = vec![
+                    "run".into(),
+                    "--interactive".into(),
+                    "--tty".into(),
+                    "--detach".into(),
+                    "--name".into(),
+                    container,
+                    "--volume".into(),
+                    volume,
                 ];
 
                 warn!(
@@ -275,17 +291,25 @@ pub fn up(root: &PathBuf, toolchain: &Toolchain, docker_user: &Option<String>) -
                     toolchain.container()
                 );
 
-                match docker_user {
+                match docker_user.clone() {
                     Some(user) => {
-                        parameters.push("--user");
-                        parameters.push(&user);
+                        parameters.push("--user".into());
+                        parameters.push(user);
                     }
                     None => {}
                 }
 
-                parameters.push(&image);
+                parameters.push(image);
 
-                execute(root, "docker", parameters, toolchain, false, docker_user)?;
+                execute(
+                    root,
+                    "docker",
+                    parameters,
+                    toolchain,
+                    false,
+                    None,
+                    docker_user.clone(),
+                )?;
                 provision_tools(root, toolchain, docker_user)
             }
         }
@@ -296,7 +320,7 @@ pub fn up(root: &PathBuf, toolchain: &Toolchain, docker_user: &Option<String>) -
 pub fn down(
     root: &PathBuf,
     toolchain: &Toolchain,
-    docker_user: &Option<String>,
+    docker_user: Option<String>,
 ) -> Result<ExitCode> {
     execute(
         root,
@@ -304,7 +328,8 @@ pub fn down(
         ["stop", &toolchain.container()],
         toolchain,
         false,
-        docker_user,
+        None,
+        docker_user.clone(),
     )
 }
 
@@ -317,7 +342,7 @@ fn extract_parameters(
     let mut result: Vec<String> = vec![];
     let mut target_runner_parameters: &Vec<String> = &vec![];
     let mut runner_parameters: &Vec<String> = &vec![];
-    let mut append_target_runner_parameters = false;
+    let mut runner_parameters_first = false;
 
     for (key, target_runner) in &target_configuration.runners {
         if let Ok(regex) = Regex::new(key) {
@@ -330,7 +355,8 @@ fn extract_parameters(
                     target_runner_parameters = &target_runner.default;
                 }
 
-                append_target_runner_parameters = target_runner.append.unwrap_or(false);
+                runner_parameters_first = target_runner.append.unwrap_or(false)
+                    || runner_configuration.prepend.unwrap_or(false);
 
                 break;
             }
@@ -345,7 +371,7 @@ fn extract_parameters(
         runner_parameters = &runner_configuration.parameters.default;
     }
 
-    if append_target_runner_parameters {
+    if runner_parameters_first {
         result.extend_from_slice(runner_parameters);
         result.extend_from_slice(target_runner_parameters);
     } else {
@@ -354,6 +380,38 @@ fn extract_parameters(
     }
 
     result
+}
+
+fn replace_parameters(
+    root: &PathBuf,
+    file: &PathBuf,
+    target: &Target,
+    parameters: &Vec<String>,
+) -> Vec<String> {
+    parameters
+        .iter()
+        .map(|p| {
+            p.replace(
+                "$file_canonical",
+                file.canonicalize().unwrap().to_str().unwrap(),
+            )
+        })
+        .map(|p| p.replace("$file_path", file.parent().unwrap().to_str().unwrap()))
+        .map(|p| {
+            p.replace(
+                "$filename_we",
+                &PathBuf::from(file.file_stem().unwrap())
+                    .file_name()
+                    .unwrap()
+                    .to_str()
+                    .unwrap(),
+            )
+        })
+        .map(|p| p.replace("$file", file.to_str().unwrap()))
+        .map(|p| p.replace("$machine_path", &target.path().to_str().unwrap()))
+        .map(|p| p.replace("$machine", &target.element.slug()))
+        .map(|p| p.replace("$root", &root.to_str().unwrap()))
+        .collect()
 }
 
 pub fn run(
@@ -373,61 +431,67 @@ pub fn run(
     let runner_configuration = configuration::runner(&runner.configuration())
         .map_err(|e| Error::ConfigurationFileError(e))?;
 
-    for program in runner_configuration.programs.iter() {
-        let program_replaced = program.replace("$machine", &target.element.slug());
+    if file.exists() {
+        for program in runner_configuration.programs.iter() {
+            let program_replaced = program.replace("$machine", &target.element.slug());
+            let parameters = replace_parameters(
+                &root,
+                &file,
+                &target,
+                &extract_parameters(runner, &target_configuration, &runner_configuration, debug),
+            );
 
-        match which(&program_replaced) {
-            Ok(_) => {
-                if file.exists() {
-                    let parameters = extract_parameters(
-                        runner,
-                        &target_configuration,
-                        &runner_configuration,
-                        debug,
-                    );
-                    let parameters_replaced = parameters
-                        .iter()
-                        .map(|p| p.replace("$file_path", file.parent().unwrap().to_str().unwrap()))
-                        .map(|p| p.replace("$file", file.to_str().unwrap()))
-                        .map(|p| p.replace("$machine_path", &target.path().to_str().unwrap()))
-                        .map(|p| p.replace("$machine", &target.element.slug()));
+            if docker && let Some(docker_configuration) = &runner_configuration.docker {
+                result = execute(
+                    root,
+                    &program_replaced,
+                    parameters,
+                    toolchain,
+                    docker,
+                    Some(docker_configuration.container.clone()),
+                    docker_user.clone(),
+                );
+            } else {
+                match which(&program_replaced) {
+                    Ok(_) => {
+                        result = execute(
+                            root,
+                            &program_replaced,
+                            parameters,
+                            toolchain,
+                            docker,
+                            None,
+                            docker_user.clone(),
+                        );
 
-                    result = execute(
-                        root,
-                        &program_replaced,
-                        parameters_replaced,
-                        toolchain,
-                        docker,
-                        docker_user,
-                    );
-
-                    if delay != 0 {
-                        sleep(time::Duration::from_secs(delay.into()));
+                        break;
                     }
-
-                    if let Some(dump) = dump_file {
-                        let dump_path = root
-                            .join(target.build_path(root, target, toolchain, docker))
-                            .join(dump);
-
-                        stdout()
-                            .write_all(&fs::read(&dump_path).map_err(|e| Error::IoError(e))?)
-                            .map_err(|e| Error::IoError(e))?;
-                        println!();
+                    Err(error) => {
+                        result = Err(Error::ProgramError(error));
+                        continue;
                     }
-                } else {
-                    result = Err(Error::IoError(std::io::Error::from(
-                        std::io::ErrorKind::NotFound,
-                    )));
                 }
-
-                break;
             }
-            Err(error) => {
-                result = Err(Error::ProgramError(error));
-                continue;
+
+            if delay != 0 {
+                sleep(time::Duration::from_secs(delay.into()));
+            }
+
+            if let Some(dump) = dump_file {
+                let dump_path = root
+                    .join(target.build_path(root, target, toolchain, docker))
+                    .join(dump);
+
+                stdout()
+                    .write_all(&fs::read(&dump_path).map_err(|e| Error::IoError(e))?)
+                    .map_err(|e| Error::IoError(e))?;
+                println!();
             }
         }
+    } else {
+        result = Err(Error::IoError(std::io::Error::from(
+            std::io::ErrorKind::NotFound,
+        )));
     }
 
     result

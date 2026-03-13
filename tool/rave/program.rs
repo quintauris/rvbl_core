@@ -108,7 +108,7 @@ fn main() -> ExitCode {
                             &toolchain_target,
                             &args.build_type,
                             args.docker,
-                            &args.docker_user,
+                            args.docker_user.clone(),
                         ) {
                             Ok(code) => {
                                 if code != 0.into() {
@@ -135,7 +135,7 @@ fn main() -> ExitCode {
                             &toolchain,
                             args.jobs,
                             args.docker,
-                            &args.docker_user,
+                            args.docker_user.clone(),
                         ) {
                             Ok(code) => {
                                 if code != 0.into() {
@@ -161,7 +161,7 @@ fn main() -> ExitCode {
                             &target,
                             &toolchain,
                             args.docker,
-                            &args.docker_user,
+                            args.docker_user.clone(),
                         ) {
                             Ok(code) => {
                                 if code != 0.into() {
@@ -190,7 +190,7 @@ fn main() -> ExitCode {
                         toolchain.element.moniker(),
                     );
 
-                    match command::provision(&root, &toolchain, &args.docker_user) {
+                    match command::provision(&root, &toolchain, args.docker_user.clone()) {
                         Ok(code) => {
                             if code != 0.into() {
                                 result = code;
@@ -209,7 +209,7 @@ fn main() -> ExitCode {
                         "Spinning up Docker container for toolchain {} ...",
                         toolchain.element.moniker(),
                     );
-                    match command::up(&root, &toolchain, &args.docker_user) {
+                    match command::up(&root, &toolchain, args.docker_user.clone()) {
                         Ok(code) => {
                             if code != 0.into() {
                                 result = code;
@@ -228,7 +228,7 @@ fn main() -> ExitCode {
                         "Winding down Docker container for toolchain {} ...",
                         toolchain.element.moniker(),
                     );
-                    match command::down(&root, &toolchain, &args.docker_user) {
+                    match command::down(&root, &toolchain, args.docker_user.clone()) {
                         Ok(code) => {
                             if code != 0.into() {
                                 result = code;

@@ -66,9 +66,16 @@ pub struct Parameters {
 }
 
 #[derive(Serialize, Deserialize, Debug, Default)]
+pub struct Docker {
+    pub container: String,
+}
+
+#[derive(Serialize, Deserialize, Debug, Default)]
 pub struct Runner {
     pub programs: Vec<String>,
     pub parameters: Parameters,
+    pub docker: Option<Docker>,
+    pub prepend: Option<bool>,
 }
 
 pub fn runner(path: &PathBuf) -> Result<Runner> {
