@@ -110,7 +110,7 @@ pub fn toolchain_target<'a>(
     let default = target_configuration
         .default_toolchain_target
         .as_ref()
-        .unwrap_or(&String::from("riscv32_ilp32"))
+        .unwrap_or(&String::from("rt_europa_m32"))
         .clone();
     let last = configuration
         .last_toolchain_target

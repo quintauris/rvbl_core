@@ -332,7 +332,7 @@ qemu.system32-bin
 .Example: configuring, building and testing a machine
 ```
 % rave make --toolchain gnu.gcc --machine qemu.virt --configure --build --test
-> cmake -S <...>/qemu/machine/virt -B <...>/build/local/gnu_gcc/qemu_virt -D CMAKE_BUILD_TYPE=Release --toolchain <...>/gnu/toolchain/gcc/riscv32_ilp32.cmake
+> cmake -S <...>/qemu/machine/virt -B <...>/build/local/gnu_gcc/qemu_virt -D CMAKE_BUILD_TYPE=Release --toolchain <...>/gnu/toolchain/gcc/rt_europa_m32.cmake
 ...
 > cmake --build <...>/build/local/gnu_gcc/qemu_virt --parallel 1
 ...
@@ -350,7 +350,7 @@ qemu.system32-bin
 > docker run --interactive --tty --detach --name rvbl.gnu_gcc --volume <...>:<...> rvbl:gnu.gcc
 ...
 % rave make --toolchain gnu.gcc --toolchain --machine qemu.virt --configure --build --test
-> docker exec --interactive --tty --env RVBL_TOOL=<...>/build/docker/gnu_gcc/tool/release --env RVBL_ROOT=<...> rvbl.gnu_gcc cmake -S <...>/qemu/machine/virt -B <...>/build/docker/gnu_gcc/qemu_virt -D CMAKE_BUILD_TYPE=Release --toolchain <...>/gnu/toolchain/gcc/riscv32_ilp32.cmake
+> docker exec --interactive --tty --env RVBL_TOOL=<...>/build/docker/gnu_gcc/tool/release --env RVBL_ROOT=<...> rvbl.gnu_gcc cmake -S <...>/qemu/machine/virt -B <...>/build/docker/gnu_gcc/qemu_virt -D CMAKE_BUILD_TYPE=Release --toolchain <...>/gnu/toolchain/gcc/rt_europa_m32.cmake
 ...
 ```
 
