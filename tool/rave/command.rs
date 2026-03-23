@@ -335,6 +335,7 @@ pub fn down(
 
 fn extract_parameters(
     runner: &Runner,
+    target: &Target,
     target_configuration: &crate::configuration::Target,
     runner_configuration: &crate::configuration::Runner,
     debug: bool,
@@ -350,6 +351,12 @@ fn extract_parameters(
                 if debug {
                     if let Some(parameters) = target_runner.debug.as_ref() {
                         target_runner_parameters = &parameters;
+                    } else {
+                        warn!(
+                            "No debug parameters defined for target {}, using defaults.",
+                            target
+                        );
+                        target_runner_parameters = &target_runner.default;
                     }
                 } else {
                     target_runner_parameters = &target_runner.default;
@@ -432,20 +439,27 @@ pub fn run(
         .map_err(|e| Error::ConfigurationFileError(e))?;
 
     if file.exists() {
+        let parameters = replace_parameters(
+            &root,
+            &file,
+            &target,
+            &extract_parameters(
+                runner,
+                target,
+                &target_configuration,
+                &runner_configuration,
+                debug,
+            ),
+        );
+
         for program in runner_configuration.programs.iter() {
             let program_replaced = program.replace("$machine", &target.element.slug());
-            let parameters = replace_parameters(
-                &root,
-                &file,
-                &target,
-                &extract_parameters(runner, &target_configuration, &runner_configuration, debug),
-            );
 
             if docker && let Some(docker_configuration) = &runner_configuration.docker {
                 result = execute(
                     root,
                     &program_replaced,
-                    parameters,
+                    &parameters,
                     toolchain,
                     docker,
                     Some(docker_configuration.container.clone()),
@@ -457,7 +471,7 @@ pub fn run(
                         result = execute(
                             root,
                             &program_replaced,
-                            parameters,
+                            &parameters,
                             toolchain,
                             docker,
                             None,
