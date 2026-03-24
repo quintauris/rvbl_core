@@ -14,7 +14,8 @@ rvbl_static_library(
   "${CMAKE_CURRENT_LIST_DIR}/include/rvbl/c"
   LIBRARIES
   compiler
-  core)
+  core
+  alloc_bump)
 
 rvbl_test(NAME string LIBRARIES c)
 rvbl_test(NAME memset LIBRARIES c)
