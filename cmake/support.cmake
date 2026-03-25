@@ -539,15 +539,30 @@ function(rvbl_test)
   cmake_parse_arguments(PARSE_ARGV 0 arg "" "NAME;TIMEOUT;EXPECTED_OUTPUT"
                         "LIBRARIES")
 
-  rvbl_executable(
-    NAME
-    test_${arg_NAME}
-    SOURCES
-    ${CMAKE_CURRENT_SOURCE_DIR}/tests/${arg_NAME}.c
-    LIBRARIES
-    test
-    ${arg_LIBRARIES}
-    TEST)
+  if(DEFINED arg_EXPECTED_OUTPUT)
+    rvbl_executable(
+      NAME
+      test_${arg_NAME}
+      SOURCES
+      ${CMAKE_CURRENT_SOURCE_DIR}/tests/${arg_NAME}.c
+      LIBRARIES
+      test
+      ${arg_LIBRARIES}
+      TEST
+      TEST_EXPECTED_OUTPUT
+      ${arg_EXPECTED_OUTPUT})
+  else()
+    rvbl_executable(
+      NAME
+      test_${arg_NAME}
+      SOURCES
+      ${CMAKE_CURRENT_SOURCE_DIR}/tests/${arg_NAME}.c
+      LIBRARIES
+      test
+      ${arg_LIBRARIES}
+      TEST)
+  endif()
+
 endfunction()
 
 macro(rvbl_use)
