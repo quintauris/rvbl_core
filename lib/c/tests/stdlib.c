@@ -1,6 +1,9 @@
 #include "rvbl/c/stdlib.h"
 #include "rvbl/test/rvbl_test.h"
 
+// Some linkers might fail if this symbol is not defined, even if it is not used
+rvbl_alloc_allocator rvbl_c_stdlib_allocator;
+
 int main(void)
 {
     rvbl_hart_hang_if_not(0);
