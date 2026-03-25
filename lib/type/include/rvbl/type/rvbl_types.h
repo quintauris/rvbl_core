@@ -78,7 +78,9 @@ typedef enum rvbl_result_t
     /// * `rvbl_result_error_busy` = `4`
     rvbl_result_error_busy = 4,
     /// * `rvbl_result_error_state` = `5`
-    rvbl_result_error_state = 5
+    rvbl_result_error_state = 5,
+    /// * `rvbl_result_error_out_of_memory` = `6`
+    rvbl_result_error_out_of_memory = 6
 } rvbl_result_t;
 
 #endif
