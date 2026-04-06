@@ -1,3 +1,5 @@
+get_property(rvbl_machine_dir GLOBAL PROPERTY rvbl_machine_dir)
+
 rvbl_static_library(
   NAME
   test
@@ -6,6 +8,7 @@ rvbl_static_library(
   "${CMAKE_CURRENT_LIST_DIR}/source/\
 rvbl_test${rvbl_toolchain_specific_suffix}.s"
   "${CMAKE_CURRENT_LIST_DIR}/source/rvbl_test.c"
+  "${rvbl_machine_dir}/source/rvbl_test.c"
   INCLUDES
   "${CMAKE_CURRENT_SOURCE_DIR}/../../third_party/nanoprintf"
   "${CMAKE_CURRENT_LIST_DIR}/include"

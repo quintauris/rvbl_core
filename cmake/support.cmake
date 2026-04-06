@@ -127,13 +127,12 @@ source \"bootstrap.sh\".")
 
   # Configure machine library
   add_library(
-    rvbl_machine STATIC
-    ${generated_files_c} ${rvbl_machine_dir}/source/rvbl_configuration.c
-    ${rvbl_machine_dir}/source/rvbl_test.c)
+    rvbl_machine STATIC ${generated_files_c}
+                        ${rvbl_machine_dir}/source/rvbl_configuration.c)
   target_include_directories(rvbl_machine
                              PUBLIC ${rvbl_machine_dir}/generated/include)
   target_link_libraries(
-    rvbl_machine PUBLIC rvbl_core rvbl_boot rvbl_test
+    rvbl_machine PUBLIC rvbl_core rvbl_boot
                         $<LIST:TRANSFORM,${arg_LIBRARIES},PREPEND,rvbl_>)
 endfunction()
 
