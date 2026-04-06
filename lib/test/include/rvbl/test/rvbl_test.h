@@ -78,6 +78,31 @@ void rvbl_test_cause_store_fault(void);
 /// Initializes test support backends (e.g. RISC-V Semihosting).
 void rvbl_test_initialize(void);
 
+/// === Type `rvbl_test_interrupt_control`
+/// Trap capabilities block.
+typedef struct rvbl_test_interrupt_control
+{
+    /// `can_trigger_interrupt`:: Whether this machine supports interrupt
+    /// triggering for testing purposes.
+    rvbl_bool_t can_trigger_interrupt;
+
+    /// `interrupt_code`:: Code of interrupt triggered by `trigger_interrupt`.
+    rvbl_uint32_t interrupt_code;
+
+    /// `prepare_interrupt`:: Pointer to function that prepares triggering of
+    /// `interrupt_code`.
+    void (*prepare_interrupt)(void);
+
+    /// `trigger_interrupt`:: Pointer to function that triggers `interrupt_code`,
+    /// possibly asynchronously.
+    void (*trigger_interrupt)(void);
+
+    /// `cleanup_interrupt`:: Pointer to function that cleans-up after
+    /// `interrupt_code` has been triggered e.g. clear interrupt-pending
+    /// flag(s).
+    void (*cleanup_interrupt)(void);
+} rvbl_test_interrupt_control;
+
 /// === Function `rvbl_test_initialize`
 /// Formats and writes log message.
 ///
@@ -100,5 +125,13 @@ void rvbl_hart_hang_if_not(rvbl_uint32_t);
 /// === Global `rvbl_test_allocator`
 /// Provides a simple 1K allocator for tests.
 extern rvbl_alloc_allocator rvbl_test_allocator;
+
+/// === Global `rvbl_test_machine_interrupt_control`
+/// Machine-mode interrupt triggering capabilities, for testing.
+extern const rvbl_test_interrupt_control rvbl_test_machine_interrupt_control;
+
+/// === Global `rvbl_test_machine_interrupt_control`
+/// Supervisor-mode interrupt triggering capabilities, for testing.
+extern const rvbl_test_interrupt_control rvbl_test_supervisor_interrupt_control;
 
 #endif

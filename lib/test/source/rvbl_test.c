@@ -20,7 +20,7 @@
 #include "rvbl/machine/rvbl_machine.h"
 
 #define heap_size 1024
-static rvbl_uint8_t heap[heap_size];
+__attribute__((aligned(4))) static rvbl_uint8_t heap[heap_size];
 static rvbl_alloc_area heap_area = {.base = heap, .size = heap_size};
 
 rvbl_alloc_allocator rvbl_test_allocator = {
