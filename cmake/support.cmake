@@ -134,6 +134,10 @@ source \"bootstrap.sh\".")
   target_link_libraries(
     rvbl_machine PUBLIC rvbl_core rvbl_boot
                         $<LIST:TRANSFORM,${arg_LIBRARIES},PREPEND,rvbl_>)
+
+  install(TARGETS rvbl_machine)
+  install(FILES ${rvbl_machine_dir}/linker/${rvbl_linker_id}.ld
+          DESTINATION linker/machine)
 endfunction()
 
 function(rvbl_compute_model_dependencies)
@@ -192,6 +196,8 @@ function(rvbl_generate_c_files)
 
   set(${arg_OUTPUT_VARIABLE} ${generated_files})
 
+  install(FILES ${generated_files} DESTINATION include/machine)
+
   return(PROPAGATE ${arg_OUTPUT_VARIABLE})
 endfunction()
 
@@ -227,6 +233,8 @@ function(rvbl_generate_linker_files)
   add_custom_target(machine_linker_files DEPENDS ${generated_files})
 
   set(${arg_OUTPUT_VARIABLE} ${generated_files})
+
+  install(FILES ${generated_files} DESTINATION linker/machine)
 
   return(PROPAGATE ${arg_OUTPUT_VARIABLE})
 endfunction()
@@ -285,6 +293,8 @@ function(rvbl_generate_machine_documentation)
     list(APPEND html_list ${html_output})
   endforeach()
 
+  install(FILES ${html_list} DESTINATION doc/lib/machine)
+
   add_custom_target(machine_doc_files ALL DEPENDS ${html_list})
 endfunction()
 
@@ -305,6 +315,8 @@ function(rvbl_library_documentation module)
     COMMENT "Generating documentation for ${module} ...")
   add_custom_target(${module}_doc ALL
                     DEPENDS "${documentation_path}/${module}.html")
+  install(FILES ${documentation_path}/${module}.html
+          DESTINATION doc/lib/${module})
 endfunction()
 
 function(rvbl_interface_library)
@@ -316,6 +328,16 @@ function(rvbl_interface_library)
     rvbl_${arg_NAME} INTERFACE $<LIST:TRANSFORM,${arg_LIBRARIES},PREPEND,rvbl_>)
 
   rvbl_library_documentation(${arg_NAME})
+  get_target_property(sources rvbl_${arg_NAME} SOURCES)
+  set(headers "")
+
+  foreach(item ${sources})
+    if(${item} MATCHES ".h$")
+      list(APPEND headers ${item})
+    endif()
+  endforeach()
+
+  install(FILES ${headers} DESTINATION include/${arg_NAME})
 endfunction()
 
 function(rvbl_static_library)
@@ -327,6 +349,18 @@ function(rvbl_static_library)
                         PUBLIC $<LIST:TRANSFORM,${arg_LIBRARIES},PREPEND,rvbl_>)
 
   rvbl_library_documentation(${arg_NAME})
+
+  install(TARGETS rvbl_${arg_NAME})
+  get_target_property(sources rvbl_${arg_NAME} SOURCES)
+  set(headers "")
+
+  foreach(item ${sources})
+    if(${item} MATCHES ".h$")
+      list(APPEND headers ${item})
+    endif()
+  endforeach()
+
+  install(FILES ${headers} DESTINATION include/${arg_NAME})
 endfunction()
 
 function(rvbl_executable)
@@ -356,6 +390,8 @@ ${rvbl_linker_id}.ld" LINKER_SEARCH_DIRECTORIES "${rvbl_toolchain_dir};\
 ${rvbl_machine_dir}/generated/linker")
   add_dependencies(${arg_NAME} machine_c_files machine_linker_files)
 
+  install(TARGETS ${arg_NAME})
+
   if(arg_BINARY)
     add_custom_command(
       TARGET ${arg_NAME}
@@ -378,6 +414,8 @@ ${rvbl_machine_dir}/generated/linker")
 shall be manually resized to ${arg_BINARY_SIZE}.")
       endif()
     endif()
+
+    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/${arg_NAME}.bin DESTINATION bin)
   endif()
 
   if(arg_TEST)
@@ -613,8 +651,12 @@ function(rvbl_layer_documentation)
     "DEVICE_MODELS;REGISTER_SET_MODELS;CPU_MODELS;PARAMETERS")
 
   make_directory(${arg_TARGET_DIR})
-  set(temp_dir ${arg_SOURCE_DIR}/generated)
-  make_directory(${temp_dir})
+  set(target_dir_adoc ${arg_SOURCE_DIR}/generated)
+  set(target_dir_html ${arg_TARGET_DIR})
+  cmake_path(GET arg_SOURCE_DIR PARENT_PATH layer_dir)
+  cmake_path(GET layer_dir STEM layer_name)
+  make_directory(${target_dir_adoc})
+  make_directory(${target_dir_html})
 
   find_program(ASCIIDOCTOR NAMES asciidoctor REQUIRED)
   find_program(EXTRACTOR_ASCIIDOC NAMES asciidoc_extractor REQUIRED)
@@ -623,10 +665,10 @@ function(rvbl_layer_documentation)
   file(
     GLOB_RECURSE inputs
     LIST_DIRECTORIES false
-    RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}
-    "../lib/*.h")
+    RELATIVE ${arg_SOURCE_DIR}
+    "${arg_SOURCE_DIR}/../lib/*.h")
   list(SORT inputs)
-  set(outputs_api ${temp_dir}/api.adoc)
+  set(outputs_api ${target_dir_adoc}/api.adoc)
 
   add_custom_command(
     OUTPUT ${outputs_api}
@@ -641,7 +683,7 @@ function(rvbl_layer_documentation)
     SOURCE_DIR
     ${arg_SOURCE_DIR}
     TARGET_DIR
-    ${arg_TARGET_DIR}
+    ${target_dir_adoc}
     RVBL_ROOT
     ${arg_RVBL_ROOT}
     GENERATOR
@@ -654,7 +696,7 @@ function(rvbl_layer_documentation)
     SOURCE_DIR
     ${arg_SOURCE_DIR}
     TARGET_DIR
-    ${arg_TARGET_DIR}
+    ${target_dir_adoc}
     RVBL_ROOT
     ${arg_RVBL_ROOT}
     GENERATOR
@@ -667,7 +709,7 @@ function(rvbl_layer_documentation)
     SOURCE_DIR
     ${arg_SOURCE_DIR}
     TARGET_DIR
-    ${arg_TARGET_DIR}
+    ${target_dir_adoc}
     RVBL_ROOT
     ${arg_RVBL_ROOT}
     GENERATOR
@@ -683,20 +725,22 @@ function(rvbl_layer_documentation)
 
   foreach(input ${inputs})
     get_filename_component(file_name_we ${input} NAME_WE)
-    list(APPEND outputs_doc ${arg_TARGET_DIR}/${file_name_we}.html)
+    list(APPEND outputs_doc ${target_dir_html}/${file_name_we}.html)
   endforeach()
 
   add_custom_command(
     OUTPUT ${outputs_doc}
-    COMMAND ${ASCIIDOCTOR} --doctype book -D ${arg_TARGET_DIR} ${inputs}
+    COMMAND ${ASCIIDOCTOR} --doctype book -D ${target_dir_html} ${inputs}
     DEPENDS ${inputs} ${outputs_api} ${outputs_model}
     COMMENT "Generating documentation...")
 
   file(GLOB glob "${arg_SOURCE_DIR}/*.html" "${arg_SOURCE_DIR}/*.png")
-  file(COPY ${glob} DESTINATION ${arg_TARGET_DIR})
+  file(COPY ${glob} DESTINATION ${target_dir_html})
 
   add_custom_target(
     docs ALL
     DEPENDS ${outputs_api} ${outputs_model_cpu} ${outputs_model_register_set}
             ${outputs_model_device} ${outputs_doc})
+
+  install(DIRECTORY ${target_dir_html} DESTINATION doc/layer/${layer_name})
 endfunction()
