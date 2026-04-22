@@ -8,7 +8,7 @@ rvbl_static_library(
   "${CMAKE_CURRENT_LIST_DIR}/include"
   LIBRARIES
   compiler
-  core)
+  type)
 
 rvbl_test(NAME alloc LIBRARIES alloc)
 

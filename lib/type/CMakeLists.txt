@@ -1,6 +1,6 @@
 rvbl_interface_library(
   NAME
-  core
+  type
   SOURCES
   "${CMAKE_CURRENT_SOURCE_DIR}/include/rvbl/type/rvbl_types.h"
   INCLUDES

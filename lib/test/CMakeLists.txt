@@ -14,7 +14,7 @@ rvbl_test${rvbl_toolchain_specific_suffix}.s"
   "${CMAKE_CURRENT_LIST_DIR}/include"
   "${CMAKE_CURRENT_BINARY_DIR}/../../machine/${machine}/generated"
   LIBRARIES
-  core
+  type
   machine
   c
   semihost

@@ -7,6 +7,6 @@ rvbl_static_library(
   INCLUDES
   "${CMAKE_CURRENT_LIST_DIR}/include"
   LIBRARIES
-  core)
+  type)
 
 rvbl_test(NAME uart_buffered LIBRARIES uart)
