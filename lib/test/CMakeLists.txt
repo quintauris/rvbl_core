@@ -7,7 +7,7 @@ rvbl_static_library(
   "${CMAKE_CURRENT_LIST_DIR}/include/rvbl/test/rvbl_test.h"
   "${CMAKE_CURRENT_LIST_DIR}/source/\
 rvbl_test${rvbl_toolchain_specific_suffix}.s"
-  "${CMAKE_CURRENT_LIST_DIR}/source/rvbl_test.c"
+  "${CMAKE_CURRENT_LIST_DIR}/source/rvbl_test_portable.c"
   "${rvbl_machine_dir}/source/rvbl_test.c"
   INCLUDES
   "${CMAKE_CURRENT_SOURCE_DIR}/../../third_party/nanoprintf"
