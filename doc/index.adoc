@@ -30,6 +30,7 @@ The {project} is a collaborative effort devoted to building a common _low-level_
 * 🏛️ xref:architecture.adoc[Architecture]
 * 🚧 xref:bootstrap_build.adoc[Bootstrap and Build System]
 * 📦 `core` layer
+** 🛠️ xref:meta_model.adoc[Meta-Model]
 ** 🧩 xref:models.adoc[Models]
 ** 🧑🏽‍💻 xref:apis.adoc[Library APIs]
 ** 🔗 xref:third_party.adoc[Third-party]

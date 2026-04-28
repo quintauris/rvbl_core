@@ -1,0 +1,15 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "include.schema.json",
+    "description": "Include schema for RISC-V",
+    "title": "Include",
+    "type": "object",
+    "properties": {
+        "include": {
+            "type": "string"
+        }
+    },
+    "required": [
+        "include"
+    ]
+}

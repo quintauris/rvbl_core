@@ -1,0 +1,10 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "register_set.schema.json",
+    "description": "Register Set schema for RISC-V",
+    "title": "Register Set",
+    "type": "array",
+    "items": {
+        "$ref": "register.schema.json"
+    }
+}

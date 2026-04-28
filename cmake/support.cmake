@@ -147,8 +147,8 @@ function(rvbl_compute_model_dependencies)
   execute_process(
     COMMAND
       ${MODEL_PARSER} --input ${arg_MODEL} --meta-model
-      ${rvbl_root}/quintauris/meta/machine.schema.json --search-path
-      ${rvbl_root} --dry-run
+      ${rvbl_root}/core/meta/machine.schema.json --search-path ${rvbl_root}
+      --dry-run
     OUTPUT_VARIABLE model_files
     # COMMAND_ECHO STDOUT ECHO_OUTPUT_VARIABLE
   )
@@ -173,8 +173,8 @@ function(rvbl_generate_c_files)
   execute_process(
     COMMAND
       ${GENERATOR_C} --input ${arg_MODEL} --meta-model
-      ${rvbl_root}/quintauris/meta/machine.schema.json --search-path
-      ${rvbl_root} --dry-run
+      ${rvbl_root}/core/meta/machine.schema.json --search-path ${rvbl_root}
+      --dry-run
     WORKING_DIRECTORY ${arg_PATH}
     OUTPUT_VARIABLE generated_files
     # COMMAND_ECHO STDOUT ECHO_OUTPUT_VARIABLE
@@ -186,8 +186,7 @@ function(rvbl_generate_c_files)
     OUTPUT ${generated_files}
     COMMAND
       ${GENERATOR_C} --input ${arg_MODEL} --meta-model
-      ${rvbl_root}/quintauris/meta/machine.schema.json --search-path
-      ${rvbl_root}
+      ${rvbl_root}/core/meta/machine.schema.json --search-path ${rvbl_root}
     DEPENDS ${arg_DEPENDENCIES}
     WORKING_DIRECTORY ${arg_PATH}
     COMMENT "Generating machine headers from ${arg_MODEL} ...")
@@ -209,8 +208,8 @@ function(rvbl_generate_linker_files)
   execute_process(
     COMMAND
       ${GENERATOR_LINKER} --input ${arg_MODEL} --meta-model
-      ${rvbl_root}/quintauris/meta/machine.schema.json --search-path
-      ${rvbl_root} --dry-run
+      ${rvbl_root}/core/meta/machine.schema.json --search-path ${rvbl_root}
+      --dry-run
     WORKING_DIRECTORY ${arg_PATH}
     OUTPUT_VARIABLE generated_files
     # COMMAND_ECHO STDOUT ECHO_OUTPUT_VARIABLE
@@ -222,8 +221,7 @@ function(rvbl_generate_linker_files)
     OUTPUT ${generated_files}
     COMMAND
       ${GENERATOR_LINKER} --input ${arg_MODEL} --meta-model
-      ${rvbl_root}/quintauris/meta/machine.schema.json --search-path
-      ${rvbl_root}
+      ${rvbl_root}/core/meta/machine.schema.json --search-path ${rvbl_root}
     DEPENDS ${arg_DEPENDENCIES}
     WORKING_DIRECTORY ${arg_PATH}
     COMMENT "Generating linker files from ${arg_MODEL} ..."
@@ -248,8 +246,7 @@ function(rvbl_generate_machine_documentation)
     OUTPUT ${arg_PATH}/model.adoc ${arg_PATH}/model.html
     COMMAND
       ${GENERATOR_ASCIIDOC_MACHINE} --input ${arg_MODEL} --meta-model
-      ${rvbl_root}/quintauris/meta/machine.schema.json --search-path
-      ${rvbl_root}
+      ${rvbl_root}/core/meta/machine.schema.json --search-path ${rvbl_root}
     COMMAND ${ASCIIDOCTOR} -o ${arg_PATH}/model.html ${arg_PATH}/model.adoc
     WORKING_DIRECTORY ${arg_PATH}
     DEPENDS ${arg_DEPENDENCIES}
@@ -633,8 +630,8 @@ function(rvbl_layer_documentation_model)
       OUTPUT ${output_adoc}
       COMMAND
         ${GENERATOR_ASCIIDOC_${arg_GENERATOR}} --input ${input} --meta-model
-        ${arg_RVBL_ROOT}/quintauris/meta/${arg_GENERATOR}.schema.json
-        --search-path ${arg_RVBL_ROOT} $<$<BOOL:${arg_PARAMETERS}>:--parameter>
+        ${arg_RVBL_ROOT}/core/meta/${arg_GENERATOR}.schema.json --search-path
+        ${arg_RVBL_ROOT} $<$<BOOL:${arg_PARAMETERS}>:--parameter>
         ${arg_PARAMETERS}
       COMMAND ${CMAKE_COMMAND} -E rename ${temp_dir}/model.adoc ${output_adoc}
       DEPENDS ${input}

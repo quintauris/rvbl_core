@@ -1,5 +1,5 @@
 {
-    "$schema": "../../../quintauris/meta/device.schema.json",
+    "$schema": "../../../core/meta/device.schema.json",
     "name": "uart_ns16550",
     "instance": "$INSTANCE",
     "description": "Simple (write-only) Hardware-Software Interface model for https://en.wikipedia.org/wiki/16550_UART[NS16550] UART.",

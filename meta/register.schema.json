@@ -1,0 +1,61 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "register.schema.json",
+    "description": "Register schema for RISC-V",
+    "title": "Register",
+    "type": "object",
+    "properties": {
+        "name": {
+            "type": "string"
+        },
+        "description": {
+            "type": "string"
+        },
+        "class": {
+            "enum": [
+                "control_status",
+                "memory_mapped"
+            ]
+        },
+        "width": {
+            "type": "integer"
+        },
+        "offset": {
+            "type": "string"
+        },
+        "values": {
+            "type": "array",
+            "items": {
+                "$ref": "value.schema.json"
+            }
+        },
+        "fields": {
+            "type": "array",
+            "items": {
+                "$ref": "field.schema.json"
+            }
+        },
+        "indexing": {
+            "type": "object",
+            "properties": {
+                "stride": {
+                    "type": "string"
+                },
+                "lower_bound": {
+                    "type": "string"
+                },
+                "upper_bound": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "upper_bound"
+            ]
+        }
+    },
+    "required": [
+        "name",
+        "class",
+        "offset"
+    ]
+}
