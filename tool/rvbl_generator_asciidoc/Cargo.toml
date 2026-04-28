@@ -1,0 +1,31 @@
+[package]
+name = "rvbl_generator_asciidoc"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+clap = { version = "4.5.58", features = ["derive"] }
+colog = "1.4.0"
+env = "1.0.1"
+log = "0.4.29"
+rvbl_model = { path = "../rvbl_model" }
+
+[[bin]]
+name = "generator_asciidoc_cpu"
+path = "program_cpu.rs"
+
+[[bin]]
+name = "generator_asciidoc_machine"
+path = "program_machine.rs"
+
+[[bin]]
+name = "generator_asciidoc_device"
+path = "program_device.rs"
+
+[[bin]]
+name = "generator_asciidoc_register_set"
+path = "program_register_set.rs"
+
+[lib]
+name = "rvbl_generator_asciidoc"
+path = "lib.rs"

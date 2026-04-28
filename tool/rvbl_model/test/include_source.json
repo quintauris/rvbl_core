@@ -1,0 +1,7 @@
+{
+    "data": {
+        "include": "include_target.json",
+        "PARAMETER1": "foo",
+        "PARAMETER2": "bar"
+    }
+}
