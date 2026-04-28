@@ -12,7 +12,6 @@ The {project} is a collaborative effort devoted to building a common _low-level_
 * A well-documented, model-driven and modular software architecture
 * A hardware (e.g. devices, machines, etc) meta-model definition
 * A CMake-based build environment, including toolchain files
-* Basic device and machine models
 * Model to code generation tools
 * Run-time libraries, including tests
 * Machine configurations
@@ -31,6 +30,5 @@ The {project} is a collaborative effort devoted to building a common _low-level_
 * 🚧 xref:bootstrap_build.adoc[Bootstrap and Build System]
 * 📦 `core` layer
 ** 🛠️ xref:meta_model.adoc[Meta-Model]
-** 🧩 xref:models.adoc[Models]
 ** 🧑🏽‍💻 xref:apis.adoc[Library APIs]
 ** 🔗 xref:third_party.adoc[Third-party]
