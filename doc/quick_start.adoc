@@ -17,11 +17,13 @@ Make sure the following tools are installed and available in your `PATH`:
 :pre-commit: https://pre-commit.com[pre-commit]
 :rustup: https://rustup.rs[rustup]
 :gcc: https://gcc.gnu.org[GNU GCC]
+:qemu-system-riscv32: https://www.qemu.org/docs/master/system/target-riscv.html[QEMU RISC-V System Emulator]
 
 * {pre-commit}
 * {rustup}
 * {cmake} (3.28 or higher)
 * {gcc} (13 or higher, gcc-riscv64-unknown-elf)
+* {qemu-system-riscv32} (10.0.2 recommended)
 
 == Check-out
 
