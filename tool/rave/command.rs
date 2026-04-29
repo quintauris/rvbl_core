@@ -218,7 +218,6 @@ fn provision_tools(
     docker_user: Option<String>,
 ) -> Result<ExitCode> {
     let tools_manifest_path = root.join("core/tool/Cargo.toml");
-    let generators_manifest_path = root.join("quintauris/tool/Cargo.toml");
 
     execute(
         root,
@@ -235,22 +234,6 @@ fn provision_tools(
         true,
         None,
         docker_user.clone(),
-    )?;
-    execute(
-        root,
-        "cargo",
-        [
-            "build",
-            "--release",
-            "--manifest-path",
-            &generators_manifest_path.to_str().unwrap(),
-            "--target-dir",
-            &toolchain.tools_build_path(root, true).to_str().unwrap(),
-        ],
-        toolchain,
-        true,
-        None,
-        docker_user,
     )
 }
 
