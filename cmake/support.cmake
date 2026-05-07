@@ -1,5 +1,5 @@
 function(rvbl_machine)
-  cmake_parse_arguments(PARSE_ARGV 0 arg "" "" "LIBRARIES;RUNNERS")
+  cmake_parse_arguments(PARSE_ARGV 0 arg "" "" "LIBRARIES;RUNNERS;BOOTLOADER")
 
   if(DEFINED ENV{RVBL_ROOT})
     set(rvbl_root $ENV{RVBL_ROOT})
@@ -92,6 +92,10 @@ source \"bootstrap.sh\".")
   set_property(GLOBAL PROPERTY rvbl_tool ${rvbl_tool})
   set(rvbl_machine_dir ${CMAKE_CURRENT_SOURCE_DIR})
   set_property(GLOBAL PROPERTY rvbl_machine_dir ${rvbl_machine_dir})
+
+  if(arg_BOOTLOADER)
+    set_property(GLOBAL PROPERTY rvbl_machine_bootloader ${arg_BOOTLOADER})
+  endif()
 
   # Run generators
   set(model_path ${rvbl_machine_dir}/model/model.json)
@@ -555,16 +559,32 @@ ${rvbl_linker_id}_flash.ld" LINKER_SEARCH_DIRECTORIES "${rvbl_toolchain_dir};\
 ${rvbl_machine_dir}/generated/linker")
 
     if(arg_BINARY)
-      add_custom_command(
-        TARGET ${flash_executable_name}
-        POST_BUILD
-        COMMAND
-          ${OBJCOPY} $<TARGET_FILE:${flash_executable_name}>
-          ${rvbl_elf_copy_parameters}
-          ${CMAKE_CURRENT_BINARY_DIR}/${flash_executable_name}.bin
+      add_custom_target(
+        ${flash_executable_name}_binary ALL
+        ${OBJCOPY} $<TARGET_FILE:${flash_executable_name}>
+        ${rvbl_elf_copy_parameters}
+        ${CMAKE_CURRENT_BINARY_DIR}/${flash_executable_name}.bin
         BYPRODUCTS ${CMAKE_CURRENT_BINARY_DIR}/${flash_executable_name}.bin
-        COMMENT "Converting $<TARGET_FILE:${flash_executable_name}> to binary \
-image...")
+        COMMENT
+          "Converting $<TARGET_FILE:${flash_executable_name}> to binary image \
+...")
+
+      get_property(rvbl_machine_bootloader GLOBAL
+                   PROPERTY rvbl_machine_bootloader)
+
+      if(rvbl_machine_bootloader)
+        add_custom_command(
+          TARGET ${flash_executable_name}_binary
+          POST_BUILD
+          COMMAND
+            ${CMAKE_COMMAND} -E cat ${rvbl_machine_bootloader}
+            ${CMAKE_CURRENT_BINARY_DIR}/${flash_executable_name}.bin >
+            ${CMAKE_CURRENT_BINARY_DIR}/${flash_executable_name}_bootable.bin
+          BYPRODUCTS
+            ${CMAKE_CURRENT_BINARY_DIR}/${flash_executable_name}_bootable.bin
+          COMMENT "Prepending bootloader to \
+${CMAKE_CURRENT_BINARY_DIR}/${flash_executable_name}.bin ...")
+      endif()
     endif()
   endif()
 endfunction()
