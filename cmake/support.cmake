@@ -138,6 +138,8 @@ source \"bootstrap.sh\".")
   target_link_libraries(
     rvbl_machine PUBLIC rvbl_type rvbl_boot
                         $<LIST:TRANSFORM,${arg_LIBRARIES},PREPEND,rvbl_>)
+  add_dependencies(rvbl_machine machine_c_files machine_linker_files
+                   machine_doc_files)
 
   install(TARGETS rvbl_machine)
   install(FILES ${rvbl_machine_dir}/linker/${rvbl_linker_id}.ld
