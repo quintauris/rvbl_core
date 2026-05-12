@@ -28,9 +28,14 @@ Make sure the following tools are installed and available in your `PATH`:
 == Check-out
 
 ```
-git clone --recurse-submodules https://github.com/quintauris-tech/rvbl_internal.git
-cd rvbl_internal
+git clone --recurse-submodules https://github.com/quintauris-tech/rvbl_<distribution>.git
+cd rvbl_<distribution>
 ```
+
+Valid examples for `<distribution>` might be:
+
+* `rt_europa`
+* `em_altair`
 
 == Bootstrapping
 
@@ -41,7 +46,7 @@ source bootstrap.sh
 == Configure and Build (GNU GCC / QEmu "virt", local)
 
 ```
-rave make --toolchain gnu.gcc --machine qemu.virt --configure --build
+rave make --toolchain gnu.gcc --toolchain-target default --machine qemu.virt --configure --build
 ```
 
 == Run Tests on (GNU GCC / QEmu "virt", local)
@@ -61,7 +66,7 @@ rave docker --toolchain llvm.clang --provision --up
 == Configure, Build and Test (LLVM Clang / QEmu "virt", container)
 
 ```
-rave make --toolchain llvm.clang --docker --machine qemu.virt --configure --build --test
+rave make --toolchain llvm.clang --toolchain-target default --docker --machine qemu.virt --configure --build --test
 ```
 
 (note the extra `--docker` flag after `--toolchain ...`)
@@ -71,7 +76,7 @@ rave make --toolchain llvm.clang --docker --machine qemu.virt --configure --buil
 Happy? Let's light the candles on this cake by building a Dhrystone benchmark application:
 
 ```
-rave make --toolchain gnu.gcc --target quintauris.dhrystone --configure --build
+rave make --toolchain gnu.gcc --toolchain-target default --target quintauris.dhrystone --configure --build
 ```
 
 Then running it:
