@@ -102,5 +102,5 @@ spec:
               dest: spec.arguments.parameters.3.value
             - src:
                 dependencyName: parent-push
-                dataTemplate: '{{if .Input.body.pull_request}}rvbl-build-gnu-gcc-{{.Input.body.pull_request.head.sha}}{{else}}rvbl-build-gnu-gcc-{{.Input.body.after}}{{end}}'
+                dataTemplate: '{{if .Input.body.pull_request}}rvbl-core-build-tools-{{.Input.body.pull_request.head.sha}}{{else}}rvbl-build-gnu-gcc-{{.Input.body.after}}{{end}}'
               dest: metadata.name

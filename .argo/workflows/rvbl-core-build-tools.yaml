@@ -1,8 +1,19 @@
+apiVersion: argoproj.io/v1alpha1
+kind: WorkflowTemplate
 metadata:
   name: rvbl-core-build-tools
   namespace: rvbl-core-workflows
 spec:
   entrypoint: main
+  archiveLogs: true
+  podGC:
+    strategy: OnPodCompletion
+    deleteDelayDuration: 1h
+  hooks:
+    running:   { expression: workflow.status == "Running",   template: update-github-status }
+    succeeded: { expression: workflow.status == "Succeeded", template: update-github-status }
+    failed:    { expression: workflow.status == "Failed",    template: update-github-status }
+    error:     { expression: workflow.status == "Error",     template: update-github-status }
   arguments:
     parameters:
       - name: repository
@@ -21,7 +32,6 @@ spec:
   volumeClaimTemplates:
     - metadata:
         name: workspace
-        creationTimestamp: null
       spec:
         accessModes:
           - ReadWriteOnce
@@ -29,13 +39,9 @@ spec:
           requests:
             storage: 10Gi
         storageClassName: local-path
-      status: {}
 
   templates:
     - name: main
-      inputs: {}
-      outputs: {}
-      metadata: {}
       steps:
         - - name: checkout
             arguments:
@@ -67,9 +73,6 @@ spec:
             arguments: {}
 
     - name: cargo-build
-      inputs: {}
-      outputs: {}
-      metadata: {}
       container:
         name: rust
         image: rust:1.90
@@ -80,15 +83,11 @@ spec:
               --target-dir build \
               --manifest-path core/tool/Cargo.toml
         workingDir: /work
-        resources: {}
         volumeMounts:
           - name: workspace
             mountPath: /work
 
     - name: cargo-test
-      inputs: {}
-      outputs: {}
-      metadata: {}
       container:
         name: rust
         image: rust:1.90
@@ -99,18 +98,15 @@ spec:
               --target-dir build \
               --manifest-path core/tool/Cargo.toml
         workingDir: /work
-        resources: {}
         volumeMounts:
           - name: workspace
             mountPath: /work
 
     - name: tools-archive
-      inputs: {}
       outputs:
         artifacts:
           - name: rvbl-tools
             path: /work/build/release/tools.tgz
-      metadata: {}
       container:
         name: ""
         image: alpine:latest
