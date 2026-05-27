@@ -56,7 +56,7 @@ spec:
 
   triggers:
     - template:
-        name: build-tools
+        name: build
         conditions: parent-push
         k8s:
           operation: create
@@ -69,7 +69,7 @@ spec:
                 namespace: rvbl-core-workflows
               spec:
                 workflowTemplateRef:
-                  name: rvbl-core-build-tools
+                  name: rvbl-core-build
                 serviceAccountName: argo-workflow-sa
                 volumeClaimGC:
                   strategy: OnWorkflowCompletion
@@ -102,5 +102,5 @@ spec:
               dest: spec.arguments.parameters.3.value
             - src:
                 dependencyName: parent-push
-                dataTemplate: '{{if .Input.body.pull_request}}rvbl-core-build-tools-{{.Input.body.pull_request.head.sha}}{{else}}rvbl-build-gnu-gcc-{{.Input.body.after}}{{end}}'
+                dataTemplate: '{{if .Input.body.pull_request}}rvbl-core-build-{{.Input.body.pull_request.head.sha}}{{else}}rvbl-build-gnu-gcc-{{.Input.body.after}}{{end}}'
               dest: metadata.name
