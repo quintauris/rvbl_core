@@ -1,0 +1,105 @@
+metadata:
+  name: rvbl-core-build-tools
+  namespace: rvbl-rt-europa-workflows # TODO: swap with rvbl-core-workflows when possible
+spec:
+  entrypoint: main
+  arguments:
+    parameters:
+      - name: repository
+        default: quintauris-tech/rvbl_core
+        description: Repository in format owner/repo
+      - name: ref
+        default: ""
+        description: Git ref (e.g., refs/heads/main)
+      - name: sha
+        default: ""
+        description: Git commit SHA
+      - name: branch
+        default: main
+        description: Branch name
+  serviceAccountName: argo-workflow-sa
+  volumeClaimTemplates:
+    - metadata:
+        name: workspace
+        creationTimestamp: null
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: 10Gi
+        storageClassName: local-path
+      status: {}
+
+  templates:
+    - name: main
+      inputs: {}
+      outputs: {}
+      metadata: {}
+      steps:
+        - - name: checkout
+            arguments:
+              parameters:
+                - name: repository
+                  value: "{{workflow.parameters.repository}}"
+                - name: ref
+                  value: "{{workflow.parameters.ref}}"
+                - name: sha
+                  value: "{{workflow.parameters.sha}}"
+                - name: branch
+                  value: "{{workflow.parameters.branch}}"
+                - name: workspace-path
+                  value: /workspace
+                - name: checkout-dir
+                  value: core
+            templateRef:
+              name: git-checkout-base
+              template: git-checkout
+              clusterScope: true
+        - - name: build
+            template: cargo-build
+            arguments: {}
+        - - name: archive
+            template: tools-archive
+            arguments: {}
+
+    - name: cargo-build
+      inputs: {}
+      outputs: {}
+      metadata: {}
+      container:
+        name: ""
+        image: rust:1.90
+        command: [bash, -ceu]
+        args:
+          - |
+            cargo build --release \
+              --target-dir build \
+              --manifest-path core/tool/Cargo.toml
+        workingDir: /work
+        resources: {}
+        volumeMounts:
+          - name: workspace
+            mountPath: /work
+
+    - name: tools-archive
+      inputs: {}
+      outputs:
+        artifacts:
+          - name: rvbl-tools
+            path: /work/build/release/tools.tgz
+      metadata: {}
+      container:
+        name: ""
+        image: alpine:latest
+        command: [sh, -c]
+        args:
+          - |
+            cd build/release
+            x=$(find . -maxdepth 1 -type f -exec test -x {} \; -exec echo {} \;)
+            tar -czf tools.tgz $x
+        workingDir: /work
+        resources: {}
+        volumeMounts:
+          - name: workspace
+            mountPath: /work
