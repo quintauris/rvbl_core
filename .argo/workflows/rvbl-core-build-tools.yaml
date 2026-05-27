@@ -59,6 +59,9 @@ spec:
         - - name: build
             template: cargo-build
             arguments: {}
+        - - name: test
+            template: cargo-test
+            arguments: {}
         - - name: archive
             template: tools-archive
             arguments: {}
@@ -68,12 +71,31 @@ spec:
       outputs: {}
       metadata: {}
       container:
-        name: ""
+        name: rust
         image: rust:1.90
         command: [bash, -ceu]
         args:
           - |
             cargo build --release \
+              --target-dir build \
+              --manifest-path core/tool/Cargo.toml
+        workingDir: /work
+        resources: {}
+        volumeMounts:
+          - name: workspace
+            mountPath: /work
+
+    - name: cargo-test
+      inputs: {}
+      outputs: {}
+      metadata: {}
+      container:
+        name: rust
+        image: rust:1.90
+        command: [bash, -ceu]
+        args:
+          - |
+            cargo test \
               --target-dir build \
               --manifest-path core/tool/Cargo.toml
         workingDir: /work
