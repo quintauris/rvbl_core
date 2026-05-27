@@ -1,6 +1,6 @@
 metadata:
   name: rvbl-core-build-tools
-  namespace: rvbl-rt-europa-workflows # TODO: swap with rvbl-core-workflows when possible
+  namespace: rvbl-core-workflows
 spec:
   entrypoint: main
   arguments:

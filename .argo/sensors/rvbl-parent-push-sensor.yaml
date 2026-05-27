@@ -66,7 +66,7 @@ spec:
               kind: Workflow
               metadata:
                 name: ""
-                namespace: rvbl-rt-europa-workflows # TODO: swap with rvbl-core-workflows when possible
+                namespace: rvbl-core-workflows
               spec:
                 workflowTemplateRef:
                   name: rvbl-core-build-tools
