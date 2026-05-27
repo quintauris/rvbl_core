@@ -121,3 +121,27 @@ spec:
         volumeMounts:
           - name: workspace
             mountPath: /work
+
+    - name: update-github-status
+      steps:
+        - - name: update-status
+            templateRef:
+              name: github-status-base
+              template: update-github-status
+              clusterScope: true
+            arguments:
+              parameters:
+                - name: repository
+                  value: "{{workflow.parameters.repository}}"
+                - name: sha
+                  value: "{{workflow.parameters.sha}}"
+                - name: workflow-name
+                  value: "{{workflow.name}}"
+                - name: workflow-namespace
+                  value: "{{workflow.namespace}}"
+                - name: context
+                  value: "ci/rvbl-core-workflows/rvbl-build-tool"
+                - name: workflow-ui-base-url
+                  value: "https://argo-workflows.quintauris.com"
+                - name: workflow-status
+                  value: "{{workflow.status}}"
