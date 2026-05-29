@@ -5,10 +5,13 @@ metadata:
   namespace: rvbl-core-workflows
 spec:
   entrypoint: main
+  parallelism: 2
   archiveLogs: true
   podGC:
     strategy: OnPodCompletion
     deleteDelayDuration: 1h
+  volumeClaimGC:
+    strategy: OnWorkflowCompletion
   hooks:
     running:   { expression: workflow.status == "Running",   template: update-github-status }
     succeeded: { expression: workflow.status == "Succeeded", template: update-github-status }
@@ -28,6 +31,9 @@ spec:
       - name: branch
         default: main
         description: Branch name
+      - name: event_type
+        default: ""
+        description: "Event kind: push | pull_request | workflow_dispatch | tag"
   serviceAccountName: argo-workflow-sa
   volumeClaimTemplates:
     - metadata:
@@ -110,8 +116,11 @@ spec:
         artifacts:
           - name: rvbl-tools
             path: /work/build/release/tools.tgz
+            s3:
+              key: "rvbl-core-tools/{{workflow.parameters.branch}}/tools.tgz"
+            archive:
+              none: {}
       container:
-        name: ""
         image: alpine:latest
         command: [sh, -c]
         args:
@@ -120,7 +129,6 @@ spec:
             x=$(find . -maxdepth 1 -type f -exec test -x {} \; -exec echo {} \;)
             tar -czf tools.tgz $x
         workingDir: /work
-        resources: {}
         volumeMounts:
           - name: workspace
             mountPath: /work

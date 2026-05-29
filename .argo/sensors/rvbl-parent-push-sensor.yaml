@@ -83,6 +83,8 @@ spec:
                       value: ""
                     - name: branch
                       value: ""
+                    - name: event_type
+                      value: ""
           parameters:
             - src:
                 dependencyName: parent-push
@@ -102,5 +104,9 @@ spec:
               dest: spec.arguments.parameters.3.value
             - src:
                 dependencyName: parent-push
-                dataTemplate: '{{if .Input.body.pull_request}}rvbl-core-build-{{.Input.body.pull_request.head.sha}}{{else}}rvbl-build-gnu-gcc-{{.Input.body.after}}{{end}}'
+                dataTemplate: '{{if .Input.body.pull_request}}rvbl-core-build-{{.Input.body.pull_request.head.sha}}{{else}}rvbl-core-build-{{.Input.body.after}}{{end}}'
               dest: metadata.name
+            - src:
+                dependencyName: parent-push
+                dataTemplate: '{{if .Input.body.pull_request}}pull_request{{else}}push{{end}}'
+              dest: spec.arguments.parameters.4.value
