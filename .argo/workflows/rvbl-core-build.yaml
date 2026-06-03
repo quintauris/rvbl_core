@@ -77,9 +77,6 @@ spec:
         - - name: archive
             template: tools-archive
             arguments: {}
-        - - name: docs
-            template: cmake-docs
-            arguments: {}
 
     - name: cargo-build
       container:
@@ -132,29 +129,6 @@ spec:
         volumeMounts:
           - name: workspace
             mountPath: /work
-
-    - name: cmake-docs
-      container:
-        image: ubuntu:noble
-        command: [bash, -ceu]
-        args:
-          - |
-            apt update
-            apt install -y build-essential asciidoctor cmake
-            export RVBL_ROOT=.
-            export RVBL_TOOL=${PWD}/build/release
-            export PATH=${PATH}:${RVBL_TOOL}
-            echo $RVBL_TOOL
-            ls $RVBL_TOOL
-            mkdir build-docs
-            cmake -B build-docs core/doc
-            cmake --build build-docs
-        workingDir: /work
-        volumeMounts:
-          - name: workspace
-            mountPath: /work
-
-    # TODO: add step publishing HTML files at core/doc/html
 
     - name: update-github-status
       steps:
