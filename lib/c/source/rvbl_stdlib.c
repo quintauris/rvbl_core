@@ -9,6 +9,11 @@ extern rvbl_alloc_allocator rvbl_c_stdlib_allocator;
 
 void *malloc(size_t count) { return rvbl_alloc(&rvbl_c_stdlib_allocator, count); }
 
-void *realloc(void *pointer, size_t size) { return NULL; }
+void *realloc(void *pointer, size_t size)
+{
+    (void)pointer;
+    (void)size;
+    return NULL;
+}
 
 void free(void *pointer) { rvbl_alloc_free(&rvbl_c_stdlib_allocator, pointer); }

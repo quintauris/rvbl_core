@@ -7,12 +7,25 @@ static rvbl_bool_t uart_initialized = rvbl_false;
 static rvbl_uword_t uart_bytes_putc = 0, uart_bytes_write = 0;
 static char buffer[256];
 
-void test_uart_init(const void *self) { uart_initialized = rvbl_true; }
+void test_uart_init(const void *self)
+{
+    (void)self;
+    uart_initialized = rvbl_true;
+}
 
-void test_uart_putc(const void *self, const int c, void *const p) { uart_bytes_putc++; }
+void test_uart_putc(const void *self, const int c, void *const p)
+{
+    (void)self;
+    (void)c;
+    (void)p;
+    uart_bytes_putc++;
+}
 
 void test_uart_write(const void *self, const void *buffer, const rvbl_uword_t count, void *p)
 {
+    (void)self;
+    (void)buffer;
+    (void)p;
     uart_bytes_write += count;
 }
 

@@ -11,6 +11,7 @@ void rvbl_uart_semihost_putc(
     const struct rvbl_uart_semihost_t *const instance, const int c, void *p
 )
 {
+    (void)p;
     rvbl_semihost_output_stream_write(instance->handle, (const rvbl_uint8_t *)&c, 1);
 }
 
@@ -21,21 +22,28 @@ void rvbl_uart_semihost_write(
     void *p
 )
 {
+    (void)p;
     rvbl_semihost_output_stream_write(instance->handle, (const rvbl_uint8_t *)buffer, size);
 }
 
 int rvbl_uart_semihost_getc(const struct rvbl_uart_semihost_t *const instance, void *p)
 {
+    (void)instance;
+    (void)p;
     return 0;
 }
 
 rvbl_bool_t rvbl_uart_semihost_rx_ready(const struct rvbl_uart_semihost_t *const instance, void *p)
 {
+    (void)instance;
+    (void)p;
     return rvbl_false;
 }
 
 rvbl_bool_t rvbl_uart_semihost_tx_ready(const struct rvbl_uart_semihost_t *const instance, void *p)
 {
+    (void)instance;
+    (void)p;
     return rvbl_true;
 }
 

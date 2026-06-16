@@ -46,7 +46,12 @@ static void *bump_allocate(const rvbl_alloc_area *area, rvbl_uword_t size, rvbl_
     }
 }
 
-static void bump_free(const rvbl_alloc_area *area, void *pointer, rvbl_uword_t size) {}
+static void bump_free(const rvbl_alloc_area *area, void *pointer, rvbl_uword_t size)
+{
+    (void)area;
+    (void)pointer;
+    (void)size;
+}
 
 const rvbl_alloc_implementation rvbl_alloc_bump_allocator = {
     .initialize = &bump_initialize, .allocate = &bump_allocate, .free = &bump_free

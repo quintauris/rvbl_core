@@ -9,6 +9,7 @@ void rvbl_buffered_uart_init(rvbl_buffered_uart *const self)
 
 void rvbl_buffered_uart_putc(rvbl_buffered_uart *const self, int c, void *p)
 {
+    (void)p;
     if (self->buffer_position < self->buffer_size) {
         ((rvbl_uint8_t *)self->buffer)[self->buffer_position++] = c;
     }
