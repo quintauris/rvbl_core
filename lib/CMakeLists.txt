@@ -1,3 +1,9 @@
+#[[
+  Copyright 2026 Quintauris GmbH
+  Licensed under the Apache License, Version 2.0 (the "License").
+  https://www.apache.org/licenses/LICENSE-2.0
+]]
+
 add_subdirectory(compiler)
 add_subdirectory(type)
 add_subdirectory(boot)

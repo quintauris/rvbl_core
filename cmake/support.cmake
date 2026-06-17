@@ -1,3 +1,9 @@
+#[[
+  Copyright 2026 Quintauris GmbH
+  Licensed under the Apache License, Version 2.0 (the "License").
+  https://www.apache.org/licenses/LICENSE-2.0
+]]
+
 function(rvbl_machine)
   cmake_parse_arguments(PARSE_ARGV 0 arg "" "" "LIBRARIES;RUNNERS;BOOTLOADER")
 
