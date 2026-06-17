@@ -276,7 +276,9 @@ fn device_header(device: &model::Device, machine: &model::Machine) -> Result<()>
                     indexing_parameter = String::from(", const rvbl_uword_t index");
                     indexing_check.push_str("if (");
 
-                    if indexing.lower_bound.is_some() {
+                    if indexing.lower_bound.is_some()
+                        && indexing.lower_bound.as_ref().unwrap().as_str() > "0"
+                    {
                         indexing_check.push_str(&format!(
                             "(index >= {}) && ",
                             indexing.lower_bound.as_ref().unwrap()
