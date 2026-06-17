@@ -1,3 +1,9 @@
+/*
+ * Copyright 2026 Quintauris GmbH
+ * Licensed under the Apache License, Version 2.0 (the "License").
+ * https://www.apache.org/licenses/LICENSE-2.0
+ */
+
 // GCC 32/64-bit integer arithmetic support for 32-bit systems that can't link
 // to libgcc.
 

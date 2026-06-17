@@ -1,3 +1,9 @@
+/*
+ * Copyright 2026 Quintauris GmbH
+ * Licensed under the Apache License, Version 2.0 (the "License").
+ * https://www.apache.org/licenses/LICENSE-2.0
+ */
+
 #include "rvbl/uart/rvbl_uart.h"
 #include "rvbl/type/rvbl_types.h"
 #include "rvbl/uart/rvbl_uart_ns16550.h"
