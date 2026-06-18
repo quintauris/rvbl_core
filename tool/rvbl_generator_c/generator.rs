@@ -1,3 +1,7 @@
+// Copyright 2026 Quintauris GmbH
+// Licensed under the Apache License, Version 2.0 (the "License").
+// https://www.apache.org/licenses/LICENSE-2.0
+
 use crate::templates;
 use rvbl_model::evaluator::{parse_expression, parse_expression_option};
 use rvbl_model::{interface::Generator, model};

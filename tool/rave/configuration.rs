@@ -1,3 +1,7 @@
+// Copyright 2026 Quintauris GmbH
+// Licensed under the Apache License, Version 2.0 (the "License").
+// https://www.apache.org/licenses/LICENSE-2.0
+
 use serde::{Deserialize, Serialize};
 use serde_json;
 use std::collections::HashMap;
