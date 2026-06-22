@@ -58,6 +58,8 @@ typedef struct rvbl_spi_configuration
     rvbl_spi_clock_phase clock_phase;
     /// `rvbl_uint32_t frequency`:: SPI CLK frequency, in Hz.
     rvbl_uint32_t frequency;
+    /// `rvbl_uint32_t word_size`:: SPI word size, in bits.
+    rvbl_uint32_t word_size;
     /// `rvbl_pointer_t vendor`:: Vendor-specific configuration/data.
     rvbl_pointer_t vendor;
 } rvbl_spi_configuration;
@@ -87,7 +89,7 @@ typedef rvbl_result_t (*rvbl_spi_init)(const void *, const rvbl_spi_configuratio
 ///
 /// ==== Return Value
 /// `rvbl_result_t`:: `rvbl_result_success` if transaction has been successful.
-typedef rvbl_result_t (*rvbl_spi_transcieve)(const void *, const void *, void *, rvbl_uword_t);
+typedef rvbl_result_t (*rvbl_spi_transcieve)(const void *, const void *, void *, rvbl_uword_t *);
 
 /// === Type `rvbl_spi_busy`
 ///
