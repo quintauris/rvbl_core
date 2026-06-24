@@ -78,14 +78,24 @@ typedef rvbl_result_t (*rvbl_spi_init)(const void *, const rvbl_spi_configuratio
 
 /// === Type `rvbl_spi_transcieve`
 ///
-/// Function pointer to an SPI device transmit/receive function.
+/// Function pointer to an SPI device transmit/receive function. The
+/// implementation of this interface behaves differently according to the bus
+/// mode the peripheral is operating on:
+///
+/// master:: Words in transmit buffer are transmitted, then the function blocks
+/// until the same number of words have been retrieved from the peripheral
+/// into the receive buffer.
+/// slave:: Words in transmit buffer are loaded into the peripheral for
+/// transmission when bytes are received, then the function blocks until the
+/// same number of words have been retrieved from the peripheral into the
+/// receive buffer.
 ///
 /// ==== Parameters
 /// `const void*`:: Pointer to device instance.
 /// `const void*`:: Pointer to data buffer to transmit.
 /// `void*`:: Pointer to buffer that receives incoming data.
-/// `rvbl_uword_t*`:: (in) Number of bytes available transmit/receive buffers,
-/// (out) number of bytes received.
+/// `rvbl_uword_t*`:: (in) Number of words available transmit/receive buffers,
+/// (out) number of words received.
 ///
 /// ==== Return Value
 /// `rvbl_result_t`:: `rvbl_result_success` if transaction has been successful.
