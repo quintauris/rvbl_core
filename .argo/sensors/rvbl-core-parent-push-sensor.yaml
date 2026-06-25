@@ -7,7 +7,7 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Sensor
 metadata:
-  name: rvbl-parent-push-sensor
+  name: rvbl-core-parent-push-sensor
   namespace: argo-events
 spec:
   eventBusName: default
