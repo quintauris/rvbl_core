@@ -4,8 +4,10 @@
   https://www.apache.org/licenses/LICENSE-2.0
 ////
 
-= Bootstrap and Build System
 include::common.adoc[]
+
+= Bootstrap and Build System
+Quintauris <www.quintauris.com> (generated {localdatetime})
 
 == Overview
 
@@ -177,10 +179,10 @@ Configures, builds and tests with CMake.
 
 ===== Examples
 
-Configure target `qemu.virt_em_altair_m32` with toolchain `gnu.gcc`:
+Configure target `qemu.virt_rvi20u32` with toolchain `gnu.gcc`:
 
 ```
-rave make --toolchain gnu.gcc --target qemu.virt_em_altair_m32 --configure
+rave make --toolchain gnu.gcc --target qemu.virt_rvi20u32 --configure
 ```
 
 Build and test previously configured target:
@@ -198,7 +200,7 @@ rave make --build --test
 Same, but all at once and building within a containerized `gnu.gcc` toolchain (container must be provisioned and up, see <<command_docker>>):
 
 ```
-rave make --toolchain gnu.gcc --docker --target qemu.virt_em_altair_m32 --configure --build --test
+rave make --toolchain gnu.gcc --docker --target qemu.virt_rvi20u32 --configure --build --test
 ```
 
 [[command_docker]]
@@ -261,10 +263,10 @@ Leverages xref:architecture.adoc#arch_runner[Runners] to run images built with <
 
 ===== Examples
 
-Run example image build with `gnu.gcc` as part of `qemu.virt_em_altair_m32` machine, using `qemu.system32-elf` runner:
+Run example image build with `gnu.gcc` as part of `qemu.virt_rvi20u32` machine, using `qemu.system32-elf` runner:
 
 ```
-rave run --toolchain gnu.gcc --machine qemu.virt_em_altair_m32 --runner qemu.system32-elf --file build/local/llvm_clang/qemu_virt_em_altair_m32/example/hello_world/hello_world.elf
+rave run --toolchain gnu.gcc --machine qemu.virt_rvi20u32 --runner qemu.system32-elf --file build/local/llvm_clang/qemu_virt_rvi20u32/example/hello_world/hello_world.elf
 ```
 
 ==== `moniker`
@@ -279,8 +281,8 @@ This command serves the CMake build infrastructure, to determine the moniker `ra
 
 ===== Examples
 
-Produce `<layer.name>` moniker for the `qemu/machine/virt_em_altair_m32` path:
+Produce `<layer.name>` moniker for the `qemu/machine/virt_rvi20u32` path:
 
 ```
-% rave moniker qemu/machine/virt_em_altair_m32
+% rave moniker qemu/machine/virt_rvi20u32
 ```

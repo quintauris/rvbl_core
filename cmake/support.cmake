@@ -763,7 +763,7 @@ function(rvbl_layer_documentation)
   file(COPY ${glob} DESTINATION ${target_dir_html})
 
   add_custom_target(
-    docs ALL
+    ${layer_name}_docs ALL
     DEPENDS ${outputs_api} ${outputs_model_cpu} ${outputs_model_register_set}
             ${outputs_model_device} ${outputs_doc})
 

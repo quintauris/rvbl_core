@@ -4,8 +4,10 @@
   https://www.apache.org/licenses/LICENSE-2.0
 ////
 
-= Architecture
 include::common.adoc[]
+
+= Architecture
+Quintauris <www.quintauris.com> (generated {localdatetime})
 
 == Overview
 
@@ -317,6 +319,7 @@ To this end, `rave`, the {project} unified build tool, exists. `rave` is a comma
 .Example: enumerating machines
 ```
 % rave list --machine
+qemu.virt_rvi20u32
 qemu.virt_em_altair_m32
 qemu.virt_rt_europa_m32
 ```
@@ -325,6 +328,7 @@ qemu.virt_rt_europa_m32
 ```
 % rave list --toolchain --target --runner
 quintauris.dhrystone
+qemu.virt_rvi20u32
 qemu.virt_em_altair_m32
 qemu.virt_rt_europa_m32
 llvm.clang
@@ -337,12 +341,12 @@ qemu.system32-bin
 
 .Example: configuring, building and testing a machine
 ```
-% rave make --toolchain gnu.gcc --machine qemu.virt_em_altair_m32 --configure --build --test
-> cmake -S <...>/qemu/machine/virt_em_altair_m32 -B <...>/build/local/gnu_gcc/qemu_virt_em_altair_m32 -D CMAKE_BUILD_TYPE=Release --toolchain <...>/gnu/toolchain/gcc/rt_europa_m32.cmake
+% rave make --toolchain gnu.gcc --machine qemu.virt_rvi20u32 --configure --build --test
+> cmake -S <...>/qemu/machine/virt_rvi20u32 -B <...>/build/local/gnu_gcc/qemu_virt_rvi20u32 -D CMAKE_BUILD_TYPE=Release --toolchain <...>/gnu/toolchain/gcc/rt_europa_m32.cmake
 ...
-> cmake --build <...>/build/local/gnu_gcc/qemu_virt_em_altair_m32 --parallel 1
+> cmake --build <...>/build/local/gnu_gcc/qemu_virt_rvi20u32 --parallel 1
 ...
-> ctest --test-dir <...>/build/local/gnu_gcc/qemu_virt_em_altair_m32
+> ctest --test-dir <...>/build/local/gnu_gcc/qemu_virt_rvi20u32
 ...
 ```
 
@@ -355,16 +359,16 @@ qemu.system32-bin
 ...
 > docker run --interactive --tty --detach --name rvbl.gnu_gcc --volume <...>:<...> rvbl:gnu.gcc
 ...
-% rave make --toolchain gnu.gcc --toolchain --machine qemu.virt_em_altair_m32 --configure --build --test
-> docker exec --interactive --tty --env RVBL_TOOL=<...>/build/docker/gnu_gcc/tool/release --env RVBL_ROOT=<...> rvbl.gnu_gcc cmake -S <...>/qemu/machine/virt_em_altair_m32 -B <...>/build/docker/gnu_gcc/qemu_virt_em_altair_m32 -D CMAKE_BUILD_TYPE=Release --toolchain <...>/gnu/toolchain/gcc/rt_europa_m32.cmake
+% rave make --toolchain gnu.gcc --toolchain --machine qemu.virt_rvi20u32 --configure --build --test
+> docker exec --interactive --tty --env RVBL_TOOL=<...>/build/docker/gnu_gcc/tool/release --env RVBL_ROOT=<...> rvbl.gnu_gcc cmake -S <...>/qemu/machine/virt_rvi20u32 -B <...>/build/docker/gnu_gcc/qemu_virt_rvi20u32 -D CMAKE_BUILD_TYPE=Release --toolchain <...>/gnu/toolchain/gcc/rt_europa_m32.cmake
 ...
 ```
 
 - Wrapping <<arch_runner>>s with a convenient, simplified, run interface:
 
 ```
-% rave run --runner qemu.system32-elf --machine qemu.virt_em_altair_m32 --file <...>/build/local/gnu_gcc/qemu_virt_em_altair_m32/example/hello_world/hello_world.elf
-> qemu-system-riscv32 -machine virt_em_altair_m32 -smp 1 -m 16M -semihosting-config enable=on -nographic -serial mon:stdio -bios <...>/build/local/gnu_gcc/qemu_virt_em_altair_m32/example/hello_world/hello_world.elf
+% rave run --runner qemu.system32-elf --machine qemu.virt_rvi20u32 --file <...>/build/local/gnu_gcc/qemu_virt_rvi20u32/example/hello_world/hello_world.elf
+> qemu-system-riscv32 -machine virt_rvi20u32 -smp 1 -m 16M -semihosting-config enable=on -nographic -serial mon:stdio -bios <...>/build/local/gnu_gcc/qemu_virt_rvi20u32/example/hello_world/hello_world.elf
 Hello world!
 ```
 

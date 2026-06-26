@@ -32,7 +32,7 @@ pub struct MakeArgs {
     #[arg(long, default_value_t = String::from("last"))]
     pub toolchain_target: String,
 
-    /// Target(s) in <layer>.<name> form (e.g. qemu.virt_em_altair_m32), comma-separated
+    /// Target(s) in <layer>.<name> form (e.g. qemu.virt_rvi20u32), comma-separated
     #[arg(short, long, default_value_t = String::from("last"), aliases=["targets", "machine", "machines"])]
     pub target: String,
 
@@ -96,7 +96,7 @@ pub struct RunArgs {
     #[arg(long, default_value_t = String::from("last"))]
     pub toolchain: String,
 
-    /// Target(s) in <layer>.<name> form (e.g. qemu.virt_em_altair_m32), comma-separated
+    /// Target(s) in <layer>.<name> form (e.g. qemu.virt_rvi20u32), comma-separated
     #[arg(short, long, default_value_t = String::from("last"), alias="machine")]
     pub target: String,
 

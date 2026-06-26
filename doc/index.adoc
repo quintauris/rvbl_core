@@ -4,8 +4,10 @@
   https://www.apache.org/licenses/LICENSE-2.0
 ////
 
-= The {project}
 include::common.adoc[]
+
+= The Core Layer
+Quintauris <www.quintauris.com> (generated {localdatetime})
 
 == Overview
 

@@ -4,8 +4,10 @@
   https://www.apache.org/licenses/LICENSE-2.0
 ////
 
-= Third-party Components 
 include::common.adoc[]
+
+= Third-party Components
+Quintauris <www.quintauris.com> (generated {localdatetime})
 
 == nanoprintf
 

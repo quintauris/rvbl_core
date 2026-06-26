@@ -4,7 +4,6 @@
   https://www.apache.org/licenses/LICENSE-2.0
 ////
 
-Quintauris <www.quintauris.com> (generated {localdatetime})
 :toc: left
 :toclevels: 3
 :coredoc: ../../core/doc
