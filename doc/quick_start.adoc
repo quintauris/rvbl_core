@@ -1,0 +1,95 @@
+////
+  Copyright 2026 Quintauris GmbH
+  Licensed under the Apache License, Version 2.0 (the "License").
+  https://www.apache.org/licenses/LICENSE-2.0
+////
+
+include::common.adoc[]
+
+= Quick Start
+Quintauris <www.quintauris.com> (generated {localdatetime})
+
+This short document steps you through the process for a typical build and test run using the {project}. More specifically, if you follow the steps listed below, you will:
+
+1. Configure a local build using GNU GCC toolchain, targeting QEmu's 32-bit RISC-V "virt_rvi20u32" machine
+2. Run a test suite on the build from (1) above
+3. Provision and start a LLVM Clang toolchain container
+4. Repeat the configuration, build and test steps from (1) and (2), in the container from (3)
+
+We're done talking here... let's get to work.
+
+== Preparation
+
+Make sure the following tools are installed and available in your `PATH`:
+
+:pre-commit: https://pre-commit.com[pre-commit]
+:rustup: https://rustup.rs[rustup]
+:gcc: https://gcc.gnu.org[GNU GCC]
+:qemu-system-riscv32: https://www.qemu.org/docs/master/system/target-riscv.html[QEMU RISC-V System Emulator]
+
+* {pre-commit}
+* {rustup}
+* {cmake} (3.28 or higher)
+* {gcc} (13 or higher, gcc-riscv64-unknown-elf)
+* {qemu-system-riscv32} (10.0.2 recommended)+
+
+== Check-out
+
+```
+git clone --recurse-submodules <repo-url>/rvbl_<distribution>.git
+cd rvbl_<distribution>
+```
+
+Valid examples for `<distribution>` might be:
+
+* `community`
+* `rt_europa`
+* `em_altair`
+
+== Bootstrapping
+
+```
+source bootstrap.sh
+```
+
+== Configure and Build (GNU GCC / QEmu "virt_rvi20u32", local)
+
+```
+rave make --toolchain gnu.gcc --toolchain-target default --machine qemu.virt_rvi20u32 --configure --build
+```
+
+== Run Tests on (GNU GCC / QEmu "virt_rvi20u32", local)
+
+```
+rave make --test
+```
+
+(`--configure ...` and `--build ...` can be omitted, which makes `rave` default to latest values used)
+
+== Provision and Start LLVM Clang container
+
+```
+rave docker --toolchain llvm.clang --provision --up
+```
+
+== Configure, Build and Test (LLVM Clang / QEmu "virt_rvi20u32", container)
+
+```
+rave make --toolchain llvm.clang --toolchain-target default --docker --machine qemu.virt_rvi20u32 --configure --build --test
+```
+
+(note the extra `--docker` flag after `--toolchain ...`)
+
+== Bonus
+
+Happy? Let's light the candles on this cake by building a Dhrystone benchmark application:
+
+```
+rave make --toolchain gnu.gcc --toolchain-target default --target quintauris.dhrystone --configure --build
+```
+
+Then running it:
+
+```
+rave run --runner qemu.system32-elf --machine qemu.virt_rvi20u32 --file build/local/gnu_gcc/quintauris_dhrystone/dhrystone.elf
+```

@@ -1,0 +1,19 @@
+////
+  Copyright 2026 Quintauris GmbH
+  Licensed under the Apache License, Version 2.0 (the "License").
+  https://www.apache.org/licenses/LICENSE-2.0
+////
+
+:toc: left
+:toclevels: 3
+:coredoc: ../../core/doc
+:stylesheet: {coredoc}/stylesheet.css
+:doctype: book
+:docinfo: shared
+:nofooter:
+:project: RISC-V Base Layer
+:cmake: https://cmake.org[CMake]
+:git: https://git-scm.com[Git]
+:json: https://json.org[JSON]
+:json-schema: https://json-schema.org[JSON-Schema]
+:docker: https://www.docker.com[Docker]

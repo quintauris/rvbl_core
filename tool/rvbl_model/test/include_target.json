@@ -1,0 +1,6 @@
+{
+    "value": "$PARAMETER1",
+    "array": [
+        "$PARAMETER2"
+    ]
+}

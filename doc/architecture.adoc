@@ -1,0 +1,390 @@
+////
+  Copyright 2026 Quintauris GmbH
+  Licensed under the Apache License, Version 2.0 (the "License").
+  https://www.apache.org/licenses/LICENSE-2.0
+////
+
+include::common.adoc[]
+
+= Architecture
+Quintauris <www.quintauris.com> (generated {localdatetime})
+
+== Overview
+
+The design of the {project} aims at realizing honorable software patterns such as https://en.wikipedia.org/wiki/Loose_coupling[loose coupling] and https://en.wikipedia.org/wiki/Cohesion_(computer_science)[high cohesion], while automating traditionally rudimentary and error-prone aspects of low-level software development and integration.
+
+For readers not willing to read further in this document, the following three design take-aways are offered:
+
+* This design is *Layer*-ed
+* This design is *Model*-driven
+* This design is *Code*-first
+
+=== Layer-oriented
+
+The {project} project comes toghether as a set of independent but coherently associated _layers_. As with any layered system, layers at the core are essential and practically irreplaceable, while others may be swapped in or out altoghether depending on the usage scenario.
+
+==== Essential layers
+
+Essential layers conform the functional core of the {project}, and there's three of them:
+
+* `core`:
+** {cmake} support files
+** Host tools
+** Project-wide documentation (including xref:index.adoc[this manual])
+** Essential run-time libraries
+** Common device models
+** References to essential and common third-pary run-time components
+* `riscv`:
+** Model files for RISC-V standard ISA and devices
+** Run-time libraries for RISC-V standard ISA and devices
+* `quintauris`
+** Machine meta-model
+** Models for Quintauris CPU profiles
+** Code generation tools
+** Additional libraries and projects
+
+==== Recommended layers
+
+The following layers are not as foundational as those above, but toghether with them conform a free, open-source functional distribution that allows to compile and run basic examples, tests, etc. without additional hardware requirements.
+
+* `gnu`: https://gcc.gnu.org[GNU GCC] toolchain
+* `llvm`: https://clang.llvm.org[LLVM Clang] toolchain
+* `qemu`: https://www.qemu.org[QEmu] machines and runners
+
+==== Optional layers
+
+Optional layers exist beyond the aforementioned layers, providing support for OEM products of all kinds, such as boards, toolchains, debuggers, etc. Optional layers may complement or even replace the recommended layers described above. For example, a certain hardware and toolchain vendor may provide its own layer with <<arch_toolchain>>, <<arch_machine>> and <<arch_runner>> definitions.
+
+Essential, recommended and optional layers maybe combined to produce <<arch_distribution>>s.
+
+=== Model-driven
+
+As shown in the previous chapter, many layers contain <<arch_model>>s. These are text-based and human-readable files describing structural aspects of devices and machines. Models are also generally easier to construct, update, reason about, and process with automated tools than code in most programming languages.
+
+For all these reasons, the {project} is designed around a machine meta-model (sometimes referred to as _MM_ or _M2_) and a set of compliant models (sometimes generally referred to as _M1_):
+
+* The *Machine Meta-model* (M2 or MM) is described in {json-schema}
+* The *Machine Models* (M1) are described in {json}
+
+{json} has been chosen due to its balance between expresiveness, conciseness and ecosystem support.
+
+=== Code-first
+
+Following recent (also ancient, but perhaps _for too long_ out of fashion) trends in the software industry, the {project} design explicitly avoids:
+
+- Relying on GUI tools (hard or impossible to automate)
+- Proprietary binary formats (hard to share and work collaboratively upon)
+
+in favour of:
+
+- Command-line tools
+- Open, text-based and human-readable formats
+
+== Concepts
+
+[[arch_layer]]
+=== Layer
+
+A *Layer* is a discrete software package representing assets maintained by, or related to, a single well-known entity, such as a company, vendor, community, organization or  consortium.
+
+The only exception is, of course, the `core` layer, which corresponds to no particular real-world entity and instead represents the infrastructure necessary for other layers to exist and operate.
+
+A Layer is represented as a {git} repository which adheres to the following structural and lexical conventions:
+
+* (repo) `rvbl_<name>`: name of the entity
+** (sub-directory) `doc`: Layer documentation
+** (sub-directory) `cmake`: {cmake}-related files (`.cmake` extension)
+** (sub-directory) `lib`: Library components
+** (sub-directory) `model`: Device model files
+** (sub-directory) `toolchain`: Toolchain components
+** (sub-directory) `tool`: Host-side tools specific to the layer (e.g. code generators)
+** (sub-directory) `machine`: Machines provided by this layer
+** (sub-directory) `third_party`: References to third-party components, as {git} Submodules
+
+NOTE: All of the sub-directories defined above are optional. Layers shall only include them if they have a use for them.
+
+[[arch_distribution]]
+=== Distribution
+
+A *Distribution* is a coherent set of layers. As stated above, layers are represented as {git} repos, hence a single distribution is represented as a {git} repository too, with little or no content but {git} https://git-scm.com/docs/git-submodule[submodule] references to the disitribution layers.
+
+Distributions are meant to offer convenient "views" into the {project} ecosystem of layers. Different organizations may offer different {project} distributions targeting subsets of the RISC-V landscape, such as particular hardware or software vendors/organizations/communities.
+
+Distributions, as {git} submodules do, tie together not only specific layers/repositorires but also specific versions of them. Thus, distributions are also versioning entities, linking toghether not only related or dependent layers, but also versions of them that represent a particular state or milestone.
+
+Distributions are structured as follows:
+
+* (repo) `rvbl_<name>`: name of the distribution
+** (submodule) `+https://.../rvbl_<name>+`: checked out as `<name>` (*without* the `rvbl_` prefix)
+** (submodule) ...
+** (submodule) `+https://.../rvbl_<name>+`: checked out as `<name>` (*without* the `rvbl_` prefix)
+** (file) `README.md`: distribution-specific notes
+
+[[arch_toolchain]]
+=== Toolchain
+
+A *Toolchain* is a set of files integrating a particular set of assemblers, compilers, linkers, etc. with
+the {project} build system.
+
+IMPORTANT: As they are defined in the {project}, toolchains do not contain "product" assets such as executables, header files, library binaries, documentation, etc. Those are generally to be automatically downloaded from an external source (e.g. distro repositories via OS package manager) or manually installed/configured (e.g. vendor installation packages and license management for commercial toolchains).
+
+Toolchains are structured as follows:
+
+* (repo) `rvbl_<name>`:
+** (sub-directory) `toolchain`:
+*** (sub-sub-directory) `<name>``
+**** (file) `<arch>_<abi>.cmake`: {cmake} toolchain file for ISA (`riscv32` or `riscv64`) and ABI (e.g. `ilp32`)
+**** (file) `Dockerfile`: {docker} recipe to construct a container image featuring this toolchain
+
+Toolchains can be leveraged both in the host build environment, or within a container defined by the
+`Dockerfile` described above.
+
+Local (i.e. in the host filesystem and run-time environment) toolchain deployment is usually the norm, but serval use cases are also enabled by containerization:
+
+* Enable toolchains that run on foreign operating systems or architectures (e.g. the host environment is 64-bit Intel Windows but the toolchain only runs on 32-bit Intel Linux) to run locally
+* Usage in tightly controlled execution environments like CI/CD servers
+* Avoid proliferation of / enable co-existence for multiple toolchains in the host runtime environment
+* Simplify installation steps
+* Guarantee homogeneity of build environments across teams
+
+The {project} is designed from the ground-up to support as many toolchains as possible, both locally available in the host run-time environment, or containerized.
+
+NOTE: At the time of writing this document, only toolchains for the C programming language are featured and supported.
+
+[[arch_library]]
+=== Library
+
+A *Library* is a cohesive set of software services packaged along with (hopefully and well designed and documented) software interfaces (i.e. APIs).
+
+Libraries can be found as layer sub-elements:
+
+* (repo) `rvbl_<name>`:
+** (sub-directory) `lib`: Library components
+*** (sub-sub-directory) `<name>`: Library component
+**** (sub-sub-sub-directory) `include`: Library header files
+**** (sub-sub-sub-directory) `source`: Library source files
+**** (sub-sub-sub-directory) `tests`: Library test files
+
+or as <<arch_machine>> sub-elements:
+
+* (repo) `rvbl_<name>`:
+** (sub-directory) `machine`: Machines provided by this layer
+*** (sub-sub-directory) `<name>`: Machine support files
+**** (sub-sub-sub-directory) `lib`: Machine-specific libraries
+***** (sub-sub-sub-sub-directory) `<name>`: Same structure as `rvbl_<name>/lib/<name>` above
+
+NOTE: At the time of writing this document, only libraries written in the C programming language are featured and supported.
+
+Many libraries rely upon and extend device Hardware-Software Interfaces (HSIs) automatically generated from device models with machine models, and thus can only by built in the context of a particular <<arch_machine>>.
+
+[[arch_model]]
+=== Model
+
+As explained earlier, a *Model* is a way to synthesize structural aspects of a complex engineering component. In addition, communities and projects greatly benefit from using common human- and machine-friendly syntax and formats.
+
+Models also conform to a given meta-model which dictates in great detail what kind of entities may appear in models, what their attributes can be, and how they relate to each other. Like a https://en.wikipedia.org/wiki/Database_schema[database schema] or an https://en.wikipedia.org/wiki/XML_schema[XML schema].
+
+In this particular context of the {project}, models are employed to define Hardware-Software Interfaces (HSIs), including but not limited to:
+
+* Machine registers
+* Machine constraints and characteristics
+* Memory region boundaries and characteristics
+
+Models can be found both as layer sub-elements:
+
+* (repo) `rvbl_<name>`:
+** (sub-directory) `model`: Device models provided by this layer
+*** (sub-sub-directory) `<name>`: Device model
+**** (file) `model.json`: Device model file
+
+or as machine sub-elements:
+
+* (repo) `rvbl_<name>`:
+** (sub-directory) `machine`: Machines provided by this layer
+*** (sub-sub-directory) `<name>`: Machine files
+**** (sub-sub-sub-directory) `model`: Machine model
+***** (file) `model.json`: Machine model file
+
+The main use case for these models is to have HSI code automatically derived, but they can also be used to:
+
+* Automatically produce machine HSI documentation
+* Verify HSI consistency (e.g. no overlapping registers or word-length inconsistencies)
+* Automatically produce inputs for, or validate outputs from, non-software tools (e.g. FPGA synthesys tools)
+
+Once we've stated the value of models, it is worth pointing out that machine models are not meant to be monolythic entities (e.g. one single huge file describing all aspects of a particular machine), but instead a composition of discrete files representing smaller, reusable portions of a larger model. This is achieved by means of special `include` directives that allow any model file to "import" other (partial) models into a given context, until complete machines are composed.
+
+NOTE: In the {project}, {json} is the de-facto file format for models, while {json-schema} used as meta-model file format.
+
+[[arch_machine]]
+=== Machine
+
+A *Machine* packages a machine model, libraries, linker files, examples, ancilliary source code, build scripts and other assets conforming a {project} for a particular machine:
+
+* (repo) `rvbl_<name>`:
+** (sub-directory) `machine`: Machines provided by this layer
+*** (sub-sub-directory) `<name>`: Machine files
+**** (sub-sub-sub-directory) `example`: Machine examples
+**** (sub-sub-sub-directory) `linker`: Machine linker files
+**** (sub-sub-sub-directory) `model`: Machine model
+**** (sub-sub-sub-directory) `source`: Machine source files
+**** (sub-sub-sub-directory) `generated`: Generated files
+**** (file) `CMakeLists.txt`: Machine {cmake} file
+**** (file) `machine.json`: Machine configuration file
+
+Machines are, along <<arch_project>>s, the only valid build targets in the {project}.
+
+[[arch_project]]
+=== Project
+
+A *Project* builds system or application-level software on top of a particular machine. Internal purpose or structure of projects is not something the {project} aims to standardize or have an opinion about. Valid examples are:
+
+- Bare-metal applications
+- Bootloaders
+- Operating Systems
+- Test benches
+
+Projects are expressed as follows:
+
+* (repo) `rvbl_<name>`:
+** (sub-directory) `project`: Projects provided by this layer
+*** (sub-sub-directory) `<name>`: Project files
+
+[[arch_runner]]
+=== Runner
+
+A *Runner* is an structured description of how final binaries (e.g. <<arch_machine>> examples, <<arch_library>> tests, <<arch_project>>s) can be executed:
+
+* (repo) `rvbl_<name>`:
+** (sub-directory) `runner`: Runners provided by this layer
+*** (sub-sub-directory) `<name>`: Runner file(s)
+**** (file) `runner.json`: Runner descriptor file
+
+`runner.json` files describe general parameters about the run-time infrastructure they represent, like:
+
+- Program to run
+- Command-line parameters to pass the program, in run and debug modes
+
+Such parameters are extended by `machine.json` files defined within <<arch_machine>>s, where machine-specific parameters are added for specific runners.
+
+== Usage
+
+The complex mesh of concepts decribed in the previous section might leave the reader confused, and with perhaps more questions than answers, like:
+
+- How do I obtain a distribution?
+- How do I build anything useful from a distribution check-out?
+- How do I choose a target machine? how about a toolchain?
+
+The {project} design rests upon two well-known development tools ({git} and {cmake}), plus a couple custom tools.
+
+=== Git
+
+Since a <<arch_distribution>> is essentially a {git} repo representing the root of a submodule hierarchy, checking a complete distribution out takes no more than a single command:
+
+```
+git clone --recurse-submodules <distribution_url>
+```
+
+Pulling from and pushing to remote branches is certainly no different:
+
+```
+git pull --recurse-submodules=on-demand
+git push --recurse-submodules=on-demand
+```
+
+=== CMake
+
+It should not be a surprise at this point that the {project} is configured, built and even tested using {cmake}. As with many large projects involving specialized build procedures, a thin utility layer of CMake functions is provided to ease the work of build engineers:
+
+* (CMake function) `rvbl_machine()`
+* (CMake function) `rvbl_interface_library()`
+* (CMake function) `rvbl_static_library()`
+* (CMake function) `rvbl_executable()`
+* (CMake function) `rvbl_test()`
+* (CMake function) `rvbl_use()`
+* (CMake function) `rvbl_layer_documentation()`
+
+<<arch_machine>> and <<arch_project>> `CMakeLists.txt` files make heavy use of these functions, which in turn rely on the well-defined directory structure defined for all the <<_concepts>> described in the previous section.
+
+=== rave
+
+Still, managing {cmake} toolchain files, source directories and build directories by hand may become exceptionally repetitive and error-prone, as the number of <<arch_machine>>s, <<arch_toolchain>>s and <<arch_project>>s one works with grows.
+
+To this end, `rave`, the {project} unified build tool, exists. `rave` is a command-line interface program that simplifies enumeration, construction, testing and execution of {project} <<arch_machine>>s and <<arch_project>>s with any set of <<arch_toolchain>>s.
+
+`rave` does most, if not all, the housekeeping so the {project} developers and users can focus on actual functionality:
+
+- Dynamically enumerating and tagging (with convenient `<layer>.<name>` monikers) all <<arch_machine>>s, <<arch_project>>s, <<arch_toolchain>>s and <<arch_runner>>s present in the current distribution:
+
+
+.Example: enumerating machines
+```
+% rave list --machine
+qemu.virt_rvi20u32
+qemu.virt_em_altair_m32
+qemu.virt_rt_europa_m32
+```
+
+.Example: enumerating toolchains, targets and runners
+```
+% rave list --toolchain --target --runner
+quintauris.dhrystone
+qemu.virt_rvi20u32
+qemu.virt_em_altair_m32
+qemu.virt_rt_europa_m32
+llvm.clang
+gnu.gcc
+qemu.system32-elf
+qemu.system32-bin
+```
+
+- Wrapping {cmake} with a convenient, simplified, build interface:
+
+.Example: configuring, building and testing a machine
+```
+% rave make --toolchain gnu.gcc --machine qemu.virt_rvi20u32 --configure --build --test
+> cmake -S <...>/qemu/machine/virt_rvi20u32 -B <...>/build/local/gnu_gcc/qemu_virt_rvi20u32 -D CMAKE_BUILD_TYPE=Release --toolchain <...>/gnu/toolchain/gcc/rt_europa_m32.cmake
+...
+> cmake --build <...>/build/local/gnu_gcc/qemu_virt_rvi20u32 --parallel 1
+...
+> ctest --test-dir <...>/build/local/gnu_gcc/qemu_virt_rvi20u32
+...
+```
+
+- Wrapping {docker} with a convenient, simplified, management and build interfaces:
+
+.Example: configuring, building and testing a machine using a containerized toolchain
+```
+% rave docker --toolchain gnu.gcc --provision --up
+> docker build -t rvbl:gnu.gcc <...>/gnu/toolchain/gcc
+...
+> docker run --interactive --tty --detach --name rvbl.gnu_gcc --volume <...>:<...> rvbl:gnu.gcc
+...
+% rave make --toolchain gnu.gcc --toolchain --machine qemu.virt_rvi20u32 --configure --build --test
+> docker exec --interactive --tty --env RVBL_TOOL=<...>/build/docker/gnu_gcc/tool/release --env RVBL_ROOT=<...> rvbl.gnu_gcc cmake -S <...>/qemu/machine/virt_rvi20u32 -B <...>/build/docker/gnu_gcc/qemu_virt_rvi20u32 -D CMAKE_BUILD_TYPE=Release --toolchain <...>/gnu/toolchain/gcc/rt_europa_m32.cmake
+...
+```
+
+- Wrapping <<arch_runner>>s with a convenient, simplified, run interface:
+
+```
+% rave run --runner qemu.system32-elf --machine qemu.virt_rvi20u32 --file <...>/build/local/gnu_gcc/qemu_virt_rvi20u32/example/hello_world/hello_world.elf
+> qemu-system-riscv32 -machine virt_rvi20u32 -smp 1 -m 16M -semihosting-config enable=on -nographic -serial mon:stdio -bios <...>/build/local/gnu_gcc/qemu_virt_rvi20u32/example/hello_world/hello_world.elf
+Hello world!
+```
+
+IMPORTANT: `rave` is the supported, continually tested way to build the {project}. The <<_cmake>> build "interface" is, by all means and purposes, considered internal. Any documentation/examples around it shall always be considered *orientational* material.
+
+=== bootstrap
+
+As convenient and powerful as <<_rave>> is, there are a few things it can't or shouldn't do:
+
+1. Setup essential environment variables (`RVBL_ROOT`, `RVBL_BUILD`, `RVBL_TOOL` and `PATH`)
+2. Ensure a Rust toolchain is available
+3. Build `rave`
+4. Ensure {git} hooks are installed in all layers
+
+For this purpose, _bootstrap_ scripts doing all of the above steps are provided for:
+
+* GNU bash and compatible shells (`bootstrap.sh`)
+* _(PLANNED)_ Windows Batch shell (`bootstrap.cmd`)
+* _(PLANNED)_ Windows PowerShell (`bootstrap.ps1`)

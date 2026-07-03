@@ -1,0 +1,21 @@
+[package]
+name = "rave"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+clap = { version = "4.5.54", features = ["derive"] }
+colog = "1.4.0"
+colored = "3.1.1"
+itertools = "0.14.0"
+log = "0.4.29"
+reedline = "0.45.0"
+regex = "1.12.2"
+serde = { version = "1.0.228", features = ["derive"] }
+serde_json = "1.0.149"
+walkdir = "2.5.0"
+which = "8.0.0"
+
+[[bin]]
+name = "rave"
+path = "program.rs"

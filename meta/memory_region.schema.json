@@ -1,0 +1,42 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "memory_region.schema.json",
+    "$comment": "Copyright 2026 Quintauris GmbH. Licensed under the Apache License, Version 2.0 (the \"License\", https://www.apache.org/licenses/LICENSE-2.0)",
+    "description": "Memory Region schema for RISC-V",
+    "title": "Memory Region",
+    "type": "object",
+    "properties": {
+        "name": {
+            "type": "string"
+        },
+        "description": {
+            "type": "string"
+        },
+        "base": {
+            "type": "string"
+        },
+        "size": {
+            "type": "string"
+        },
+        "read": {
+            "type": "boolean"
+        },
+        "write": {
+            "type": "boolean"
+        },
+        "execute": {
+            "type": "boolean"
+        },
+        "registers": {
+            "type": "array",
+            "items": {
+                "$ref": "register.schema.json"
+            }
+        }
+    },
+    "required": [
+        "name",
+        "base",
+        "size"
+    ]
+}

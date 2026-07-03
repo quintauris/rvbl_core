@@ -1,0 +1,42 @@
+////
+  Copyright 2026 Quintauris GmbH
+  Licensed under the Apache License, Version 2.0 (the "License").
+  https://www.apache.org/licenses/LICENSE-2.0
+////
+
+include::common.adoc[]
+
+= The Core Layer
+Quintauris <www.quintauris.com> (generated {localdatetime})
+
+== Overview
+
+This manual introduces the {project} project providing concepts, architecture, conventions, procedures and best practices for its users.
+
+The {project} is a collaborative effort devoted to building a common _low-level_ software enviroment for the for RISC-V ecosystem. "Low-level" in this context means that no software stack (e.g. bootloader, operating system, run-time libraries) is assumed to be present in the target machine.
+
+=== What's in the {project}
+
+* A well-documented, model-driven and modular software architecture
+* A hardware (e.g. devices, machines, etc) meta-model definition
+* A CMake-based build environment, including toolchain files
+* Model to code generation tools
+* Run-time libraries, including tests
+* Machine configurations
+* A build management tool to wrangle all of the above (`rave`)
+
+=== What's NOT in the {project}
+
+* An Operating System
+* An Integrated Development Environment
+* Hardware design/verification tools
+
+== Index
+
+* ⚡️ xref:quick_start.adoc[Quick Start]
+* 🏛️ xref:architecture.adoc[Architecture]
+* 🚧 xref:bootstrap_build.adoc[Bootstrap and Build System]
+* 📦 `core` layer
+** 🛠️ xref:meta_model.adoc[Meta-Model]
+** 🧑🏽‍💻 xref:apis.adoc[Library APIs]
+** 🔗 xref:third_party.adoc[Third-party]

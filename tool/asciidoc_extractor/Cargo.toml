@@ -1,0 +1,12 @@
+[package]
+name = "asciidoc_extractor"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+colog = "1.4.0"
+log = "0.4.29"
+
+[[bin]]
+name = "asciidoc_extractor"
+path = "program.rs"

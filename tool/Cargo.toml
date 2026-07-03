@@ -1,0 +1,3 @@
+[workspace]
+resolver = "3"
+members = ["asciidoc_extractor", "rave", "rvbl_model", "rvbl_generator_asciidoc", "rvbl_generator_c", "rvbl_generator_linker"]

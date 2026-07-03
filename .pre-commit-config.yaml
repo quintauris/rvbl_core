@@ -1,0 +1,42 @@
+---
+exclude: third_party
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+    - id: check-executables-have-shebangs
+    - id: check-shebang-scripts-are-executable
+    - id: check-illegal-windows-names
+    - id: check-symlinks
+    - id: check-toml
+    - id: end-of-file-fixer
+    - id: detect-private-key
+    - id: check-json
+    - id: mixed-line-ending
+      args: ['--fix=lf']
+    - id: pretty-format-json
+      exclude: hpm_sdk
+      args: ['--autofix', '--no-sort-keys', '--top-keys', '$schema,name,instance', '--indent', '4']
+    - id: check-yaml
+    - id: trailing-whitespace
+      args: ['--markdown-linebreak-ext=md']
+  - repo: https://github.com/pre-commit/mirrors-clang-format
+    rev: v21.1.8
+    hooks:
+    - id: clang-format
+      types_or: [c]
+      args: ['--style=file']
+  - repo: https://github.com/cheshirekow/cmake-format-precommit
+    rev: v0.6.13
+    hooks:
+    - id: cmake-format
+    - id: cmake-lint
+  - repo: https://github.com/doublify/pre-commit-rust
+    rev: v1.0
+    hooks:
+    - id: fmt
+      name: rustfmt
+      args: ['--verbose', '--manifest-path', 'tool/rave/Cargo.toml', '--', '--style-edition', '2024']
+    - id: fmt
+      name: rustfmt
+      args: ['--verbose', '--manifest-path', 'tool/asciidoc_extractor/Cargo.toml', '--', '--style-edition', '2024']

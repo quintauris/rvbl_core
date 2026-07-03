@@ -1,0 +1,43 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "paramaeter.schema.json",
+    "$comment": "Copyright 2026 Quintauris GmbH. Licensed under the Apache License, Version 2.0 (the \"License\", https://www.apache.org/licenses/LICENSE-2.0)",
+    "description": "Machine schema for RISC-V",
+    "title": "Parameter",
+    "type": "object",
+    "properties": {
+        "name": {
+            "type": "string"
+        },
+        "description": {
+            "type": "string"
+        },
+        "stage": {
+            "enum": [
+                "compile",
+                "link",
+                "run"
+            ]
+        },
+        "class": {
+            "enum": [
+                "uint8",
+                "uint16",
+                "uint32",
+                "uint64",
+                "int8",
+                "int16",
+                "int32",
+                "int64"
+            ]
+        },
+        "value": {
+            "type": "string"
+        }
+    },
+    "required": [
+        "name",
+        "stage",
+        "class"
+    ]
+}

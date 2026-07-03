@@ -1,0 +1,16 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "include.schema.json",
+    "$comment": "Copyright 2026 Quintauris GmbH. Licensed under the Apache License, Version 2.0 (the \"License\", https://www.apache.org/licenses/LICENSE-2.0)",
+    "description": "Include schema for RISC-V",
+    "title": "Include",
+    "type": "object",
+    "properties": {
+        "include": {
+            "type": "string"
+        }
+    },
+    "required": [
+        "include"
+    ]
+}

@@ -1,0 +1,288 @@
+////
+  Copyright 2026 Quintauris GmbH
+  Licensed under the Apache License, Version 2.0 (the "License").
+  https://www.apache.org/licenses/LICENSE-2.0
+////
+
+include::common.adoc[]
+
+= Bootstrap and Build System
+Quintauris <www.quintauris.com> (generated {localdatetime})
+
+== Overview
+
+After a successful {project} xref:architecture.adoc#arch_distribution[Distribution] had been cloned with {git}, the workflow continues as follows:
+
+1. xref:architecture.adoc#_bootstrap[Bootstrap] the distribution
+2. Use xref:architecture.adoc#_rave[`rave`] to build one or more targets
+
+NOTE: Bootstrapping the distribution sets certain environment variables needed by `rave` to work (also adds it to `PATH`), thus step (1) is not required in every terminal/console session that uses `rave`. Fortunately, `bootstrap` runs in matter of seconds.
+
+NOTE: Updating one or more layers may update the `bootstrap` script, `rave` or other tools, so it is recommended to repeat step (1) every time a xref:architecture.adoc#arch_distribution[Distribution], or layers within it, are updated.
+
+The following sections document, in detail, how to use and troubleshoot both `bootstrap` scripts and `rave`.
+
+=== Bootstrap script(s)
+
+:pre-commit: https://pre-commit.com[pre-commit]
+:rustup: https://rustup.rs[rustup]
+
+==== Requirements
+
+* {pre-commit}
+* {rustup}
+
+==== Usage (POSIX)
+
+The `bootstrap` script for POSIX-like environments (e.g. Linux, macOS) needs to be _sourced_:
+
+```
+% source bootstrap.sh
+```
+
+After this, environment variables `RVBL_*` should have been set, and `PATH` updated:
+
+```
+% export
+...
+RVBL_ROOT=<distribution>
+RVBL_BUILD=<distribution>/build/local
+RVBL_TOOL=<distribution>/build/local/tool/release
+...
+PATH=...:<distribution>/build/local/tool/release'
+...
+```
+
+==== Troubleshooting
+
+[qanda]
+Environment variables `RVBL_*` and `PATH` are not set after executing the bootstrap script::
+In most shells, there are practical differences between _executing_ (`% ./script.sh`) and _sourcing_ (`% source script.sh`) a shell script. You *must* _source_ in this case.
+
+
+I'm getting some errors related to `pre-commit` and/or `rust`::
+Make sure {pre-commit} and {rustup} and are installed and available in your `PATH`.
+
+=== `rave`
+
+Once the bootstrapping process described above has succeeded, `rave` will be in your `PATH` ready to use:
+
+```
+% rave
+...
+
+Usage: rave <COMMAND>
+
+Commands:
+  ...
+
+Options:
+  ...
+```
+
+`rave` command line parameters are structured with the following syntax:
+
+```
+rave [command] <flags>
+```
+
+All commands and the flags they support are described in the following sections.
+
+==== `help`
+
+===== Description
+
+Print help message or the help of the given subcommand(s).
+
+===== Sub-commands
+
+`<command>`:: Prints help related to `<command>`
+
+===== Examples
+
+Prints help message:
+
+```
+rave help
+```
+
+Prints help message for `list` command:
+
+```
+rave help list
+```
+
+==== `diagnostic`
+
+===== Description
+
+Print internal diagnostic information, useful for troubleshooting.
+
+===== Examples
+
+Prints diagnostic information:
+
+```
+rave diagnostic
+```
+
+==== `list`
+
+===== Description
+
+Lists elements of different kinds identified in the current {project} distribution tree.
+
+===== Flags
+
+`--toolchains`:: List all toolchains
+`-t`, `--targets`, `-m`, `--machines`:: List all targets (projects and machines)
+`-r`, `--runners`:: List all runners
+
+===== Examples
+
+List all recognized elements:
+
+```
+rave list
+```
+
+List recognized toolchain elements:
+
+```
+rave list --toolchains
+```
+
+List recognized targets _and_ runners:
+
+```
+rave list --targets --runners
+```
+
+==== `make`
+
+===== Description
+
+Configures, builds and tests with CMake.
+
+===== Flags
+
+`--toolchain <layer.toolchain_name>`:: Set build toolchain (one of `rave list --toolchains` output, `ask` for interactive selection, `last` to retrieve last value from configuration, `all` to iterate across all known toolchains)
+`--toolchain-target <target>`:: Set build toolchain target (`ask` for interactive selection, `last` to retrieve last value from configuration, `default` to use machine's default setting), use with `--configure`
+`--target <layer.target_name>`:: Set target to build (one of `rave list --targets` output, `ask` for interactive selection, `last` to retrieve last value from configuration, `all` to iterate across all known targets)
+`--configure`:: Configure build (`cmake ...`)
+`--build-type <type>`:: Build type to configure (`-DCMAKE_BUILD_TYPE=<type>`), use with `--configure`
+`--build`:: Execute build (`cmake --build ...`)
+`--test`:: Execute tests (`ctest ...`)
+`--jobs <n>`:: Number of build jobs (`--parallel <n>`), use with `--build`
+`--docker`:: Execute commands in {docker} container `rvbl.<layer.toolchain_name>` (container must be provisioned and up, see <<command_docker>>)
+`--docker-user`:: User to pass {docker} invokations in form `user:group` or `uid:gid`
+
+===== Examples
+
+Configure target `qemu.virt_rvi20u32` with toolchain `gnu.gcc`:
+
+```
+rave make --toolchain gnu.gcc --target qemu.virt_rvi20u32 --configure
+```
+
+Build and test previously configured target:
+
+```
+rave make --toolchain last --target last --build --test
+```
+
+Or, simply (`--toolchain` and `--target` revert to `last` if omitted):
+
+```
+rave make --build --test
+```
+
+Same, but all at once and building within a containerized `gnu.gcc` toolchain (container must be provisioned and up, see <<command_docker>>):
+
+```
+rave make --toolchain gnu.gcc --docker --target qemu.virt_rvi20u32 --configure --build --test
+```
+
+[[command_docker]]
+==== `docker`
+
+===== Description
+
+Manages toolchain containers with {docker}.
+
+===== Flags
+
+`--toolchain <layer.toolchain_name>`:: Set toolchain (one of `rave list --toolchains` output, `ask` for interactive selection, `last` to retrieve last value from configuration, `all` to iterate across all known toolchains)
+`--provision`:: Build {docker} image for selected toolchain(s)
+`--up`:: Start (and keep running) container for selected toolchain (image must have been built with `--provision` before)
+`--down`:: Stop (but not remove) container for selected toolchain
+`--docker-user`:: User to pass {docker} invokations in form `user:group` or `uid:gid`
+
+===== Examples
+
+Build image and start container for toolchain `gnu.gcc`:
+
+```
+rave docker --toolchain gnu.gcc --provision --up
+```
+
+Stop container for toolchain `gnu.gcc`
+
+```
+rave docker --toolchain last --down
+```
+
+Or, simply (`--toolchain` reverts to `last` if omitted):
+
+```
+rave docker --down
+```
+
+Once "downed", a container must be removed before its image can be updated:
+
+```
+docker container rm rvbl.gnu_gcc
+```
+
+==== `run`
+
+===== Description
+
+Leverages xref:architecture.adoc#arch_runner[Runners] to run images built with <<_make>>.
+
+===== Flags
+
+`--toolchain <layer.toolchain_name>`:: Set toolchain the image has been built with (one of `rave list --toolchains` output, `ask` for interactive selection, `last` to retrieve last value from configuration, `all` to iterate across all known toolchains)
+`--target <layer.target_name>`:: Set target the image has built for (one of `rave list --targets` output, `ask` for interactive selection, `last` to retrieve last value from configuration, `all` to iterate across all known targets)
+`--runner <layer.runner_name>`:: Set runner to use (one of `rave list --runners` output, `ask` for interactive selection, `last` to retrieve last value from configuration, `all` to iterate across all known runners)
+`--docker`:: Set if the target has been built with `--docker`
+`--file <file>`:: Set path of image file to run (absolute or relative to current directory)
+`--debug`:: Use runner "debug" configuration
+`--dump-file <file>`:: File to dump after the run, absolute or relative to build directory
+`--delay <seconds>`:: Artificial delay to introduce after each test run (needed for some runners to unwind before honoring `--dump-file`)
+
+===== Examples
+
+Run example image build with `gnu.gcc` as part of `qemu.virt_rvi20u32` machine, using `qemu.system32-elf` runner:
+
+```
+rave run --toolchain gnu.gcc --machine qemu.virt_rvi20u32 --runner qemu.system32-elf --file build/local/llvm_clang/qemu_virt_rvi20u32/example/hello_world/hello_world.elf
+```
+
+==== `moniker`
+
+===== Description
+
+This command serves the CMake build infrastructure, to determine the moniker `rave` assigns to a particular target directory.
+
+===== Options
+
+`<path>`:: Path to derive moniker from
+
+===== Examples
+
+Produce `<layer.name>` moniker for the `qemu/machine/virt_rvi20u32` path:
+
+```
+% rave moniker qemu/machine/virt_rvi20u32
+```

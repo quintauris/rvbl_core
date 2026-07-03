@@ -1,0 +1,29 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "cpu.schema.json",
+    "$comment": "Copyright 2026 Quintauris GmbH. Licensed under the Apache License, Version 2.0 (the \"License\", https://www.apache.org/licenses/LICENSE-2.0)",
+    "description": "Machine schema for RISC-V",
+    "title": "CPU",
+    "type": "object",
+    "properties": {
+        "name": {
+            "type": "string"
+        },
+        "description": {
+            "type": "string"
+        },
+        "xlen": {
+            "type": "integer",
+            "multipleOf": 32
+        },
+        "register_sets": {
+            "type": "array",
+            "items": {
+                "$ref": "register_set.schema.json"
+            }
+        }
+    },
+    "required": [
+        "name"
+    ]
+}

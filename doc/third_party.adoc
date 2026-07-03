@@ -1,0 +1,27 @@
+////
+  Copyright 2026 Quintauris GmbH
+  Licensed under the Apache License, Version 2.0 (the "License").
+  https://www.apache.org/licenses/LICENSE-2.0
+////
+
+include::common.adoc[]
+
+= Third-party Components
+Quintauris <www.quintauris.com> (generated {localdatetime})
+
+== nanoprintf
+
+=== Description
+
+nanoprintf is an unencumbered implementation of snprintf and vsnprintf for embedded systems that, when fully enabled, aim for C11 standard compliance. The primary exceptions are scientific notation (`%e`, `%g`, `%a`), and locale conversions that require `wcrtomb` to exist. C23 binary integer output is optionally supported as per http://www.open-std.org/jtc1/sc22/wg14/www/docs/n2630.pdf[N2630]. Safety extensions for snprintf and vsnprintf can be optionally configured to return trimmed or fully-empty strings on buffer overflow events.
+
+=== Rationale
+
+* xref:apis.adoc#_test_library[Test Library] uses `vsnprintf()` to format log outputs.
+* Further layers may also benefit from `printf()` and similar functions.
+
+=== Source and license
+
+Nanoprintf is dual-licensed under both the "Unlicense" and the "Zero-Clause BSD" (0BSD) licenses. The intent of this dual-licensing structure is to make nanoprintf as consumable as possible in as many environments / countries / companies as possible without encumbering users.
+
+See https://github.com/charlesnicholson/nanoprintf/blob/main/LICENSE.

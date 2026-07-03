@@ -1,0 +1,37 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "device.schema.json",
+    "$comment": "Copyright 2026 Quintauris GmbH. Licensed under the Apache License, Version 2.0 (the \"License\", https://www.apache.org/licenses/LICENSE-2.0)",
+    "description": "Device schema for RISC-V",
+    "title": "Device",
+    "type": "object",
+    "properties": {
+        "name": {
+            "type": "string"
+        },
+        "instance": {
+            "type": "string"
+        },
+        "description": {
+            "type": "string"
+        },
+        "memory_regions": {
+            "type": "array",
+            "items": {
+                "$ref": "memory_region.schema.json"
+            },
+            "minItems": 1
+        },
+        "parameters": {
+            "type": "array",
+            "items": {
+                "$ref": "parameter.schema.json"
+            }
+        }
+    },
+    "required": [
+        "name",
+        "instance",
+        "memory_regions"
+    ]
+}

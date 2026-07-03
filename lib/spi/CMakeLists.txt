@@ -1,0 +1,9 @@
+rvbl_interface_library(
+  NAME
+  spi
+  SOURCES
+  "${CMAKE_CURRENT_SOURCE_DIR}/include/rvbl/spi/rvbl_spi.h"
+  INCLUDES
+  "${CMAKE_CURRENT_LIST_DIR}/include"
+  LIBRARIES
+  type)

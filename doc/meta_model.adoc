@@ -1,0 +1,97 @@
+////
+  Copyright 2026 Quintauris GmbH
+  Licensed under the Apache License, Version 2.0 (the "License").
+  https://www.apache.org/licenses/LICENSE-2.0
+////
+
+include::common.adoc[]
+
+= Meta-Model
+Quintauris <www.quintauris.com> (generated {localdatetime})
+
+== Overview
+
+Quintauris' machine meta-model defines structure and properties of machine models employed all across the {project}.
+
+The top-level machine meta-model is a composition of smaller, more purpose-specific meta-models. The following is a simplified, top-level description of the metamodel hierarchy:
+
+* <<_machine>>
+** (1..*) <<_cpu>>
+*** (0..*) <<_register_set>>
+**** (0..*) <<_register>>
+***** (0..*) <<_field>>
+****** (0..*) <<_value>>
+** (0..*) <<_memory_region>>
+*** (0..*) <<_register>>
+** (0..*) <<_device>>
+*** (0..*) <<_memory_region>>
+*** (0..*) <<_parameter>>
+** (0..*) <<_parameter>>
+
+== Common Attributes
+
+All model entities share the follwoing attributes:
+
+name:: Name of the model entity
+description:: Human-friendly description of the entity, for documentation purposes
+
+For conciseness and readability, these attributes are omitted in the following sections.
+
+== Machine
+
+cpus:: Array of <<_cpu>>s featured by the machine
+memory_regions:: Array of <<_memory_region>>s featured by the machine
+devices:: Array of <<_device>>s featured by the machine
+parameters:: Array of machine-level <<_parameter>>s
+
+== Parameter
+
+stage:: One of `compile`, `link`, `run`. Determines the stage at which the parameter value is to be defined
+class:: One of `uint8`, `uint16`, `uint32`, `uint64`, `int8`, `int16`, `int32`, `int64`. Determines the type of the parameter
+value:: String representation of the parameter's numerical default value
+
+== CPU
+
+xlen:: Multiple-of-32 integer stating the native register width of the machine
+register_sets:: Array of <<_register_set>>s
+
+== Register Set
+
+Array of <<_register>>s.
+
+== Register
+
+class:: One of `memory_mapped`, `control_status`
+width:: Number of bits in the register
+offset:: Zero-based offset of the register within the memory space that contains it, in bytes
+values:: Array of possible <<_value>>s for the register
+fields:: Array of register <<_field>>s within the register
+indexing:: If defined, the register is considered an array of individual registers
+indexing/lower_bound:: Lower bound for indexed access
+indexing/upper_bound:: Upper bound for indexed access
+indexing/stride:: Distance between entries, in bytes
+
+== Device
+
+instance:: Device instance name, which differentiates it from other instantiations of the same device
+memory_regions:: Array of <<_memory_region>>s featured by the device
+parameters:: Array of device-level <<_parameter>>s
+
+== Field
+
+position:: Zero-based offset of the field within its containing register, in bits
+length:: Length of the field, in bits
+values:: Array of possible <<_value>>s for the field
+
+== Memory Region
+
+base:: Base address of the memory region
+size:: Size of the memory region, in bytes
+read:: Whether the memory region is readable
+write:: Whether the memory region is writable
+execute:: Whether the memory region is executable
+registers:: Array of <<_register>>s
+
+== Value
+
+value:: Data held by the value
