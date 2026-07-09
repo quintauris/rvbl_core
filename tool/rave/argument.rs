@@ -44,6 +44,10 @@ pub struct MakeArgs {
     #[arg(long, default_value_t = String::from("Release"), requires = "configure")]
     pub build_type: String,
 
+    /// Build generator (e.g. Unix Makefiles)
+    #[arg(long, default_value_t = String::from("Unix Makefiles"), requires = "configure")]
+    pub build_generator: String,
+
     /// Perform build for selected target(s)
     #[arg(short, long)]
     pub build: bool,

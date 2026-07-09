@@ -171,6 +171,7 @@ Configures, builds and tests with CMake.
 `--target <layer.target_name>`:: Set target to build (one of `rave list --targets` output, `ask` for interactive selection, `last` to retrieve last value from configuration, `all` to iterate across all known targets)
 `--configure`:: Configure build (`cmake ...`)
 `--build-type <type>`:: Build type to configure (`-DCMAKE_BUILD_TYPE=<type>`), use with `--configure`
+`--build-generator <name>`:: Build generator to configure (`-G <name>`), use with `--configure`
 `--build`:: Execute build (`cmake --build ...`)
 `--test`:: Execute tests (`ctest ...`)
 `--jobs <n>`:: Number of build jobs (`--parallel <n>`), use with `--build`

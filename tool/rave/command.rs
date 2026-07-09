@@ -121,6 +121,7 @@ pub fn configure(
     toolchain: &Toolchain,
     toolchain_target: &str,
     build_type: &String,
+    build_generator: &String,
     docker: bool,
     docker_user: Option<String>,
 ) -> Result<ExitCode> {
@@ -137,6 +138,8 @@ pub fn configure(
             target.path().to_str().unwrap(),
             "-B",
             build_path.to_str().unwrap(),
+            "-G",
+            build_generator,
             "-D",
             &format!("CMAKE_BUILD_TYPE={}", build_type),
             "--toolchain",
