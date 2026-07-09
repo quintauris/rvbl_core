@@ -111,6 +111,7 @@ fn main() -> ExitCode {
                             &toolchain,
                             &toolchain_target,
                             &args.build_type,
+                            &args.build_generator,
                             args.docker,
                             args.docker_user.clone(),
                         ) {
