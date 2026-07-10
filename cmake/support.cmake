@@ -547,6 +547,32 @@ shall be manually resized to ${arg_BINARY_SIZE}.")
     endif()
   endif()
 
+  if("openocd" IN_LIST rvbl_runners)
+    set(test_list "")
+
+    add_test(
+      NAME openocd.${arg_NAME}
+      COMMAND
+        ${rvbl_rave_local} run --toolchain ${rvbl_toolchain_moniker} --machine
+        ${rvbl_machine_moniker} --runner quintauris.openocd --file
+        ${CMAKE_CURRENT_BINARY_DIR}/${arg_NAME}${CMAKE_EXECUTABLE_SUFFIX_C})
+    list(APPEND test_list openocd.${arg_NAME})
+
+    if(arg_TEST_EXPECTED_OUTPUT)
+      set_tests_properties(${test_list} PROPERTIES PASS_REGULAR_EXPRESSION
+                                                   ${arg_TEST_EXPECTED_OUTPUT})
+    else()
+      set_tests_properties(
+        ${test_list}
+        PROPERTIES PASS_REGULAR_EXPRESSION "PASS" FAIL_REGULAR_EXPRESSION
+                   "FAIL" SKIP_REGULAR_EXPRESSION "SKIP")
+    endif()
+
+    if(arg_TEST_TIMEOUT)
+      set_tests_properties(${test_list} PROPERTIES TIMEOUT ${arg_TEST_TIMEOUT})
+    endif()
+  endif()
+
   if(arg_FLASH)
     set(flash_executable_name "${arg_NAME}_flash")
 
