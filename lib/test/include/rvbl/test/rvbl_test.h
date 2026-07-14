@@ -17,6 +17,7 @@
 #include "rvbl/alloc/rvbl_alloc.h"
 #include "rvbl/semihost/rvbl_semihost.h"
 #include "rvbl/type/rvbl_types.h"
+#include "rvbl/uart/rvbl_uart.h"
 
 /// === Enumeration `TestResult`
 typedef enum TestResult
@@ -109,13 +110,26 @@ typedef struct rvbl_test_interrupt_control
     void (*cleanup_interrupt)(void);
 } rvbl_test_interrupt_control;
 
-/// === Function `rvbl_test_initialize`
+/// === Function `rvbl_test_log`
 /// Formats and writes log message.
 ///
 /// ==== Parameters
 /// `const char*`:: Format string (printf-style).
 /// `...`:: Format arguments.
 void rvbl_test_log(const char *format, ...);
+
+/// === Function `rvbl_test_log_uart`
+/// Formats and writes log message to the designated UART driver and instance.
+///
+/// This function does not require `rvbl_test_initialize()` to have been
+/// previously called.
+///
+/// ==== Parameters
+/// `const rvbl_uart*`:: UART driver.
+/// `const void*`:: UART instance (must be compatible with driver).
+/// `const char*`:: Format string (printf-style).
+/// `...`:: Format arguments.
+void rvbl_test_log_uart(const rvbl_uart *uart, const void *instance, const char *format, ...);
 
 /// === Function `rvbl_hang`
 /// Hangs current HART in an infinite loop.
