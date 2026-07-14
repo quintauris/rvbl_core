@@ -23,5 +23,6 @@ rvbl_test${rvbl_toolchain_specific_suffix}.s"
   type
   machine
   c
+  uart
   semihost
   alloc_bump)

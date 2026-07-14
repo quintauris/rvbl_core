@@ -66,6 +66,34 @@ void rvbl_test_log(const char *format, ...)
     va_end(arguments);
 }
 
+struct uart_parameters
+{
+    const rvbl_uart *uart;
+    const void *instance;
+};
+
+static void rvbl_test_putc_uart(int c, void *p)
+{
+    const struct uart_parameters *parameters = p;
+
+    while (parameters->uart->tx_ready(parameters->instance, NULL) == rvbl_false) {
+    }
+
+    parameters->uart->putc(parameters->instance, c, NULL);
+}
+
+void rvbl_test_log_uart(const rvbl_uart *uart, const void *instance, const char *format, ...)
+{
+    struct uart_parameters parameters = {uart, instance};
+    va_list arguments;
+
+    va_start(arguments, format);
+    npf_vpprintf(rvbl_test_putc_uart, &parameters, format, arguments);
+    rvbl_test_putc_uart('\n', &parameters);
+    rvbl_test_putc_uart('\r', &parameters);
+    va_end(arguments);
+}
+
 void rvbl_hart_hang_if_not(rvbl_uint32_t hart)
 {
     if (rvbl_mhartid_read() != hart) {
