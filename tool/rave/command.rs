@@ -182,15 +182,27 @@ pub fn test(
     root: &PathBuf,
     target: &Target,
     toolchain: &Toolchain,
+    filter: &Option<String>,
+    filter_exclude: &Option<String>,
     docker: bool,
     docker_user: Option<String>,
 ) -> Result<ExitCode> {
     let build_path = target.build_path(root, target, toolchain, docker);
+    let dir_parameters = vec!["--test-dir", build_path.to_str().unwrap()];
+    let filter_parameters = match &filter {
+        Some(r) => vec!["-R", r],
+        None => vec![],
+    };
+    let filter_exclude_parameters = match &filter_exclude {
+        Some(e) => vec!["-E", e],
+        None => vec![],
+    };
+    let parameters = vec![dir_parameters, filter_parameters, filter_exclude_parameters];
 
     execute(
         root,
         "ctest",
-        ["--test-dir", build_path.to_str().unwrap()],
+        parameters.iter().flatten(),
         toolchain,
         false,
         None,
