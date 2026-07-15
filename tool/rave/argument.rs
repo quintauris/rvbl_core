@@ -60,6 +60,14 @@ pub struct MakeArgs {
     #[arg(short, long)]
     pub test: bool,
 
+    /// Run tests matching regular expression
+    #[arg(long, requires = "test")]
+    pub test_filter: Option<String>,
+
+    /// Exclude tests matching regular expression
+    #[arg(long, requires = "test")]
+    pub test_filter_exclude: Option<String>,
+
     /// Run selected actions in Docker container(s)
     #[arg(short, long)]
     pub docker: bool,

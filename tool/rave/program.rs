@@ -165,6 +165,8 @@ fn main() -> ExitCode {
                             &root,
                             &target,
                             &toolchain,
+                            &args.test_filter,
+                            &args.test_filter_exclude,
                             args.docker,
                             args.docker_user.clone(),
                         ) {
