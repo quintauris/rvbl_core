@@ -428,15 +428,21 @@ shall be manually resized to ${arg_BINARY_SIZE}.")
   endif()
 
   if(arg_TEST)
-    if("qemu" IN_LIST rvbl_runners)
+    if("qemu" IN_LIST rvbl_runners OR "qemu-docker" IN_LIST rvbl_runners)
       set(test_list "")
+      set(extra "")
+
+      if("qemu-docker" IN_LIST rvbl_runners)
+        set(extra "--docker")
+      endif()
 
       add_test(
         NAME qemu.${arg_NAME}
         COMMAND
           ${rvbl_rave_local} run --toolchain ${rvbl_toolchain_moniker}
           --machine ${rvbl_machine_moniker} --runner qemu.system32-elf --file
-          ${CMAKE_CURRENT_BINARY_DIR}/${arg_NAME}${CMAKE_EXECUTABLE_SUFFIX_C})
+          ${CMAKE_CURRENT_BINARY_DIR}/${arg_NAME}${CMAKE_EXECUTABLE_SUFFIX_C}
+          ${extra})
       list(APPEND test_list qemu.${arg_NAME})
 
       if(arg_BINARY)
