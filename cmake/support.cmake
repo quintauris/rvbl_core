@@ -350,12 +350,14 @@ function(rvbl_interface_library)
 endfunction()
 
 function(rvbl_static_library)
-  cmake_parse_arguments(PARSE_ARGV 0 arg "" "NAME" "SOURCES;INCLUDES;LIBRARIES")
+  cmake_parse_arguments(PARSE_ARGV 0 arg "" "NAME"
+                        "SOURCES;INCLUDES;LIBRARIES;DEFINITIONS")
 
   add_library(rvbl_${arg_NAME} STATIC ${arg_SOURCES})
   target_include_directories(rvbl_${arg_NAME} PUBLIC ${arg_INCLUDES})
   target_link_libraries(rvbl_${arg_NAME}
                         PUBLIC $<LIST:TRANSFORM,${arg_LIBRARIES},PREPEND,rvbl_>)
+  target_compile_definitions(rvbl_${arg_NAME} PRIVATE ${arg_DEFINITIONS})
 
   rvbl_library_documentation(${arg_NAME})
 
@@ -650,7 +652,7 @@ endfunction()
 
 function(rvbl_test)
   cmake_parse_arguments(PARSE_ARGV 0 arg "" "NAME;TIMEOUT;EXPECTED_OUTPUT"
-                        "LIBRARIES")
+                        "LIBRARIES;DEFINITIONS")
 
   if(DEFINED arg_EXPECTED_OUTPUT)
     rvbl_executable(
@@ -661,6 +663,8 @@ function(rvbl_test)
       LIBRARIES
       test
       ${arg_LIBRARIES}
+      DEFINITIONS
+      ${arg_DEFINITIONS}
       TEST
       TEST_EXPECTED_OUTPUT
       ${arg_EXPECTED_OUTPUT})
@@ -673,6 +677,8 @@ function(rvbl_test)
       LIBRARIES
       test
       ${arg_LIBRARIES}
+      DEFINITIONS
+      ${arg_DEFINITIONS}
       TEST)
   endif()
 
