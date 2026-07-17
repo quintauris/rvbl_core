@@ -627,6 +627,23 @@ ${rvbl_machine_dir}/generated/linker")
           COMMENT "Prepending bootloader to \
 ${CMAKE_CURRENT_BINARY_DIR}/${flash_executable_name}.bin ...")
       endif()
+
+      if(arg_BINARY_SIZE)
+        if(TRUNCATE)
+          add_custom_command(
+            TARGET ${flash_executable_name}_binary
+            POST_BUILD
+            COMMAND ${TRUNCATE} -s ${arg_BINARY_SIZE}
+                    ${CMAKE_CURRENT_BINARY_DIR}/${flash_executable_name}.bin
+            COMMENT "Resizing \
+${CMAKE_CURRENT_BINARY_DIR}/${flash_executable_name}.bin ...")
+        else()
+          message(
+            WARNING
+              "No \"truncate\" executable found, ${flash_executable_name}.bin \
+  shall be manually resized to ${arg_BINARY_SIZE}.")
+        endif()
+      endif()
     endif()
   endif()
 endfunction()
