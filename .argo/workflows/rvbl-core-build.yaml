@@ -44,7 +44,6 @@ spec:
         resources:
           requests:
             storage: 10Gi
-        storageClassName: local-path
 
   templates:
     - name: main
