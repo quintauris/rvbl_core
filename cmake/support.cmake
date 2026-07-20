@@ -447,14 +447,14 @@ shall be manually resized to ${arg_BINARY_SIZE}.")
           ${extra})
       list(APPEND test_list qemu.${arg_NAME})
 
-      if(arg_BINARY)
+      if(arg_FLASH)
         add_test(
-          NAME qemu.${arg_NAME}.bin
+          NAME qemu.${arg_NAME}.flash
           COMMAND
             ${rvbl_rave_local} run --toolchain ${rvbl_toolchain_moniker}
             --machine ${rvbl_machine_moniker} --runner qemu.system32-bin --file
-            ${CMAKE_CURRENT_BINARY_DIR}/${arg_NAME}.bin)
-        list(APPEND test_list qemu.${arg_NAME}.bin)
+            ${CMAKE_CURRENT_BINARY_DIR}/${arg_NAME}_flash.bin ${extra})
+        list(APPEND test_list qemu.${arg_NAME}.flash)
       endif()
 
       if(arg_TEST_EXPECTED_OUTPUT)
