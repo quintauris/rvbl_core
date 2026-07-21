@@ -45,7 +45,7 @@ pub struct MakeArgs {
     pub build_type: String,
 
     /// Build generator (e.g. Unix Makefiles)
-    #[arg(long, default_value_t = String::from("Unix Makefiles"), requires = "configure")]
+    #[arg(long, default_value_t = String::from("last"), requires = "configure")]
     pub build_generator: String,
 
     /// Perform build for selected target(s)

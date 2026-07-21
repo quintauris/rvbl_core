@@ -15,6 +15,7 @@ pub struct Configuration {
     pub last_toolchain_target: Option<String>,
     pub last_targets: Vec<String>,
     pub last_runners: Vec<String>,
+    pub last_build_generator: Option<String>,
 }
 
 pub enum Error {
