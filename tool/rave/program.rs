@@ -86,6 +86,8 @@ fn main() -> ExitCode {
         Arguments::Make(args) => {
             let targets = select::targets(&args.target, &elements, &mut configuration);
             let toolchains = select::toolchains(&args.toolchain, &elements, &mut configuration);
+            let build_generator =
+                select::build_generators(&args.build_generator, &mut configuration);
 
             'target_loop: for target in targets {
                 let target_configuration =
@@ -111,7 +113,7 @@ fn main() -> ExitCode {
                             &toolchain,
                             &toolchain_target,
                             &args.build_type,
-                            &args.build_generator,
+                            &build_generator,
                             args.docker,
                             args.docker_user.clone(),
                         ) {

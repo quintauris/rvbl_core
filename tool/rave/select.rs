@@ -162,3 +162,36 @@ pub fn runners<'a>(
 
     result
 }
+
+pub fn build_generators<'a>(
+    filter: &str,
+    configuration: &mut configuration::Configuration,
+) -> String {
+    let default = String::from("Unix Makefiles");
+    let all = vec![
+        default.clone(),
+        String::from("Ninja"),
+        String::from("Ninja Multi-Config"),
+    ];
+    let result = match filter {
+        "last" => {
+            if let Some(g) = configuration.last_build_generator.as_ref() {
+                g.clone()
+            } else {
+                default
+            }
+        }
+        "ask" => {
+            if let Some(g) = interactive::choose("generator", &all) {
+                g
+            } else {
+                default
+            }
+        }
+        _ => filter.to_string(),
+    };
+
+    configuration.last_build_generator = Some(result.clone());
+
+    result.clone()
+}
