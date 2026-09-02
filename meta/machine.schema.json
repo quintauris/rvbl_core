@@ -25,10 +25,10 @@
                 "$ref": "memory_region.schema.json"
             }
         },
-        "devices": {
+        "peripherals": {
             "type": "array",
             "items": {
-                "$ref": "device.schema.json"
+                "$ref": "peripheral.schema.json"
             }
         },
         "parameters": {
@@ -42,7 +42,7 @@
         "name",
         "cpus",
         "memory_regions",
-        "devices",
+        "peripherals",
         "parameters"
     ]
 }

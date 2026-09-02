@@ -36,8 +36,8 @@ source \"bootstrap.sh\".")
     NO_DEFAULT_PATH)
 
   find_program(
-    GENERATOR_ASCIIDOC_DEVICE
-    NAMES generator_asciidoc_device
+    GENERATOR_ASCIIDOC_PERIPHERAL
+    NAMES generator_asciidoc_peripheral
     HINTS ${rvbl_tool} REQUIRED
     NO_DEFAULT_PATH)
 

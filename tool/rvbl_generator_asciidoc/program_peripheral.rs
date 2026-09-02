@@ -7,7 +7,7 @@ mod templates;
 
 use clap::Parser;
 use log::error;
-use rvbl_model::{argument, loader, model::Device};
+use rvbl_model::{argument, loader, model::Peripheral};
 use std::{collections::HashSet, path::PathBuf, process::ExitCode};
 
 fn main() -> ExitCode {
@@ -17,7 +17,7 @@ fn main() -> ExitCode {
 
     colog::init();
 
-    match loader::load_model::<Device>(
+    match loader::load_model::<Peripheral>(
         &arguments.input,
         &arguments.meta_model,
         &arguments.search_path,

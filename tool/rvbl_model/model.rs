@@ -239,7 +239,7 @@ pub struct Parameter {
 }
 
 #[derive(Serialize, Deserialize, Debug)]
-pub struct Device {
+pub struct Peripheral {
     pub name: String,
     pub description: Option<String>,
     pub instance: String,
@@ -253,6 +253,6 @@ pub struct Machine {
     pub description: Option<String>,
     pub cpus: Vec<Cpu>,
     pub memory_regions: Vec<MemoryRegion>,
-    pub devices: Vec<Device>,
+    pub peripherals: Vec<Peripheral>,
     pub parameters: Vec<Parameter>,
 }

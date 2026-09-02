@@ -23,7 +23,7 @@ The top-level machine meta-model is a composition of smaller, more purpose-speci
 ****** (0..*) <<_value>>
 ** (0..*) <<_memory_region>>
 *** (0..*) <<_register>>
-** (0..*) <<_device>>
+** (0..*) <<_peripheral>>
 *** (0..*) <<_memory_region>>
 *** (0..*) <<_parameter>>
 ** (0..*) <<_parameter>>
@@ -41,7 +41,7 @@ For conciseness and readability, these attributes are omitted in the following s
 
 cpus:: Array of <<_cpu>>s featured by the machine
 memory_regions:: Array of <<_memory_region>>s featured by the machine
-devices:: Array of <<_device>>s featured by the machine
+peripherals:: Array of <<_peripheral>>s featured by the machine
 parameters:: Array of machine-level <<_parameter>>s
 
 == Parameter
@@ -71,11 +71,11 @@ indexing/lower_bound:: Lower bound for indexed access
 indexing/upper_bound:: Upper bound for indexed access
 indexing/stride:: Distance between entries, in bytes
 
-== Device
+== Peripheral
 
-instance:: Device instance name, which differentiates it from other instantiations of the same device
-memory_regions:: Array of <<_memory_region>>s featured by the device
-parameters:: Array of device-level <<_parameter>>s
+instance:: Peripheral instance name, which differentiates it from other instantiations of the same peripheral
+memory_regions:: Array of <<_memory_region>>s featured by the peripheral
+parameters:: Array of peripheral-level <<_parameter>>s
 
 == Field
 
