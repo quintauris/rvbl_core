@@ -244,7 +244,7 @@ impl AsciiDocGenerator {
 
     fn device(
         self: &AsciiDocGenerator,
-        device: &model::Device,
+        device: &model::Peripheral,
         cpu: &model::Cpu,
         writer: &mut BufWriter<File>,
     ) -> Result<()> {
@@ -273,7 +273,7 @@ impl AsciiDocGenerator {
     }
 
     #[allow(unused)]
-    pub fn generate_device(&self, device: &model::Device) -> Result<()> {
+    pub fn generate_device(&self, device: &model::Peripheral) -> Result<()> {
         let file = File::create("model.adoc")?;
         let mut writer = BufWriter::new(file);
         let cpu = model::Cpu {
@@ -325,7 +325,7 @@ impl Generator for AsciiDocGenerator {
             2,
         )?;
 
-        for device in machine.devices.iter() {
+        for device in machine.peripherals.iter() {
             self.device(device, machine.cpus.first().unwrap(), &mut writer)?;
         }
 

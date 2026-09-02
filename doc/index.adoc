@@ -18,7 +18,7 @@ The {project} is a collaborative effort devoted to building a common _low-level_
 === What's in the {project}
 
 * A well-documented, model-driven and modular software architecture
-* A hardware (e.g. devices, machines, etc) meta-model definition
+* A hardware (e.g. peripherals, machines, etc) meta-model definition
 * A CMake-based build environment, including toolchain files
 * Model to code generation tools
 * Run-time libraries, including tests

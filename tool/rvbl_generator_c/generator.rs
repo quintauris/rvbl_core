@@ -16,7 +16,7 @@ fn machine_header(machine: &model::Machine) -> Result<()> {
     let file = File::create("include/rvbl/machine/rvbl_machine.h").unwrap();
     let mut writer = BufWriter::new(file);
     let device_types: HashSet<String> = machine
-        .devices
+        .peripherals
         .iter()
         .map(|x| x.name.clone())
         .collect::<HashSet<String>>();
@@ -71,7 +71,7 @@ fn machine_header(machine: &model::Machine) -> Result<()> {
 
     templates::new_line(&mut writer)?;
 
-    for device in machine.devices.iter() {
+    for device in machine.peripherals.iter() {
         let type_ = &device.name;
         let instance = &device.instance;
 
@@ -157,7 +157,7 @@ fn machine_instances_source(machine: &model::Machine) -> Result<()> {
     templates::include(&mut writer, Path::new("rvbl/machine/rvbl_machine.h"))?;
     templates::new_line(&mut writer)?;
 
-    for device in machine.devices.iter() {
+    for device in machine.peripherals.iter() {
         let type_ = &device.name;
         let instance = &device.instance;
         let mut initializers = device
@@ -194,7 +194,7 @@ fn machine_instances_source(machine: &model::Machine) -> Result<()> {
     Ok(())
 }
 
-fn device_header(device: &model::Device, machine: &model::Machine) -> Result<()> {
+fn device_header(device: &model::Peripheral, machine: &model::Machine) -> Result<()> {
     let device_type = format!("rvbl_{}_t", device.name);
     let file = File::create(format!("include/rvbl/machine/rvbl_{}.h", device.name)).unwrap();
     let mut writer = BufWriter::new(file);
@@ -498,7 +498,7 @@ impl Generator for CGenerator {
             cpu_header(cpu)?
         }
 
-        for device in machine.devices.iter() {
+        for device in machine.peripherals.iter() {
             device_header(device, machine)?
         }
 
@@ -516,7 +516,7 @@ impl Generator for CGenerator {
             paths.insert(format!("include/rvbl/machine/rvbl_{}.h", cpu.name));
         }
 
-        for device in machine.devices.iter() {
+        for device in machine.peripherals.iter() {
             paths.insert(format!("include/rvbl/machine/rvbl_{}.h", device.name));
         }
 

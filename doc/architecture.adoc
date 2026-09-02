@@ -32,11 +32,11 @@ Essential layers conform the functional core of the {project}, and there's three
 ** Host tools
 ** Project-wide documentation (including xref:index.adoc[this manual])
 ** Essential run-time libraries
-** Common device models
+** Common peripheral models
 ** References to essential and common third-pary run-time components
 * `riscv`:
-** Model files for RISC-V standard ISA and devices
-** Run-time libraries for RISC-V standard ISA and devices
+** Model files for RISC-V standard ISA and peripherals
+** Run-time libraries for RISC-V standard ISA and peripherals
 * `quintauris`
 ** Machine meta-model
 ** Models for Quintauris CPU profiles
@@ -59,7 +59,7 @@ Essential, recommended and optional layers maybe combined to produce <<arch_dist
 
 === Model-driven
 
-As shown in the previous chapter, many layers contain <<arch_model>>s. These are text-based and human-readable files describing structural aspects of devices and machines. Models are also generally easier to construct, update, reason about, and process with automated tools than code in most programming languages.
+As shown in the previous chapter, many layers contain <<arch_model>>s. These are text-based and human-readable files describing structural aspects of peripherals and machines. Models are also generally easier to construct, update, reason about, and process with automated tools than code in most programming languages.
 
 For all these reasons, the {project} is designed around a machine meta-model (sometimes referred to as _MM_ or _M2_) and a set of compliant models (sometimes generally referred to as _M1_):
 
@@ -95,7 +95,7 @@ A Layer is represented as a {git} repository which adheres to the following stru
 ** (sub-directory) `doc`: Layer documentation
 ** (sub-directory) `cmake`: {cmake}-related files (`.cmake` extension)
 ** (sub-directory) `lib`: Library components
-** (sub-directory) `model`: Device model files
+** (sub-directory) `model`: Peripheral model files
 ** (sub-directory) `toolchain`: Toolchain components
 ** (sub-directory) `tool`: Host-side tools specific to the layer (e.g. code generators)
 ** (sub-directory) `machine`: Machines provided by this layer
@@ -175,7 +175,7 @@ or as <<arch_machine>> sub-elements:
 
 NOTE: At the time of writing this document, only libraries written in the C programming language are featured and supported.
 
-Many libraries rely upon and extend device Hardware-Software Interfaces (HSIs) automatically generated from device models with machine models, and thus can only by built in the context of a particular <<arch_machine>>.
+Many libraries rely upon and extend peripheral Hardware-Software Interfaces (HSIs) automatically generated from peripheral models with machine models, and thus can only by built in the context of a particular <<arch_machine>>.
 
 [[arch_model]]
 === Model
@@ -193,9 +193,9 @@ In this particular context of the {project}, models are employed to define Hardw
 Models can be found both as layer sub-elements:
 
 * (repo) `rvbl_<name>`:
-** (sub-directory) `model`: Device models provided by this layer
-*** (sub-sub-directory) `<name>`: Device model
-**** (file) `model.json`: Device model file
+** (sub-directory) `model`: Peripheral models provided by this layer
+*** (sub-sub-directory) `<name>`: Peripheral model
+**** (file) `model.json`: Peripheral model file
 
 or as machine sub-elements:
 

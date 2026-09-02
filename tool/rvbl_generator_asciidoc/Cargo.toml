@@ -19,8 +19,8 @@ name = "generator_asciidoc_machine"
 path = "program_machine.rs"
 
 [[bin]]
-name = "generator_asciidoc_device"
-path = "program_device.rs"
+name = "generator_asciidoc_peripheral"
+path = "program_peripheral.rs"
 
 [[bin]]
 name = "generator_asciidoc_register_set"
