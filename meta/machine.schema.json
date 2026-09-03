@@ -12,6 +12,10 @@
         "description": {
             "type": "string"
         },
+        "word_size": {
+            "type": "integer",
+            "multipleOf": 8
+        },
         "cpus": {
             "type": "array",
             "items": {
@@ -19,10 +23,10 @@
             },
             "minItems": 1
         },
-        "memory_regions": {
+        "memory_map": {
             "type": "array",
             "items": {
-                "$ref": "memory_region.schema.json"
+                "$ref": "addressable.schema.json"
             }
         },
         "peripherals": {
@@ -41,7 +45,7 @@
     "required": [
         "name",
         "cpus",
-        "memory_regions",
+        "memory_map",
         "peripherals",
         "parameters"
     ]

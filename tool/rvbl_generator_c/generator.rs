@@ -43,7 +43,7 @@ fn machine_header(machine: &model::Machine) -> Result<()> {
 
     templates::new_line(&mut writer)?;
 
-    for memory_region in machine.memory_regions.iter() {
+    for memory_region in machine.memory_map.iter() {
         templates::define(
             &mut writer,
             format!("rvbl_memory_region_{}_base", &memory_region.name).as_str(),
@@ -161,7 +161,7 @@ fn machine_instances_source(machine: &model::Machine) -> Result<()> {
         let type_ = &device.name;
         let instance = &device.instance;
         let mut initializers = device
-            .memory_regions
+            .addressables
             .iter()
             .map(|x| parse_expression(&x.base))
             .collect::<Vec<i64>>();
@@ -199,7 +199,7 @@ fn device_header(device: &model::Peripheral, machine: &model::Machine) -> Result
     let file = File::create(format!("include/rvbl/machine/rvbl_{}.h", device.name)).unwrap();
     let mut writer = BufWriter::new(file);
     let mut initializers = device
-        .memory_regions
+        .addressables
         .iter()
         .map(|m| {
             (
@@ -239,7 +239,7 @@ fn device_header(device: &model::Peripheral, machine: &model::Machine) -> Result
             .collect::<Vec<(&str, &str)>>(),
     )?;
 
-    for memory_region in device.memory_regions.iter() {
+    for memory_region in device.addressables.iter() {
         if memory_region.registers.is_some() {
             for register in memory_region.registers.as_ref().unwrap().iter() {
                 let mut register_type = format!(

@@ -218,7 +218,7 @@ pub struct Cpu {
 }
 
 #[derive(Serialize, Deserialize, Debug)]
-pub struct MemoryRegion {
+pub struct Addressable {
     pub name: String,
     pub description: Option<String>,
     pub base: String,
@@ -227,6 +227,7 @@ pub struct MemoryRegion {
     pub read: Option<bool>,
     pub write: Option<bool>,
     pub execute: Option<bool>,
+    pub word_size: Option<u32>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -243,7 +244,8 @@ pub struct Peripheral {
     pub name: String,
     pub description: Option<String>,
     pub instance: String,
-    pub memory_regions: Vec<MemoryRegion>,
+    pub word_size: Option<u32>,
+    pub addressables: Vec<Addressable>,
     pub parameters: Option<Vec<Parameter>>,
 }
 
@@ -251,8 +253,9 @@ pub struct Peripheral {
 pub struct Machine {
     pub name: String,
     pub description: Option<String>,
+    pub word_size: Option<u32>,
     pub cpus: Vec<Cpu>,
-    pub memory_regions: Vec<MemoryRegion>,
+    pub memory_map: Vec<Addressable>,
     pub peripherals: Vec<Peripheral>,
     pub parameters: Vec<Parameter>,
 }

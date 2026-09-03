@@ -9,7 +9,7 @@ use rvbl_model::{evaluator::parse_expression, model};
 
 pub trait MemoryLayoutTemplate {
     fn open(&self, writer: &mut BufWriter<File>) -> Result<()>;
-    fn entry(&self, writer: &mut BufWriter<File>, region: &model::MemoryRegion) -> Result<()>;
+    fn entry(&self, writer: &mut BufWriter<File>, region: &model::Addressable) -> Result<()>;
     fn close(&self, writer: &mut BufWriter<File>) -> Result<()>;
 }
 
@@ -37,7 +37,7 @@ impl MemoryLayoutTemplate for Gnu {
         Ok(())
     }
 
-    fn entry(&self, writer: &mut BufWriter<File>, region: &model::MemoryRegion) -> Result<()> {
+    fn entry(&self, writer: &mut BufWriter<File>, region: &model::Addressable) -> Result<()> {
         writeln!(
             writer,
             "{}({}{}{}) : ORIGIN = {:#010x}, LENGTH = {:#010x}",
@@ -66,7 +66,7 @@ impl MemoryLayoutTemplate for Iar {
         Ok(())
     }
 
-    fn entry(&self, writer: &mut BufWriter<File>, region: &model::MemoryRegion) -> Result<()> {
+    fn entry(&self, writer: &mut BufWriter<File>, region: &model::Addressable) -> Result<()> {
         writeln!(
             writer,
             "define region {} = Mem:[from {:#010x} size {:#010x}];",
@@ -90,7 +90,7 @@ impl MemoryLayoutTemplate for Tasking {
         Ok(())
     }
 
-    fn entry(&self, writer: &mut BufWriter<File>, region: &model::MemoryRegion) -> Result<()> {
+    fn entry(&self, writer: &mut BufWriter<File>, region: &model::Addressable) -> Result<()> {
         writeln!(
             writer,
             r#"memory {}
