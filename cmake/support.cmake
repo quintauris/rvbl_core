@@ -710,6 +710,7 @@ function(rvbl_layer_documentation_model)
     get_filename_component(model_name ${model_name} NAME)
     set(output_adoc ${temp_dir}/${model_name}_${file_name}.adoc)
     list(APPEND outputs_model_${arg_GENERATOR} ${output_adoc})
+    message("${input}")
 
     add_custom_command(
       OUTPUT ${output_adoc}
@@ -728,9 +729,8 @@ function(rvbl_layer_documentation_model)
 endfunction()
 
 function(rvbl_layer_documentation)
-  cmake_parse_arguments(
-    PARSE_ARGV 0 arg "" "SOURCE_DIR;TARGET_DIR;RVBL_ROOT"
-    "DEVICE_MODELS;REGISTER_SET_MODELS;CPU_MODELS;PARAMETERS")
+  cmake_parse_arguments(PARSE_ARGV 0 arg "" "SOURCE_DIR;TARGET_DIR;RVBL_ROOT"
+                        "PERIPHERAL_MODELS;CPU_MODELS;PARAMETERS")
 
   make_directory(${arg_TARGET_DIR})
   set(target_dir_adoc ${arg_SOURCE_DIR}/generated)
@@ -769,35 +769,9 @@ function(rvbl_layer_documentation)
     RVBL_ROOT
     ${arg_RVBL_ROOT}
     GENERATOR
-    device
+    peripheral
     MODELS
-    ${arg_DEVICE_MODELS}
-    PARAMETERS
-    ${arg_PARAMETERS})
-  rvbl_layer_documentation_model(
-    SOURCE_DIR
-    ${arg_SOURCE_DIR}
-    TARGET_DIR
-    ${target_dir_adoc}
-    RVBL_ROOT
-    ${arg_RVBL_ROOT}
-    GENERATOR
-    register_set
-    MODELS
-    ${arg_REGISTER_SET_MODELS}
-    PARAMETERS
-    ${arg_PARAMETERS})
-  rvbl_layer_documentation_model(
-    SOURCE_DIR
-    ${arg_SOURCE_DIR}
-    TARGET_DIR
-    ${target_dir_adoc}
-    RVBL_ROOT
-    ${arg_RVBL_ROOT}
-    GENERATOR
-    cpu
-    MODELS
-    ${arg_CPU_MODELS}
+    ${arg_PERIPHERAL_MODELS}
     PARAMETERS
     ${arg_PARAMETERS})
 
@@ -820,9 +794,8 @@ function(rvbl_layer_documentation)
   file(COPY ${glob} DESTINATION ${target_dir_html})
 
   add_custom_target(
-    ${layer_name}_docs ALL
-    DEPENDS ${outputs_api} ${outputs_model_cpu} ${outputs_model_register_set}
-            ${outputs_model_device} ${outputs_doc})
+    ${layer_name}_docs ALL DEPENDS ${outputs_api} ${outputs_model_peripheral}
+                                   ${outputs_doc})
 
   install(DIRECTORY ${target_dir_html} DESTINATION doc/layer/${layer_name})
 endfunction()
