@@ -24,28 +24,66 @@ pub struct Field {
 
 impl Field {
     #[allow(unused)]
-    pub fn resolve_position(&self, register: &Register, cpu: &Cpu) -> u32 {
+    pub fn resolve_position(
+        &self,
+        register: &Register,
+        addressable: &Addressable,
+        peripheral: &Peripheral,
+        machine: &Machine,
+    ) -> u32 {
         match self.position < 0 {
-            true => (register.resolve_width(cpu) as i32 + self.position) as u32,
+            true => {
+                (register.resolve_width(&addressable, &peripheral, &machine) as i32 + self.position)
+                    as u32
+            }
             false => self.position as u32,
         }
     }
 
     #[allow(unused)]
-    pub fn resolve_length(&self, register: &Register, cpu: &Cpu) -> u32 {
-        self.length
-            .unwrap_or(register.resolve_width(cpu) - self.resolve_position(register, cpu))
+    pub fn resolve_length(
+        &self,
+        register: &Register,
+        addressable: &Addressable,
+        peripheral: &Peripheral,
+        machine: &Machine,
+    ) -> u32 {
+        let width = register.resolve_width(&addressable, &peripheral, &machine);
+        let position = self.resolve_position(register, &addressable, &peripheral, &machine);
+
+        self.length.unwrap_or(width - position)
     }
 }
 
 #[cfg(test)]
 #[test]
 fn test_resolve_position() {
-    let cpu = Cpu {
+    let machine = Machine {
         name: String::new(),
         description: None,
-        xlen: 32,
-        register_sets: vec![],
+        word_size: 128,
+        memory_map: vec![],
+        peripherals: vec![],
+        parameters: vec![],
+    };
+    let peripheral = Peripheral {
+        name: String::new(),
+        description: None,
+        instance: String::new(),
+        word_size: None,
+        addressables: vec![],
+        parameters: None,
+    };
+    let addressable = Addressable {
+        name: String::new(),
+        description: None,
+        base: String::from("0"),
+        size: String::from("64K"),
+        registers: None,
+        read: None,
+        write: None,
+        execute: None,
+        word_size: None,
     };
     let register = Register {
         name: String::new(),
@@ -65,21 +103,51 @@ fn test_resolve_position() {
         values: None,
     };
 
-    assert_eq!(field.resolve_position(&register, &cpu), 0);
+    assert_eq!(
+        field.resolve_position(&register, &addressable, &peripheral, &machine),
+        0
+    );
     field.position = 5;
-    assert_eq!(field.resolve_position(&register, &cpu), 5);
+    assert_eq!(
+        field.resolve_position(&register, &addressable, &peripheral, &machine),
+        5
+    );
     field.position = -2;
-    assert_eq!(field.resolve_position(&register, &cpu), 30);
+    assert_eq!(
+        field.resolve_position(&register, &addressable, &peripheral, &machine),
+        30
+    );
 }
 
 #[cfg(test)]
 #[test]
 fn test_resolve_length() {
-    let cpu = Cpu {
+    let machine = Machine {
         name: String::new(),
         description: None,
-        xlen: 32,
-        register_sets: vec![],
+        word_size: 128,
+        memory_map: vec![],
+        peripherals: vec![],
+        parameters: vec![],
+    };
+    let peripheral = Peripheral {
+        name: String::new(),
+        description: None,
+        instance: String::new(),
+        word_size: None,
+        addressables: vec![],
+        parameters: None,
+    };
+    let addressable = Addressable {
+        name: String::new(),
+        description: None,
+        base: String::from("0"),
+        size: String::from("64K"),
+        registers: None,
+        read: None,
+        write: None,
+        execute: None,
+        word_size: None,
     };
     let register = Register {
         name: String::new(),
@@ -99,11 +167,20 @@ fn test_resolve_length() {
         values: None,
     };
 
-    assert_eq!(field.resolve_length(&register, &cpu), 32);
+    assert_eq!(
+        field.resolve_length(&register, &addressable, &peripheral, &machine),
+        32
+    );
     field.position = 16;
-    assert_eq!(field.resolve_length(&register, &cpu), 16);
+    assert_eq!(
+        field.resolve_length(&register, &addressable, &peripheral, &machine),
+        16
+    );
     field.length = Some(8);
-    assert_eq!(field.resolve_length(&register, &cpu), 8);
+    assert_eq!(
+        field.resolve_length(&register, &addressable, &peripheral, &machine),
+        8
+    );
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -115,9 +192,15 @@ pub struct Indexing {
 
 impl Indexing {
     #[allow(unused)]
-    pub fn resolve_stride(&self, register: &Register, cpu: &Cpu) -> u32 {
+    pub fn resolve_stride(
+        &self,
+        register: &Register,
+        addressable: &Addressable,
+        peripheral: &Peripheral,
+        machine: &Machine,
+    ) -> u32 {
         match &self.stride {
-            None => register.resolve_width(cpu) / 8,
+            None => register.resolve_width(&addressable, &peripheral, &machine) / 8,
             Some(x) => evaluator::parse_expression(x.as_str()).try_into().unwrap(),
         }
     }
@@ -126,11 +209,32 @@ impl Indexing {
 #[cfg(test)]
 #[test]
 fn test_resolve_stride() {
-    let cpu = Cpu {
+    let machine = Machine {
         name: String::new(),
         description: None,
-        xlen: 32,
-        register_sets: vec![],
+        word_size: 128,
+        memory_map: vec![],
+        peripherals: vec![],
+        parameters: vec![],
+    };
+    let peripheral = Peripheral {
+        name: String::new(),
+        description: None,
+        instance: String::new(),
+        word_size: None,
+        addressables: vec![],
+        parameters: None,
+    };
+    let addressable = Addressable {
+        name: String::new(),
+        description: None,
+        base: String::from("0"),
+        size: String::from("64K"),
+        registers: None,
+        read: None,
+        write: None,
+        execute: None,
+        word_size: None,
     };
     let mut register = Register {
         name: String::new(),
@@ -148,21 +252,23 @@ fn test_resolve_stride() {
     };
 
     assert_eq!(
-        register
-            .indexing
-            .as_ref()
-            .unwrap()
-            .resolve_stride(&register, &cpu),
+        register.indexing.as_ref().unwrap().resolve_stride(
+            &register,
+            &addressable,
+            &peripheral,
+            &machine
+        ),
         64
     );
     register.indexing.as_mut().unwrap().stride = None;
     assert_eq!(
-        register
-            .indexing
-            .as_ref()
-            .unwrap()
-            .resolve_stride(&register, &cpu),
-        4
+        register.indexing.as_ref().unwrap().resolve_stride(
+            &register,
+            &addressable,
+            &peripheral,
+            &machine
+        ),
+        128
     );
 }
 
@@ -179,19 +285,51 @@ pub struct Register {
 }
 
 impl Register {
-    pub fn resolve_width(&self, cpu: &Cpu) -> u32 {
-        self.width.unwrap_or(cpu.xlen)
+    pub fn resolve_width(
+        &self,
+        addressable: &Addressable,
+        peripheral: &Peripheral,
+        machine: &Machine,
+    ) -> u32 {
+        self.width.unwrap_or(
+            addressable
+                .word_size
+                .unwrap_or(peripheral.word_size.unwrap_or(machine.word_size)),
+        )
     }
 }
 
 #[cfg(test)]
 #[test]
 fn test_resolve_width() {
-    let cpu = Cpu {
+    use std::vec;
+
+    let machine = Machine {
         name: String::new(),
         description: None,
-        xlen: 32,
-        register_sets: vec![],
+        word_size: 128,
+        memory_map: vec![],
+        peripherals: vec![],
+        parameters: vec![],
+    };
+    let mut peripheral = Peripheral {
+        name: String::new(),
+        description: None,
+        instance: String::new(),
+        word_size: None,
+        addressables: vec![],
+        parameters: None,
+    };
+    let mut addressable = Addressable {
+        name: String::new(),
+        description: None,
+        base: String::from("0"),
+        size: String::from("64K"),
+        registers: None,
+        read: None,
+        write: None,
+        execute: None,
+        word_size: None,
     };
     let mut register = Register {
         name: String::new(),
@@ -204,17 +342,25 @@ fn test_resolve_width() {
         indexing: None,
     };
 
-    assert_eq!(register.resolve_width(&cpu), 32);
-    register.width = Some(64);
-    assert_eq!(register.resolve_width(&cpu), 64);
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-pub struct Cpu {
-    pub name: String,
-    pub description: Option<String>,
-    pub xlen: u32,
-    pub register_sets: Vec<Vec<Register>>,
+    assert_eq!(
+        register.resolve_width(&addressable, &peripheral, &machine),
+        128
+    );
+    peripheral.word_size = Some(64);
+    assert_eq!(
+        register.resolve_width(&addressable, &peripheral, &machine),
+        64
+    );
+    addressable.word_size = Some(32);
+    assert_eq!(
+        register.resolve_width(&addressable, &peripheral, &machine),
+        32
+    );
+    register.width = Some(16);
+    assert_eq!(
+        register.resolve_width(&addressable, &peripheral, &machine),
+        16
+    );
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -253,8 +399,7 @@ pub struct Peripheral {
 pub struct Machine {
     pub name: String,
     pub description: Option<String>,
-    pub word_size: Option<u32>,
-    pub cpus: Vec<Cpu>,
+    pub word_size: u32,
     pub memory_map: Vec<Addressable>,
     pub peripherals: Vec<Peripheral>,
     pub parameters: Vec<Parameter>,

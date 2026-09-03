@@ -7,8 +7,11 @@ mod templates;
 
 use clap::Parser;
 use log::error;
-use rvbl_model::{argument, loader, model::Peripheral};
-use std::{collections::HashSet, path::PathBuf, process::ExitCode};
+use rvbl_model::{
+    argument, loader,
+    model::{Machine, Peripheral},
+};
+use std::{collections::HashSet, path::PathBuf, process::ExitCode, vec};
 
 fn main() -> ExitCode {
     let arguments = argument::Arguments::parse();
@@ -24,10 +27,18 @@ fn main() -> ExitCode {
         &mut parameters,
         &mut dependencies,
     ) {
-        Ok(device) => {
+        Ok(peripheral) => {
             let generator = generator::AsciiDocGenerator::default();
+            let machine = Machine {
+                name: String::new(),
+                description: None,
+                word_size: 32,
+                memory_map: vec![],
+                peripherals: vec![],
+                parameters: vec![],
+            };
 
-            match generator.generate_device(&device) {
+            match generator.generate_peripheral(&peripheral, &machine) {
                 Ok(_) => ExitCode::from(0),
                 Err(error) => {
                     error!("Generation failed: {error}");
