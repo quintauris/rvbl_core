@@ -11,20 +11,12 @@ log = "0.4.29"
 rvbl_model = { path = "../rvbl_model" }
 
 [[bin]]
-name = "generator_asciidoc_cpu"
-path = "program_cpu.rs"
-
-[[bin]]
 name = "generator_asciidoc_machine"
 path = "program_machine.rs"
 
 [[bin]]
 name = "generator_asciidoc_peripheral"
 path = "program_peripheral.rs"
-
-[[bin]]
-name = "generator_asciidoc_register_set"
-path = "program_register_set.rs"
 
 [lib]
 name = "rvbl_generator_asciidoc"

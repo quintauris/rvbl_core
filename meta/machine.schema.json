@@ -16,13 +16,6 @@
             "type": "integer",
             "multipleOf": 8
         },
-        "cpus": {
-            "type": "array",
-            "items": {
-                "$ref": "cpu.schema.json"
-            },
-            "minItems": 1
-        },
         "memory_map": {
             "type": "array",
             "items": {
@@ -44,7 +37,7 @@
     },
     "required": [
         "name",
-        "cpus",
+        "word_size",
         "memory_map",
         "peripherals",
         "parameters"

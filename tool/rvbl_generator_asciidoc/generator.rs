@@ -30,28 +30,17 @@ impl Default for AsciiDocGenerator {
 }
 
 impl AsciiDocGenerator {
-    fn cpu(self: &AsciiDocGenerator, cpu: &model::Cpu, writer: &mut BufWriter<File>) -> Result<()> {
-        templates::section(writer, 2, format!("CPU {}", cpu.name).as_str())?;
-        templates::paragraph_optional(writer, &cpu.description)?;
-        templates::new_line(writer)?;
-
-        for register_set in cpu.register_sets.iter() {
-            self.registers(&register_set, cpu, writer, 3)?;
-        }
-
-        Ok(())
-    }
-
-    fn memory_regions(
+    fn addressables(
         self: &AsciiDocGenerator,
-        memory_regions: &Vec<model::Addressable>,
-        cpu: &model::Cpu,
+        addressables: &Vec<model::Addressable>,
+        peripheral: &model::Peripheral,
+        machine: &model::Machine,
         writer: &mut BufWriter<File>,
         level: usize,
     ) -> Result<()> {
         templates::table_header(writer, &self.memory_regions_header)?;
 
-        for memory_region in memory_regions {
+        for memory_region in addressables {
             let cells = vec![
                 memory_region.name.as_str(),
                 memory_region.base.as_str(),
@@ -63,20 +52,22 @@ impl AsciiDocGenerator {
 
         templates::table_footer(writer)?;
 
-        for memory_region in memory_regions {
-            if memory_region.description.is_some() || memory_region.registers.is_some() {
+        for addressable in addressables {
+            if addressable.description.is_some() || addressable.registers.is_some() {
                 templates::section(
                     writer,
                     level,
-                    format!("Memory Region {}", memory_region.name).as_str(),
+                    format!("Memory Region {}", addressable.name).as_str(),
                 )?;
-                templates::paragraph_optional(writer, &memory_region.description)?;
+                templates::paragraph_optional(writer, &addressable.description)?;
                 templates::new_line(writer)?;
 
-                if memory_region.registers.is_some() {
+                if addressable.registers.is_some() {
                     self.registers(
-                        memory_region.registers.as_ref().unwrap(),
-                        cpu,
+                        addressable.registers.as_ref().unwrap(),
+                        addressable,
+                        peripheral,
+                        machine,
                         writer,
                         level + 1,
                     )?;
@@ -138,7 +129,9 @@ impl AsciiDocGenerator {
     fn registers(
         self: &AsciiDocGenerator,
         registers: &Vec<model::Register>,
-        cpu: &model::Cpu,
+        addressable: &model::Addressable,
+        peripheral: &model::Peripheral,
+        machine: &model::Machine,
         writer: &mut BufWriter<File>,
         level: usize,
     ) -> Result<()> {
@@ -156,7 +149,10 @@ impl AsciiDocGenerator {
                     ("Offset", register.offset.as_str()),
                     (
                         "Width (bits)",
-                        register.resolve_width(cpu).to_string().as_str(),
+                        register
+                            .resolve_width(addressable, peripheral, machine)
+                            .to_string()
+                            .as_str(),
                     ),
                     (
                         "Indexed",
@@ -193,7 +189,7 @@ impl AsciiDocGenerator {
                                 .indexing
                                 .as_ref()
                                 .unwrap()
-                                .resolve_stride(register, cpu)
+                                .resolve_stride(register, addressable, peripheral, machine)
                                 .to_string()
                                 .as_str(),
                         ),
@@ -221,11 +217,17 @@ impl AsciiDocGenerator {
                         &vec![
                             (
                                 "Position (bits)",
-                                field.resolve_position(register, cpu).to_string().as_str(),
+                                field
+                                    .resolve_position(register, addressable, peripheral, machine)
+                                    .to_string()
+                                    .as_str(),
                             ),
                             (
                                 "Length (bits)",
-                                field.resolve_length(register, cpu).to_string().as_str(),
+                                field
+                                    .resolve_length(register, addressable, peripheral, machine)
+                                    .to_string()
+                                    .as_str(),
                             ),
                         ],
                     )?;
@@ -242,62 +244,52 @@ impl AsciiDocGenerator {
         Ok(())
     }
 
-    fn device(
+    fn peripheral(
         self: &AsciiDocGenerator,
-        device: &model::Peripheral,
-        cpu: &model::Cpu,
+        peripheral: &model::Peripheral,
+        machine: &model::Machine,
         writer: &mut BufWriter<File>,
     ) -> Result<()> {
-        templates::section(writer, 2, format!("Device {}", device.name).as_str())?;
-        templates::paragraph_optional(writer, &device.description)?;
+        templates::section(writer, 2, format!("Device {}", peripheral.name).as_str())?;
+        templates::paragraph_optional(writer, &peripheral.description)?;
         templates::new_line(writer)?;
 
-        if !device.addressables.is_empty() {
-            self.memory_regions(&device.addressables, cpu, writer, 3)?;
+        if !peripheral.addressables.is_empty() {
+            self.addressables(&peripheral.addressables, peripheral, machine, writer, 3)?;
         }
 
-        if device.parameters.is_some() {
+        if peripheral.parameters.is_some() {
             templates::section(writer, 3, "Parameters")?;
-            self.parameters(&device.parameters.as_ref().unwrap(), writer, 3)?;
+            self.parameters(&peripheral.parameters.as_ref().unwrap(), writer, 3)?;
         }
 
         Ok(())
     }
 
     #[allow(unused)]
-    pub fn generate_cpu(&self, cpu: &model::Cpu) -> Result<()> {
+    pub fn generate_peripheral(
+        &self,
+        peripheral: &model::Peripheral,
+        machine: &model::Machine,
+    ) -> Result<()> {
         let file = File::create("model.adoc")?;
         let mut writer = BufWriter::new(file);
 
-        self.cpu(&cpu, &mut writer)
+        self.peripheral(peripheral, machine, &mut writer)
     }
 
     #[allow(unused)]
-    pub fn generate_device(&self, device: &model::Peripheral) -> Result<()> {
+    pub fn generate_register_set(
+        &self,
+        registers: &Vec<model::Register>,
+        addressable: &model::Addressable,
+        peripheral: &model::Peripheral,
+        machine: &model::Machine,
+    ) -> Result<()> {
         let file = File::create("model.adoc")?;
         let mut writer = BufWriter::new(file);
-        let cpu = model::Cpu {
-            name: String::from("Default"),
-            description: None,
-            xlen: 32,
-            register_sets: vec![],
-        };
 
-        self.device(device, &cpu, &mut writer)
-    }
-
-    #[allow(unused)]
-    pub fn generate_register_set(&self, registers: &Vec<model::Register>) -> Result<()> {
-        let file = File::create("model.adoc")?;
-        let mut writer = BufWriter::new(file);
-        let cpu = model::Cpu {
-            name: String::from("Default"),
-            description: None,
-            xlen: 32,
-            register_sets: vec![],
-        };
-
-        self.registers(registers, &cpu, &mut writer, 1)
+        self.registers(registers, addressable, peripheral, machine, &mut writer, 1)
     }
 }
 
@@ -314,19 +306,8 @@ impl Generator for AsciiDocGenerator {
         templates::paragraph_optional(&mut writer, &machine.description)?;
         templates::new_line(&mut writer)?;
 
-        for cpu in machine.cpus.iter() {
-            self.cpu(cpu, &mut writer)?;
-        }
-
-        self.memory_regions(
-            &machine.memory_map,
-            &machine.cpus.first().unwrap(),
-            &mut writer,
-            2,
-        )?;
-
-        for device in machine.peripherals.iter() {
-            self.device(device, machine.cpus.first().unwrap(), &mut writer)?;
+        for peripheral in machine.peripherals.iter() {
+            self.peripheral(peripheral, machine, &mut writer)?;
         }
 
         if !machine.parameters.is_empty() {
