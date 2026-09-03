@@ -12,7 +12,7 @@ use rvbl_model::model;
 use crate::templates;
 
 pub struct AsciiDocGenerator {
-    memory_regions_header: Vec<&'static str>,
+    addressables_header: Vec<&'static str>,
     parameters_header: Vec<&'static str>,
     values_header: Vec<&'static str>,
     default: String,
@@ -21,7 +21,7 @@ pub struct AsciiDocGenerator {
 impl Default for AsciiDocGenerator {
     fn default() -> Self {
         AsciiDocGenerator {
-            memory_regions_header: vec!["Memory Region", "Base", "Size"],
+            addressables_header: vec!["Addressable", "Base", "Size"],
             parameters_header: vec!["Parameter", "Stage", "Type", "Value", "Description"],
             values_header: vec!["Value Name", "Value"],
             default: String::from("_"),
@@ -38,13 +38,13 @@ impl AsciiDocGenerator {
         writer: &mut BufWriter<File>,
         level: usize,
     ) -> Result<()> {
-        templates::table_header(writer, &self.memory_regions_header)?;
+        templates::table_header(writer, &self.addressables_header)?;
 
-        for memory_region in addressables {
+        for addressable in addressables {
             let cells = vec![
-                memory_region.name.as_str(),
-                memory_region.base.as_str(),
-                memory_region.size.as_str(),
+                addressable.name.as_str(),
+                addressable.base.as_str(),
+                addressable.size.as_str(),
             ];
 
             templates::table_row(writer, &cells)?;
@@ -57,7 +57,7 @@ impl AsciiDocGenerator {
                 templates::section(
                     writer,
                     level,
-                    format!("Memory Region {}", addressable.name).as_str(),
+                    format!("Addressable {}", addressable.name).as_str(),
                 )?;
                 templates::paragraph_optional(writer, &addressable.description)?;
                 templates::new_line(writer)?;
@@ -250,7 +250,11 @@ impl AsciiDocGenerator {
         machine: &model::Machine,
         writer: &mut BufWriter<File>,
     ) -> Result<()> {
-        templates::section(writer, 2, format!("Device {}", peripheral.name).as_str())?;
+        templates::section(
+            writer,
+            2,
+            format!("Peripheral {}", peripheral.name).as_str(),
+        )?;
         templates::paragraph_optional(writer, &peripheral.description)?;
         templates::new_line(writer)?;
 

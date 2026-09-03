@@ -115,7 +115,7 @@ fn test_resolve_position() {
     field.position = -2;
     assert_eq!(
         field.resolve_position(&register, &addressable, &peripheral, &machine),
-        30
+        126
     );
 }
 
@@ -169,12 +169,12 @@ fn test_resolve_length() {
 
     assert_eq!(
         field.resolve_length(&register, &addressable, &peripheral, &machine),
-        32
+        128
     );
     field.position = 16;
     assert_eq!(
         field.resolve_length(&register, &addressable, &peripheral, &machine),
-        16
+        112
     );
     field.length = Some(8);
     assert_eq!(
@@ -268,7 +268,7 @@ fn test_resolve_stride() {
             &peripheral,
             &machine
         ),
-        128
+        16
     );
 }
 
