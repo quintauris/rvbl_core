@@ -44,7 +44,7 @@ impl AsciiDocGenerator {
 
     fn memory_regions(
         self: &AsciiDocGenerator,
-        memory_regions: &Vec<model::MemoryRegion>,
+        memory_regions: &Vec<model::Addressable>,
         cpu: &model::Cpu,
         writer: &mut BufWriter<File>,
         level: usize,
@@ -252,8 +252,8 @@ impl AsciiDocGenerator {
         templates::paragraph_optional(writer, &device.description)?;
         templates::new_line(writer)?;
 
-        if !device.memory_regions.is_empty() {
-            self.memory_regions(&device.memory_regions, cpu, writer, 3)?;
+        if !device.addressables.is_empty() {
+            self.memory_regions(&device.addressables, cpu, writer, 3)?;
         }
 
         if device.parameters.is_some() {
@@ -319,7 +319,7 @@ impl Generator for AsciiDocGenerator {
         }
 
         self.memory_regions(
-            &machine.memory_regions,
+            &machine.memory_map,
             &machine.cpus.first().unwrap(),
             &mut writer,
             2,

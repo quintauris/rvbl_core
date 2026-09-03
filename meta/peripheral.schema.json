@@ -15,10 +15,14 @@
         "description": {
             "type": "string"
         },
-        "memory_regions": {
+        "word_size": {
+            "type": "integer",
+            "multipleof": 8
+        },
+        "addressables": {
             "type": "array",
             "items": {
-                "$ref": "memory_region.schema.json"
+                "$ref": "addressable.schema.json"
             },
             "minItems": 1
         },
@@ -32,6 +36,6 @@
     "required": [
         "name",
         "instance",
-        "memory_regions"
+        "addressables"
     ]
 }
