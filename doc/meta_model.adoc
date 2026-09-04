@@ -50,11 +50,12 @@ read:: Whether the addressable entity is readable
 write:: Whether the addressable entity is writable
 execute:: Whether the addressable entity is executable
 word_size:: Default word size, in bits, of the addressable entity (assumed from enclosing <<_machine>> or <<_peripheral>> `word_size` if not defined)
+default_register_class:: Default class for contained registers
 registers:: Array of <<_register>>s
 
 == Register
 
-class:: One of `memory_mapped`, `control_status`
+class:: One of `memory_mapped`, `control_status` (assumed from enclosing <<_addressable>> `default_register_class` if not defined)
 width:: Number of bits in the register (assumed from <<_addressable>> `word_size` if not defined)
 offset:: Zero-based offset of the register within the memory space that contains it, in bytes
 values:: Array of possible <<_value>>s for the register

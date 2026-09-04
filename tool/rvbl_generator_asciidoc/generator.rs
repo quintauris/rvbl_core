@@ -145,7 +145,7 @@ impl AsciiDocGenerator {
             templates::horizontal_list(
                 writer,
                 &vec![
-                    ("Type", register.class.as_str()),
+                    ("Type", register.resolve_class(addressable).as_str()),
                     ("Offset", register.offset.as_str()),
                     (
                         "Width (bits)",
