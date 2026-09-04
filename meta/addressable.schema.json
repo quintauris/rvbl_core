@@ -31,6 +31,13 @@
             "type": "integer",
             "multipleOf": 8
         },
+        "default_register_class": {
+            "type": "string",
+            "enum": [
+                "control_status",
+                "memory_mapped"
+            ]
+        },
         "registers": {
             "type": "array",
             "items": {
@@ -41,6 +48,7 @@
     "required": [
         "name",
         "base",
-        "size"
+        "size",
+        "default_register_class"
     ]
 }

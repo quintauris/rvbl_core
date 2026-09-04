@@ -467,7 +467,7 @@ fn peripheral_header(peripheral: &model::Peripheral, machine: &model::Machine) -
     for addressable in peripheral.addressables.iter() {
         if addressable.registers.is_some() {
             for register in addressable.registers.as_ref().unwrap().iter() {
-                match register.class.as_str() {
+                match register.resolve_class(addressable).as_str() {
                     "memory_mapped" => peripheral_header_memory_mapped_register(
                         register,
                         addressable,
