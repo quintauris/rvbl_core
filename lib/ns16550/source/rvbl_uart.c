@@ -5,6 +5,7 @@
  */
 
 #include "rvbl/uart/rvbl_uart.h"
+#include "rvbl/hardware/rvbl_hardware.h"
 #include "rvbl/type/rvbl_types.h"
 #include "rvbl/uart/rvbl_uart_ns16550.h"
 
@@ -15,22 +16,22 @@ void rvbl_uart_ns16550_init(const struct rvbl_uart_ns16550_t *const instance) { 
 void rvbl_uart_ns16550_putc(const struct rvbl_uart_ns16550_t *const instance, const int c, void *p)
 {
     (void)p;
-    rvbl_uart_ns16550_data_write(instance, c);
+    RVBL_REGISTER_WRITE(uart_ns16550, registers, instance, data, c);
 }
 
 int rvbl_uart_ns16550_getc(const struct rvbl_uart_ns16550_t *const instance, void *p)
 {
     (void)p;
-    return rvbl_uart_ns16550_data_read(instance);
+    return RVBL_REGISTER_READ(uart_ns16550, registers, instance, data);
 }
 
 rvbl_bool_t rvbl_uart_ns16550_rx_ready(const struct rvbl_uart_ns16550_t *const instance, void *p)
 {
     (void)p;
-    return rvbl_uart_ns16550_line_status_data_ready(instance);
+    return RVBL_REGISTER_FIELD_READ(uart_ns16550, registers, instance, line_status, data_ready);
 }
 
-rvbl_bool_t rvbl_uart_ns16550_tx_ready(const struct rvbl_uart_ns16550_t *const instance, void *p)
+rvbl_bool_t rvbl_uart_ns16550_tx_ready(const struct rvbl_uart_ns16550_t *const *instance, void *p)
 {
     (void)p;
     (void)instance;

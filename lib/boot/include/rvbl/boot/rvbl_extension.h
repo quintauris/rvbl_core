@@ -20,6 +20,6 @@
 ///
 /// ==== Return value
 /// `rvbl_bool_t`:: Whether given extension is available.
-rvbl_bool_t rvbl_extension_present(misa_extensions_values);
+rvbl_bool_t rvbl_extension_present(enum rvbl_riscv_hart_privileged_misa_extensions_t);
 
 #endif
