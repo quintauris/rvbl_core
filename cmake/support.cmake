@@ -142,7 +142,7 @@ source \"bootstrap.sh\".")
   target_include_directories(rvbl_machine
                              PUBLIC ${rvbl_machine_dir}/generated/include)
   target_link_libraries(
-    rvbl_machine PUBLIC rvbl_type rvbl_boot
+    rvbl_machine PUBLIC rvbl_type rvbl_hardware rvbl_boot
                         $<LIST:TRANSFORM,${arg_LIBRARIES},PREPEND,rvbl_>)
   add_dependencies(rvbl_machine machine_c_files machine_linker_files
                    machine_doc_files)

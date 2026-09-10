@@ -6,6 +6,7 @@
 
 add_subdirectory(compiler)
 add_subdirectory(type)
+add_subdirectory(hardware)
 add_subdirectory(boot)
 add_subdirectory(c)
 add_subdirectory(uart)

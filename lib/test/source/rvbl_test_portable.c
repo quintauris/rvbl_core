@@ -96,7 +96,7 @@ void rvbl_test_log_uart(const rvbl_uart *uart, const void *instance, const char 
 
 void rvbl_hart_hang_if_not(rvbl_uint32_t hart)
 {
-    if (rvbl_mhartid_read() != hart) {
+    if (RVBL_REGISTER_READ(riscv_hart, privileged, &rvbl_riscv_hart_instance_0, mhartid) != hart) {
         rvbl_hang();
     }
 }

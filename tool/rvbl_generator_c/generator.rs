@@ -7,8 +7,9 @@ use rvbl_model::evaluator::{parse_expression, parse_expression_option};
 use rvbl_model::{interface::Generator, model};
 use std::collections::HashSet;
 use std::fs::{File, create_dir_all};
-use std::io::{BufWriter, ErrorKind, Result, Write};
+use std::io::{BufWriter, Error, ErrorKind, Result, Write};
 use std::path::{Path, PathBuf};
+use std::{format, vec};
 
 const DEFAULT_PARAMETER_VALUE: &'static str = "0";
 
@@ -57,6 +58,8 @@ fn machine_header(machine: &model::Machine) -> Result<()> {
             Path::new(format!("rvbl_{peripheral_type}.h").as_str()),
         )?;
     }
+
+    templates::include(&mut writer, Path::new("rvbl/hardware/rvbl_hardware.h"))?;
 
     templates::new_line(&mut writer)?;
 
@@ -183,146 +186,40 @@ fn machine_instances_source(machine: &model::Machine) -> Result<()> {
     Ok(())
 }
 
-fn peripheral_header_memory_mapped_register(
+fn peripheral_header_register(
     register: &model::Register,
     addressable: &model::Addressable,
     peripheral: &model::Peripheral,
-    machine: &model::Machine,
     peripheral_type: &String,
-    mut writer: &mut BufWriter<File>,
-) -> Result<()> {
-    let mut register_type = format!(
-        "rvbl_uint{}_t",
-        register.resolve_width(&addressable, &peripheral, &machine)
-    );
-    let mut indexing_parameter = String::from("");
-    let mut indexing_check = String::from("");
-    let mut indexing_operation = String::from("");
-    let mut indexing_value = String::from("");
-    let mut indexing_comment = String::from("");
-
-    templates::documentation_block(
-        &mut writer,
-        format!("=== Register `{}`", register.name).as_str(),
-    )?;
-    templates::new_line(&mut writer)?;
-
-    if register.values.is_some() {
-        register_type = format!("{}_{}_values", peripheral.name, register.name);
-        templates::enumeration(
-            &mut writer,
-            "=".repeat(4).as_str(),
-            register_type.as_str(),
-            &register
-                .values
-                .as_ref()
-                .unwrap()
-                .iter()
-                .map(|v| (v.name.as_str(), v.value.as_str()))
-                .collect::<Vec<(&str, &str)>>(),
-        )?;
-    }
-
-    if register.indexing.is_some() {
-        let indexing: &model::Indexing = register.indexing.as_ref().unwrap();
-
-        indexing_parameter = String::from(", const rvbl_uword_t index");
-        indexing_check.push_str("if (");
-
-        if indexing.lower_bound.is_some() && indexing.lower_bound.as_ref().unwrap().as_str() > "0" {
-            indexing_check.push_str(&format!(
-                "(index >= {}) && ",
-                indexing.lower_bound.as_ref().unwrap()
-            ));
-        }
-
-        indexing_check.push_str(&format!("(index <= {}))", indexing.upper_bound));
-        indexing_operation = format!(
-            " + (index*{})",
-            indexing.resolve_stride(&register, addressable, peripheral, machine)
-        );
-        indexing_value = String::from(", index");
-        indexing_comment = String::from("`const rvbl_uword_t`:: (in) Register index.")
-    }
-
-    templates::memory_mapped_register(
-        &mut writer,
-        "=".repeat(4).as_str(),
-        format!(
-            "{}_{}",
-            peripheral.name.to_uppercase(),
-            addressable.name.to_uppercase()
-        )
-        .as_str(),
-        format!("{}_{}", peripheral.name, register.name).as_str(),
-        register_type.as_str(),
-        register.offset.as_str(),
-        addressable.name.as_str(),
-        peripheral_type.as_str(),
-        indexing_parameter.as_str(),
-        indexing_check.as_str(),
-        indexing_operation.as_str(),
-        indexing_comment.as_str(),
-    )?;
-
-    if register.fields.is_some() {
-        for field in register.fields.as_ref().unwrap().iter() {
-            let mut field_type = format!(
-                "rvbl_uint{}_t",
-                register.resolve_width(&addressable, &peripheral, &machine)
-            );
-
-            if field.values.is_some() {
-                field_type = format!(
-                    "{}_{}_{}_values",
-                    peripheral.name, register.name, field.name
-                );
-                templates::enumeration(
-                    &mut writer,
-                    "=".repeat(5).as_str(),
-                    field_type.as_str(),
-                    &field
-                        .values
-                        .as_ref()
-                        .unwrap()
-                        .iter()
-                        .map(|v| (v.name.as_str(), v.value.as_str()))
-                        .collect::<Vec<(&str, &str)>>(),
-                )?;
-            }
-
-            templates::memory_mapped_register_field(
-                &mut writer,
-                "=".repeat(5).as_str(),
-                format!("{}_{}", peripheral.name, register.name).as_str(),
-                field.name.as_str(),
-                field_type.as_str(),
-                field.resolve_position(register, &addressable, &peripheral, &machine),
-                field.resolve_length(register, &addressable, &peripheral, &machine),
-                peripheral_type.as_str(),
-                indexing_parameter.as_str(),
-                indexing_value.as_str(),
-                indexing_comment.as_str(),
-            )?;
-        }
-
-        Ok(())
-    } else {
-        Ok(())
-    }
-}
-
-fn peripheral_header_control_status_register(
-    register: &model::Register,
-    addressable: &model::Addressable,
-    peripheral: &model::Peripheral,
     machine: &model::Machine,
     mut writer: &mut BufWriter<File>,
 ) -> Result<()> {
-    let mut register_type = format!(
+    let mut bit_fields: Vec<(String, String, u32, u32)> = vec![];
+    let register_integer_type = format!(
         "rvbl_uint{}_t",
         register.resolve_width(addressable, peripheral, machine)
     );
+    let mut register_internal_type = register_integer_type.clone();
+    let mut register_internal_type_prefix = String::new();
+    let register_namespace = format!(
+        "rvbl_{}_{}_{}",
+        peripheral.name, addressable.name, register.name
+    );
+    let register_type = format!("{register_namespace}_t");
+    let register_width = register.resolve_width(addressable, peripheral, machine);
+
+    let mut indexing_lower_bound: i64 = 0;
+    let mut indexing_upper_bound = String::from("0");
+    let mut indexing_stride: i64 = (register_width / 8).into();
+
+    if let Some(indexing) = &register.indexing {
+        indexing_lower_bound = parse_expression_option(&indexing.lower_bound);
+        indexing_upper_bound = indexing.upper_bound.clone();
+        indexing_stride = match &indexing.stride {
+            Some(stride) => parse_expression(&stride),
+            None => indexing_stride,
+        }
+    }
 
     templates::documentation_block(
         &mut writer,
@@ -331,11 +228,13 @@ fn peripheral_header_control_status_register(
     templates::new_line(&mut writer)?;
 
     if register.values.is_some() {
-        register_type = format!("{}_values", register.name);
+        register_internal_type = format!("{register_namespace}_values_t");
+        register_internal_type_prefix = String::from("enum");
         templates::enumeration(
             &mut writer,
             "=".repeat(4).as_str(),
-            register_type.as_str(),
+            &register_internal_type,
+            &format!("{register_namespace}_values"),
             &register
                 .values
                 .as_ref()
@@ -346,28 +245,23 @@ fn peripheral_header_control_status_register(
         )?;
     }
 
-    templates::control_status_register(
-        &mut writer,
-        "=".repeat(4).as_str(),
-        register.name.as_str(),
-        register_type.as_str(),
-        parse_expression(&register.offset),
-    )?;
-    templates::new_line(&mut writer)?;
-
-    if register.fields.is_some() {
-        for field in register.fields.as_ref().unwrap().iter() {
-            let mut field_type = format!(
-                "rvbl_uint{}_t",
-                register.resolve_width(addressable, peripheral, machine)
-            );
+    if let Some(fields) = &register.fields {
+        for field in fields {
+            let mut field_type = register_internal_type.clone();
+            let mut field_type_prefix = register_internal_type_prefix.clone();
+            let field_length = field.resolve_length(register, addressable, peripheral, machine);
+            let field_position = field.resolve_position(register, addressable, peripheral, machine);
+            let field_namespace = format!("{register_namespace}_{}", field.name);
 
             if field.values.is_some() {
-                field_type = format!("{}_{}_values", register.name, field.name);
+                field_type = format!("{field_namespace}_t");
+                field_type_prefix = String::from("enum");
+
                 templates::enumeration(
                     &mut writer,
-                    "=".repeat(5).as_str(),
-                    field_type.as_str(),
+                    "=".repeat(4).as_str(),
+                    &field_type,
+                    &format!("{field_namespace}_values"),
                     &field
                         .values
                         .as_ref()
@@ -378,42 +272,130 @@ fn peripheral_header_control_status_register(
                 )?;
             }
 
-            templates::control_status_register_field(
-                &mut writer,
-                "=".repeat(5).as_str(),
-                register.name.as_str(),
-                register_type.as_str(),
-                field.name.as_str(),
-                field_type.as_str(),
-                field.resolve_position(register, addressable, peripheral, machine),
-                field.resolve_length(register, addressable, peripheral, machine),
-            )?;
-
-            match field.resolve_length(register, addressable, peripheral, machine) {
-                1 => templates::control_status_register_field_bits_fast(
-                    &mut writer,
-                    "=".repeat(5).as_str(),
-                    register.name.as_str(),
-                    parse_expression(&register.offset),
-                    field.name.as_str(),
-                    field.resolve_position(register, addressable, peripheral, machine),
-                    field.resolve_length(register, addressable, peripheral, machine),
-                ),
-                _ => templates::control_status_register_field_bits_slow(
-                    &mut writer,
-                    "=".repeat(5).as_str(),
-                    register.name.as_str(),
-                    field.name.as_str(),
-                    field.resolve_position(register, addressable, peripheral, machine),
-                    field.resolve_length(register, addressable, peripheral, machine),
-                ),
-            }?
+            bit_fields.push((
+                format!("{field_type_prefix} {field_type}"),
+                field.name.clone(),
+                field_position,
+                field_length,
+            ));
         }
 
-        Ok(())
-    } else {
-        Ok(())
+        {
+            let mut bit_fields_with_unused: Vec<(String, String, u32, u32)> = vec![];
+            let mut i = 0;
+
+            if let Some(first) = bit_fields.first()
+                && first.2 > 0
+            {
+                bit_fields_with_unused.push((
+                    String::from("rvbl_uword_t"),
+                    format!("unused_{i}"),
+                    0,
+                    first.2,
+                ));
+                i += 1;
+            }
+
+            for pair in bit_fields.windows(2) {
+                if let Some(a) = pair.first()
+                    && let Some(b) = pair.last()
+                {
+                    let a_end = a.2 + a.3;
+                    let b_begin = b.2;
+                    bit_fields_with_unused.push(a.clone());
+
+                    if a_end < b_begin {
+                        bit_fields_with_unused.push((
+                            String::from("rvbl_uword_t"),
+                            format!("unused_{i}"),
+                            a_end,
+                            b_begin - a_end,
+                        ));
+                        i += 1;
+                    }
+                }
+            }
+
+            if let Some(last) = bit_fields.last() {
+                bit_fields_with_unused.push(last.clone());
+
+                if last.2 + last.3 < register_width {
+                    bit_fields_with_unused.push((
+                        String::from("rvbl_uword_t"),
+                        format!("unused_{i}"),
+                        last.2 + last.3,
+                        register_width - (last.2 + last.3),
+                    ));
+                }
+            }
+
+            bit_fields = bit_fields_with_unused;
+        }
+
+        templates::bitfield(
+            writer,
+            &format!("{register_namespace}_fields_t"),
+            &bit_fields
+                .iter()
+                .map(|f| (f.0.as_str(), f.1.as_str(), f.3))
+                .collect(),
+        )?;
+
+        register_internal_type = format!("{register_namespace}_union_t");
+        register_internal_type_prefix = String::from("union");
+
+        templates::union(
+            writer,
+            &register_internal_type,
+            &vec![
+                (&format!("struct {register_namespace}_fields_t"), "f"),
+                (&register_integer_type, "w"),
+                (&register_integer_type, "s"),
+            ],
+        )?;
     }
+
+    templates::typedef(
+        writer,
+        &format!("{register_internal_type_prefix} {register_internal_type}"),
+        &register_type,
+    )?;
+
+    match register.resolve_class(addressable).as_str() {
+        "memory_mapped" => templates::memory_mapped_register(
+            &mut writer,
+            "=".repeat(4).as_str(),
+            &peripheral.name,
+            &peripheral_type,
+            &addressable.name,
+            &register.name,
+            &register_type,
+            &register.offset,
+            register.fields.is_some(),
+            indexing_lower_bound,
+            &indexing_upper_bound,
+            indexing_stride,
+        ),
+        "control_status" => templates::control_status_register(
+            &mut writer,
+            "=".repeat(4).as_str(),
+            &peripheral.name,
+            &peripheral_type,
+            &addressable.name,
+            &register.name,
+            &register_type,
+            &register.offset,
+            register.fields.is_some(),
+            indexing_lower_bound,
+            &indexing_upper_bound,
+            indexing_stride,
+        ),
+        _ => Result::Err(Error::from(ErrorKind::InvalidInput)),
+    }?;
+
+    templates::new_line(&mut writer)?;
+
+    Ok(())
 }
 
 fn peripheral_header(peripheral: &model::Peripheral, machine: &model::Machine) -> Result<()> {
@@ -468,18 +450,19 @@ fn peripheral_header(peripheral: &model::Peripheral, machine: &model::Machine) -
         if addressable.registers.is_some() {
             for register in addressable.registers.as_ref().unwrap().iter() {
                 match register.resolve_class(addressable).as_str() {
-                    "memory_mapped" => peripheral_header_memory_mapped_register(
+                    "memory_mapped" => peripheral_header_register(
                         register,
                         addressable,
                         peripheral,
-                        machine,
                         &peripheral_type,
+                        machine,
                         &mut writer,
                     ),
-                    "control_status" => peripheral_header_control_status_register(
+                    "control_status" => peripheral_header_register(
                         register,
                         addressable,
                         peripheral,
+                        &peripheral_type,
                         machine,
                         &mut writer,
                     ),
