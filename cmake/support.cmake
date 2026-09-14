@@ -710,7 +710,6 @@ function(rvbl_layer_documentation_model)
     get_filename_component(model_name ${model_name} NAME)
     set(output_adoc ${temp_dir}/${model_name}_${file_name}.adoc)
     list(APPEND outputs_model_${arg_GENERATOR} ${output_adoc})
-    message("${input}")
 
     add_custom_command(
       OUTPUT ${output_adoc}
