@@ -778,6 +778,7 @@ function(rvbl_layer_documentation)
 
   # Main documents and common files
   file(GLOB inputs "${arg_SOURCE_DIR}/*.adoc")
+  list(APPEND inputs ${outputs_model_peripheral})
   set(outputs_doc "")
 
   foreach(input ${inputs})
@@ -788,7 +789,7 @@ function(rvbl_layer_documentation)
   add_custom_command(
     OUTPUT ${outputs_doc}
     COMMAND ${ASCIIDOCTOR} --doctype book -D ${target_dir_html} ${inputs}
-    DEPENDS ${inputs} ${outputs_api} ${outputs_model}
+    DEPENDS ${inputs} ${outputs_api} ${outputs_model_peripheral}
     COMMENT "Generating documentation...")
 
   file(GLOB glob "${arg_SOURCE_DIR}/*.html" "${arg_SOURCE_DIR}/*.png")
