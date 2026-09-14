@@ -748,16 +748,18 @@ function(rvbl_layer_documentation)
     LIST_DIRECTORIES false
     RELATIVE ${arg_SOURCE_DIR}
     "${arg_SOURCE_DIR}/../lib/*.h")
-  list(SORT inputs)
-  set(outputs_api ${target_dir_adoc}/api.adoc)
 
-  add_custom_command(
-    OUTPUT ${outputs_api}
-    COMMAND ${EXTRACTOR_ASCIIDOC} ${inputs} ${outputs_api}
-    COMMAND_EXPAND_LISTS
-    DEPENDS ${inputs}
-    WORKING_DIRECTORY ${arg_SOURCE_DIR}
-    COMMENT "Generating API documentation...")
+  if(inputs)
+    list(SORT inputs)
+    set(outputs_api ${target_dir_adoc}/api.adoc)
+    add_custom_command(
+      OUTPUT ${outputs_api}
+      COMMAND ${EXTRACTOR_ASCIIDOC} ${inputs} ${outputs_api}
+      COMMAND_EXPAND_LISTS
+      DEPENDS ${inputs}
+      WORKING_DIRECTORY ${arg_SOURCE_DIR}
+      COMMENT "Generating API documentation...")
+  endif()
 
   # Models
   rvbl_layer_documentation_model(
