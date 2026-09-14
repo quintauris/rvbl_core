@@ -17,3 +17,4 @@
 :json: https://json.org[JSON]
 :json-schema: https://json-schema.org[JSON-Schema]
 :docker: https://www.docker.com[Docker]
+:qemu: https://qemu.org[QEmu]
