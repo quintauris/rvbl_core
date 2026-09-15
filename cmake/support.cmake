@@ -792,7 +792,7 @@ function(rvbl_layer_documentation)
     DEPENDS ${inputs} ${outputs_api} ${outputs_model_peripheral}
     COMMENT "Generating documentation...")
 
-  file(GLOB glob "${arg_SOURCE_DIR}/*.html" "${arg_SOURCE_DIR}/*.png")
+  file(GLOB glob "${arg_RVBL_ROOT}/doc/*.png")
   file(COPY ${glob} DESTINATION ${target_dir_html})
 
   add_custom_target(
