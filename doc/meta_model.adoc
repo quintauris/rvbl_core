@@ -16,11 +16,12 @@ Quintauris' machine meta-model defines structure and properties of machine model
 The top-level machine meta-model is a composition of smaller, more purpose-specific meta-models. The following is a simplified, top-level description of the metamodel hierarchy:
 
 * <<_machine>>
-** (0..*) <<_addressable>>
+** (0..*) <<_import>>
+** (0..*) <<_addressable>> (inline or <<_reference>>d)
 *** (0..*) <<_register>>
 **** (0..*) <<_field>>
-** (0..*) <<_peripheral>>
-*** (0..*) <<_addressable>>
+** (0..*) <<_peripheral>> (inline or <<_reference>>d)
+*** (0..*) <<_addressable>> (inline or <<_reference>>d)
 **** (0..*) <<_register>>
 ***** (0..*) <<_field>>
 *** (0..*) <<_parameter>>
@@ -30,60 +31,129 @@ The top-level machine meta-model is a composition of smaller, more purpose-speci
 
 All model entities share the follwoing attributes:
 
-name:: Name of the model entity
-description:: Human-friendly description of the entity, for documentation purposes
+name (string):: Name of the model entity
+description (string):: Human-friendly description of the entity, for documentation purposes
 
 For conciseness and readability, these attributes are omitted in the following sections.
 
+=== Constraints
+
+ctr_comm_001:: `name` must conform to the following regular expression: `[a-zA-Z]+[0-9a-zA-Z_]*`
+
+
+== Computed values
+
+Attributes annotated with the 🧮 icon are strings that should be evaluated to produce an integer result.
+
 == Machine
 
-word_size:: Default word size, in bits, of the machine (e.g. 32, 64)
-memory_map:: Array of <<_addressable>>s describing the machine's memory map
-peripherals:: Array of <<_peripheral>>s featured by the machine
-parameters:: Array of machine-level <<_parameter>>s
+word_size (integer):: Default word size, in bits, of the machine (e.g. 32, 64)
+imports (array):: Array of <<_import>>s, describing elements imported from other files
+memory_map (array):: Array of <<_addressable>>s describing the machine's memory map
+peripherals (array):: Array of <<_peripheral>>s featured by the machine
+parameters (array):: Array of machine-level <<_parameter>>s
+
+=== Constraints
+
+ctr_mach_001:: `word_size` must be a multiple of 8
+ctr_mach_002:: No two <<_import>>s can have the same name
+ctr_mach_003:: No two <<_addressable>>s under `memory_map` can have the same name
+ctr_mach_004:: No two <<_peripheral>>s under `peripherals` can have the same name
+ctr_mach_005:: No two <<_parameters>>s under `peripherals` can have the same name
+
+== Import
+
+file (string):: File containing the entity to import
+substitutions (object):: Key/value substitutions to apply to string values in the imported entity
+
+=== Constraints
+
+ctr_impr_001:: Keys within `substitutions` must be conform to the following regular expression: `[A-Z]+[0-9a-zA-Z_]*`
+
+== Reference
+
+reference (string):: Name assigned to <<_import>>ed entity
+substitutions (object):: Key/value substitutions to apply to string values in the reference entity
+
+=== Constraints
+
+ctr_refr_001:: `reference` must be a `name` assignmed to an <<_import>> in the context of the reference (<<_machine>> or <<_peripheral>>)
+ctr_reft_001:: Keys within `substitutions` must be conform to the following regular expression: `[A-Z]+[0-9a-zA-Z_]*`
 
 == Addressable
 
-base:: Base address of the addressable entity
-size:: Size of the addressable entity, in bytes
-read:: Whether the addressable entity is readable
-write:: Whether the addressable entity is writable
-execute:: Whether the addressable entity is executable
-word_size:: Default word size, in bits, of the addressable entity (assumed from enclosing <<_machine>> or <<_peripheral>> `word_size` if not defined)
-default_register_class:: Default class for contained registers
-registers:: Array of <<_register>>s
+base (string, 🧮):: Base address of the addressable entity
+size (string, 🧮):: Size of the addressable entity, in bytes
+read (boolean):: Whether the addressable entity is readable
+write (boolean):: Whether the addressable entity is writable
+execute (boolean):: Whether the addressable entity is executable
+word_size (integer):: Default word size, in bits, of the addressable entity (assumed from enclosing <<_machine>> or <<_peripheral>> `word_size` if not defined)
+default_register_class (string):: Default class for contained registers
+registers (array):: Array of <<_register>>s
+
+=== Constraints
+
+ctr_addr_001:: `base` must evaluate to a signed integer number
+ctr_addr_002:: `size` must evaluate to a signed integer number
+ctr_addr_003:: `word_size` must be a multiple of 8
+crt_addr_004:: `default_register_class` must be either `control_status` or `memory_mapped`
+ctr_addr_005:: No two <<_register>>s can have the same name
 
 == Register
 
-class:: One of `memory_mapped`, `control_status` (assumed from enclosing <<_addressable>> `default_register_class` if not defined)
-width:: Number of bits in the register (assumed from <<_addressable>> `word_size` if not defined)
-offset:: Zero-based offset of the register within the memory space that contains it, in bytes
-values:: Array of possible <<_value>>s for the register
-fields:: Array of register <<_field>>s within the register
-indexing:: If defined, the register is considered an array of individual registers
-indexing/lower_bound:: Lower bound for indexed access
-indexing/upper_bound:: Upper bound for indexed access
-indexing/stride:: Distance between entries, in bytes
+class (string):: Register class (assumed from enclosing <<_addressable>> `default_register_class` if not defined)
+width (integer):: Number of bits in the register (assumed from <<_addressable>> `word_size` if not defined)
+offset (string):: Zero-based offset of the register within the memory space that contains it, in bytes
+values (array) :: Array of possible <<_value>>s for the register
+fields (array):: Array of register <<_field>>s within the register
+indexing (object):: If defined, the register is considered an array of individual registers
+indexing/lower_bound (string, 🧮):: Lower bound for indexed access
+indexing/upper_bound (string, 🧮):: Upper bound for indexed access
+indexing/stride (string, 🧮):: Distance between entries, in bytes
+
+=== Constraints
+
+crt_regs_001:: `class` must be either `control_status` or `memory_mapped`
+ctr_regs_002:: `width` must be a multiple of 8
+ctr_regs_003:: `offset` must evaluate to a signed integer number
+ctr_regs_004:: No two <<_value>>s can have the same name
+ctr_regs_005:: No two <<_fields>>s can have the same name
+ctr_regs_006:: `indexing/lower_bound` must evaluate to a signed integer number equal to or higher than zero
+ctr_regs_007:: `indexing/upper_bound` must evaluate to a signed integer number equal to or higher than zero
+ctr_regs_008:: `indexing/stride` must evaluate to a signed integer number higher than zero
 
 == Field
 
-position:: Zero-based offset of the field within its containing register, in bits
-length:: Length of the field, in bits
-values:: Array of possible <<_value>>s for the field
+position (integer):: Zero-based offset of the field within its containing register, in bits
+length (integer):: Length of the field, in bits
+values (array):: Array of possible <<_value>>s for the field
+
+=== Constraints
+
+ctr_fild_001:: `position` must be an integer number in the range `[-(w-1), w-1]` where `w` is the value of the `width` attribute from the enclosing <<_register>>
+ctr_fild_002:: `length` must be an integer number in the range `[1, w]` where `w` is the value of the `width` attribute from the enclosing <<_register>>
+ctr_fild_003:: No two <<_value>>s can have the same name
 
 == Peripheral
 
-instance:: Peripheral instance name, which differentiates it from other instantiations of the same peripheral
-word_size:: Default word size, in bits, of the peripheral (assumed from <<_machine>> `word_size` if not defined)
-addressables:: Array of <<_addressable>>s featured by the peripheral
-parameters:: Array of peripheral-level <<_parameter>>s
+instance (string):: Peripheral instance name, which differentiates it from other instantiations of the same peripheral
+word_size (integer):: Default word size, in bits, of the peripheral (assumed from <<_machine>> `word_size` if not defined)
+addressables (array):: Array of <<_addressable>>s featured by the peripheral
+parameters (array):: Array of peripheral-level <<_parameter>>s
+
+=== Constraints
+
+ctr_perp_001:: `instance` must conform to the following regular expression: `[a-zA-Z]+[0-9a-zA-Z_]*`
+ctr_perp_002:: `word_size` must be a multiple of 8
+ctr_perp_003:: No two <<_addressable>>s can have the same name
+ctr_perp_004:: No two <<_parameter>>s can have the same name
 
 == Parameter
 
-stage:: One of `compile`, `link`, `run`. Determines the stage at which the parameter value is to be defined
-class:: One of `uint8`, `uint16`, `uint32`, `uint64`, `int8`, `int16`, `int32`, `int64`. Determines the type of the parameter
-value:: String representation of the parameter's numerical default value
+stage (string):: One of `compile`, `link`, `run`. Determines the stage at which the parameter value is to be defined
+class (string):: One of `uint8`, `uint16`, `uint32`, `uint64`, `int8`, `int16`, `int32`, `int64`. Determines the type of the parameter
+value (string, 🧮):: String representation of the parameter's numerical default value
 
-== Value
+=== Constraints
 
-value:: Data held by the value
+ctr_parm_001:: `value` must evaluate to a signed integer number

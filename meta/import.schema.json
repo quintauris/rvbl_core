@@ -1,0 +1,26 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "import.schema.json",
+    "$comment": "Copyright 2026 Quintauris GmbH. Licensed under the Apache License, Version 2.0 (the \"License\", https://www.apache.org/licenses/LICENSE-2.0)",
+    "description": "Import schema for RISC-V",
+    "title": "Import",
+    "type": "object",
+    "properties": {
+        "name": {
+            "type": "string"
+        },
+        "file": {
+            "type": "string"
+        },
+        "description": {
+            "type": "string"
+        },
+        "substitutions": {
+            "type": "object"
+        }
+    },
+    "required": [
+        "file",
+        "name"
+    ]
+}

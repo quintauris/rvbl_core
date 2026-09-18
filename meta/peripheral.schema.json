@@ -19,10 +19,23 @@
             "type": "integer",
             "multipleof": 8
         },
+        "imports": {
+            "type": "array",
+            "items": {
+                "$ref": "import.schema.json"
+            }
+        },
         "addressables": {
             "type": "array",
             "items": {
-                "$ref": "addressable.schema.json"
+                "anyOf": [
+                    {
+                        "$ref": "addressable.schema.json"
+                    },
+                    {
+                        "$ref": "reference.schema.json"
+                    }
+                ]
             },
             "minItems": 1
         },

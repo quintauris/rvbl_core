@@ -33,8 +33,12 @@ impl Generator for LinkerGenerator<'_> {
             let mut writer = BufWriter::new(file);
 
             toolchain.1.open(&mut writer)?;
-            for region in machine.memory_map.iter() {
-                toolchain.1.entry(&mut writer, &region)?;
+            for addressable in machine
+                .memory_map
+                .iter()
+                .filter_map(|r| r.dereference().ok())
+            {
+                toolchain.1.entry(&mut writer, addressable)?;
             }
             toolchain.1.close(&mut writer)?;
         }

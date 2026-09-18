@@ -2,9 +2,14 @@
 // Licensed under the Apache License, Version 2.0 (the "License").
 // https://www.apache.org/licenses/LICENSE-2.0
 
-use serde::{Deserialize, Serialize};
+use std::{
+    collections::{HashMap, HashSet},
+    path::PathBuf,
+};
 
-use crate::evaluator;
+use serde::{Deserialize, Serialize, de::DeserializeOwned};
+
+use crate::{evaluator, loader};
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Value {
@@ -113,6 +118,12 @@ impl Register {
     }
 }
 
+pub trait Resolve {
+    fn resolve(&mut self, _: &PathBuf, _: &PathBuf) -> loader::Result<()> {
+        Ok(())
+    }
+}
+
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Addressable {
     pub name: String,
@@ -127,6 +138,8 @@ pub struct Addressable {
     pub default_register_class: String,
 }
 
+impl Resolve for Addressable {}
+
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Parameter {
     pub name: String,
@@ -137,13 +150,134 @@ pub struct Parameter {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct Import {
+    pub file: String,
+    pub name: String,
+    pub description: Option<String>,
+    pub substitutions: Option<HashMap<String, String>>,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct Reference {
+    pub reference: String,
+    pub substitutions: Option<HashMap<String, String>>,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(untagged)]
+pub enum Referenceable<T> {
+    Reference(Reference),
+    Inplace(T),
+}
+
+impl<T: Clone + DeserializeOwned + Resolve> Referenceable<T> {
+    fn lookup(
+        reference: &Reference,
+        imports: &Option<Vec<Import>>,
+        meta_model_search_path: &PathBuf,
+        search_path: &PathBuf,
+    ) -> loader::Result<T> {
+        match imports
+            .iter()
+            .flatten()
+            .find(|i| i.name == reference.reference)
+        {
+            Some(import) => {
+                let mut dependencies: HashSet<PathBuf> = [].into();
+                let mut parameters = match &import.substitutions {
+                    Some(s) => s.clone(),
+                    None => HashMap::new(),
+                };
+
+                match &reference.substitutions {
+                    Some(s) => {
+                        parameters.extend(s.into_iter().map(|(k, v)| (k.clone(), v.clone())));
+                    }
+                    None => {}
+                }
+
+                loader::load_model::<T>(
+                    &PathBuf::from(&import.file),
+                    meta_model_search_path,
+                    search_path,
+                    &parameters,
+                    &mut dependencies,
+                )
+            }
+            None => Err(loader::Error::ValidationError(format!(
+                "Import \"{}\" not found.",
+                reference.reference
+            ))),
+        }
+    }
+
+    pub fn resolve(
+        &mut self,
+        imports: &Option<Vec<Import>>,
+        meta_model_search_path: &PathBuf,
+        include_search_path: &PathBuf,
+    ) -> loader::Result<()> {
+        match self {
+            Referenceable::Reference(reference) => match Referenceable::<T>::lookup(
+                reference,
+                imports,
+                meta_model_search_path,
+                include_search_path,
+            ) {
+                Ok(t) => {
+                    *self = Referenceable::<T>::Inplace(t);
+                    Ok(())
+                }
+                Err(e) => Err(e),
+            },
+            Referenceable::Inplace(_) => Ok(()),
+        }
+    }
+
+    #[allow(unused)]
+    pub fn dereference(&self) -> loader::Result<&T> {
+        match self {
+            Referenceable::Reference(reference) => Err(loader::Error::ValidationError(
+                String::from(format!("Broken reference: {}", reference.reference)),
+            )),
+            Referenceable::Inplace(value) => Ok(value),
+        }
+    }
+
+    #[allow(unused)]
+    pub fn dereference_mut(&mut self) -> loader::Result<&mut T> {
+        match self {
+            Referenceable::Reference(reference) => Err(loader::Error::ValidationError(
+                String::from(format!("Broken reference: {}", reference.reference)),
+            )),
+            Referenceable::Inplace(value) => Ok(value),
+        }
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Peripheral {
     pub name: String,
     pub description: Option<String>,
     pub instance: String,
     pub word_size: Option<u32>,
-    pub addressables: Vec<Addressable>,
+    pub imports: Option<Vec<Import>>,
+    pub addressables: Vec<Referenceable<Addressable>>,
     pub parameters: Option<Vec<Parameter>>,
+}
+
+impl Resolve for Peripheral {
+    fn resolve(
+        &mut self,
+        meta_model_search_path: &PathBuf,
+        include_search_path: &PathBuf,
+    ) -> loader::Result<()> {
+        for reference in &mut self.addressables {
+            reference.resolve(&self.imports, meta_model_search_path, include_search_path)?;
+        }
+
+        Ok(())
+    }
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -151,9 +285,32 @@ pub struct Machine {
     pub name: String,
     pub description: Option<String>,
     pub word_size: u32,
-    pub memory_map: Vec<Addressable>,
-    pub peripherals: Vec<Peripheral>,
+    pub imports: Option<Vec<Import>>,
+    pub memory_map: Vec<Referenceable<Addressable>>,
+    pub peripherals: Vec<Referenceable<Peripheral>>,
     pub parameters: Vec<Parameter>,
+}
+
+impl Resolve for Machine {
+    fn resolve(
+        &mut self,
+        meta_model_search_path: &PathBuf,
+        include_search_path: &PathBuf,
+    ) -> loader::Result<()> {
+        for reference in &mut self.memory_map {
+            reference.resolve(&self.imports, meta_model_search_path, include_search_path)?;
+        }
+
+        for reference in &mut self.peripherals {
+            reference.resolve(&self.imports, meta_model_search_path, include_search_path)?;
+
+            if let Ok(peripheral) = reference.dereference_mut() {
+                peripheral.resolve(meta_model_search_path, include_search_path)?;
+            }
+        }
+
+        Ok(())
+    }
 }
 
 #[cfg(test)]
@@ -164,6 +321,7 @@ mod tests {
         name: String::new(),
         description: None,
         word_size: 128,
+        imports: None,
         memory_map: vec![],
         peripherals: vec![],
         parameters: vec![],
@@ -173,6 +331,7 @@ mod tests {
         description: None,
         instance: String::new(),
         word_size: None,
+        imports: None,
         addressables: vec![],
         parameters: None,
     };

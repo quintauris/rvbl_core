@@ -19,7 +19,8 @@ fn machine_header(machine: &model::Machine) -> Result<()> {
     let peripheral_types: HashSet<String> = machine
         .peripherals
         .iter()
-        .map(|x| x.name.clone())
+        .filter_map(|r| r.dereference().ok())
+        .map(|p| p.name.clone())
         .collect::<HashSet<String>>();
 
     templates::header_guard_begin(&mut writer, machine.name.as_str())?;
@@ -33,16 +34,20 @@ fn machine_header(machine: &model::Machine) -> Result<()> {
     templates::new_line(&mut writer)?;
     templates::new_line(&mut writer)?;
 
-    for memory_region in machine.memory_map.iter() {
+    for addressable in machine
+        .memory_map
+        .iter()
+        .filter_map(|r| r.dereference().ok())
+    {
         templates::define(
             &mut writer,
-            format!("rvbl_memory_region_{}_base", &memory_region.name).as_str(),
-            format!("0x{:x}", parse_expression(memory_region.base.as_str())).as_str(),
+            &format!("rvbl_memory_region_{}_base", &addressable.name),
+            &format!("0x{:x}", parse_expression(&addressable.base)),
         )?;
         templates::define(
             &mut writer,
-            format!("rvbl_memory_region_{}_size", &memory_region.name).as_str(),
-            format!("{}", parse_expression(&memory_region.size)).as_str(),
+            &format!("rvbl_memory_region_{}_size", &addressable.name),
+            &format!("{}", parse_expression(&addressable.size)),
         )?;
     }
 
@@ -63,9 +68,13 @@ fn machine_header(machine: &model::Machine) -> Result<()> {
 
     templates::new_line(&mut writer)?;
 
-    for device in machine.peripherals.iter() {
-        let type_ = &device.name;
-        let instance = &device.instance;
+    for peripheral in machine
+        .peripherals
+        .iter()
+        .filter_map(|r| r.dereference().ok())
+    {
+        let type_ = &peripheral.name;
+        let instance = &peripheral.instance;
 
         templates::extern_const_struct_declaration(
             &mut writer,
@@ -149,17 +158,22 @@ fn machine_instances_source(machine: &model::Machine) -> Result<()> {
     templates::include(&mut writer, Path::new("rvbl/machine/rvbl_machine.h"))?;
     templates::new_line(&mut writer)?;
 
-    for device in machine.peripherals.iter() {
-        let type_ = &device.name;
-        let instance = &device.instance;
-        let mut initializers = device
+    for peripheral in machine
+        .peripherals
+        .iter()
+        .filter_map(|r| r.dereference().ok())
+    {
+        let type_ = &peripheral.name;
+        let instance = &peripheral.instance;
+        let mut initializers = peripheral
             .addressables
             .iter()
+            .filter_map(|r| r.dereference().ok())
             .map(|x| parse_expression(&x.base))
             .collect::<Vec<i64>>();
 
-        if device.parameters.is_some() {
-            initializers.extend(device.parameters.as_ref().unwrap().iter().map(|x| {
+        if peripheral.parameters.is_some() {
+            initializers.extend(peripheral.parameters.as_ref().unwrap().iter().map(|x| {
                 parse_expression(
                     &x.value
                         .as_ref()
@@ -405,6 +419,7 @@ fn peripheral_header(peripheral: &model::Peripheral, machine: &model::Machine) -
     let mut initializers = peripheral
         .addressables
         .iter()
+        .filter_map(|r| r.dereference().ok())
         .map(|m| {
             (
                 "rvbl_uword_t".to_string(),
@@ -446,7 +461,11 @@ fn peripheral_header(peripheral: &model::Peripheral, machine: &model::Machine) -
             .collect::<Vec<(&str, &str)>>(),
     )?;
 
-    for addressable in peripheral.addressables.iter() {
+    for addressable in peripheral
+        .addressables
+        .iter()
+        .filter_map(|r| r.dereference().ok())
+    {
         if addressable.registers.is_some() {
             for register in addressable.registers.as_ref().unwrap().iter() {
                 match register.resolve_class(addressable).as_str() {
@@ -494,8 +513,12 @@ impl Generator for CGenerator {
         configuration_header(machine)?;
         machine_instances_source(machine)?;
 
-        for peripheral in machine.peripherals.iter() {
-            peripheral_header(peripheral, machine)?
+        for peripheral in machine
+            .peripherals
+            .iter()
+            .filter_map(|r| r.dereference().ok())
+        {
+            peripheral_header(&peripheral, machine)?
         }
 
         Ok(())
@@ -508,8 +531,12 @@ impl Generator for CGenerator {
         paths.insert("include/rvbl/machine/rvbl_configuration.h".to_string());
         paths.insert("source/rvbl_machine_instances.c".to_string());
 
-        for device in machine.peripherals.iter() {
-            paths.insert(format!("include/rvbl/machine/rvbl_{}.h", device.name));
+        for peripheral in machine
+            .peripherals
+            .iter()
+            .filter_map(|r| r.dereference().ok())
+        {
+            paths.insert(format!("include/rvbl/machine/rvbl_{}.h", peripheral.name));
         }
 
         return paths.iter().map(|x| PathBuf::from(x)).collect();

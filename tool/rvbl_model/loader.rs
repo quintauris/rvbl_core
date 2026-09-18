@@ -8,9 +8,11 @@ use serde_json::Value as JsonValue;
 use std::{
     collections::{HashMap, HashSet},
     fmt::Display,
-    mem,
+    format, mem,
     path::PathBuf,
 };
+
+use crate::model;
 
 #[derive(Debug)]
 pub enum Error {
@@ -81,15 +83,15 @@ fn test_parse() {
 pub fn preprocess<'a>(
     value: &'a mut JsonValue,
     search_path: &'a PathBuf,
-    mut parameters: &'a mut HashMap<String, String>,
+    parameters: &'a HashMap<String, String>,
     dependencies: &'a mut HashSet<PathBuf>,
 ) -> Result<&'a mut JsonValue> {
-    scan(value, &mut parameters, search_path, dependencies)?;
+    scan(value, parameters, search_path, dependencies)?;
 
     Ok(value)
 }
 
-pub fn validate<'a>(model: &'a JsonValue, meta_model_path: std::path::PathBuf) -> Result<()> {
+pub fn validate<'a>(model: &'a JsonValue, meta_model_path: &std::path::PathBuf) -> Result<()> {
     let format_error = |e: jsonschema::ValidationError| {
         Error::ValidationError(format!("{}: {}", e.instance_path, e))
     };
@@ -168,7 +170,7 @@ fn resolve_path(path: &PathBuf, search_path: &PathBuf) -> Result<PathBuf> {
 
 fn scan(
     value: &mut JsonValue,
-    parameters: &mut HashMap<String, String>,
+    parameters: &HashMap<String, String>,
     search_path: &PathBuf,
     dependencies: &mut HashSet<PathBuf>,
 ) -> Result<()> {
@@ -177,6 +179,7 @@ fn scan(
             let path = PathBuf::from(value["include"].as_str().unwrap());
             let resolved_path = resolve_path(&path, search_path)?;
             let text = load(&resolved_path)?;
+            let mut parameters = parameters.clone();
 
             dependencies.insert(path.clone());
 
@@ -188,7 +191,7 @@ fn scan(
                         }
                     }
 
-                    preprocess(&mut content, search_path, parameters, dependencies)?;
+                    preprocess(&mut content, search_path, &parameters, dependencies)?;
                     mem::swap(&mut content, value);
                 }
                 Err(_) => error!(
@@ -232,22 +235,49 @@ fn scan(
     Ok(())
 }
 
+fn locate_file(path: &PathBuf, search_path: &PathBuf) -> Result<PathBuf> {
+    if path.is_relative() {
+        let absolute = search_path.join(path);
+
+        if absolute.exists() {
+            Ok(absolute)
+        } else {
+            Err(Error::IoError(std::io::ErrorKind::NotFound.into()))
+        }
+    } else if path.exists() {
+        Ok(path.clone())
+    } else {
+        Err(Error::IoError(std::io::ErrorKind::NotFound.into()))
+    }
+}
+
 pub fn load_model<T>(
     input: &PathBuf,
-    meta_model: &PathBuf,
-    search_path: &PathBuf,
-    parameters: &mut HashMap<String, String>,
+    meta_model_search_path: &PathBuf,
+    include_search_path: &PathBuf,
+    parameters: &HashMap<String, String>,
     dependencies: &mut HashSet<PathBuf>,
 ) -> Result<T>
 where
-    T: DeserializeOwned,
+    T: DeserializeOwned + model::Resolve,
 {
-    let canonical_search_path = search_path.canonicalize().map_err(|e| Error::IoError(e))?;
-    let model_data = load(&input)?;
+    let input_path = locate_file(input, include_search_path)?;
+    let model_data = load(&input_path)?;
     let mut model = parse(&model_data)?;
-    let _ = preprocess(&mut model, &canonical_search_path, parameters, dependencies)?;
-    let canonical_meta_model_path = meta_model.canonicalize().map_err(|e| Error::IoError(e))?;
-    let _ = validate(&model, canonical_meta_model_path)?;
 
-    deserialize::<T>(model)
+    preprocess(&mut model, include_search_path, parameters, dependencies)?;
+
+    let type_name = std::any::type_name::<T>().split("::").last().unwrap();
+    let schema_file_name = format!("{}.schema.json", type_name.to_lowercase());
+    let meta_model_path = meta_model_search_path.join(schema_file_name);
+
+    validate(&model, &meta_model_path)?;
+
+    match deserialize::<T>(model) {
+        Ok(mut result) => match result.resolve(meta_model_search_path, include_search_path) {
+            Ok(_) => Ok(result),
+            Err(e) => Err(e),
+        },
+        Err(e) => Err(e),
+    }
 }

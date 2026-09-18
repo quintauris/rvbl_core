@@ -7,7 +7,7 @@ use std::io::{BufWriter, Result, Write};
 use std::path::PathBuf;
 
 use rvbl_model::interface::Generator;
-use rvbl_model::model;
+use rvbl_model::model::{self, Addressable};
 
 use crate::templates;
 
@@ -259,7 +259,18 @@ impl AsciiDocGenerator {
         templates::new_line(writer)?;
 
         if !peripheral.addressables.is_empty() {
-            self.addressables(&peripheral.addressables, peripheral, machine, writer, 3)?;
+            self.addressables(
+                &peripheral
+                    .addressables
+                    .iter()
+                    .filter_map(|r| r.dereference().ok())
+                    .map(|a| a.clone())
+                    .collect::<Vec<Addressable>>(),
+                peripheral,
+                machine,
+                writer,
+                3,
+            )?;
         }
 
         if peripheral.parameters.is_some() {
@@ -310,8 +321,12 @@ impl Generator for AsciiDocGenerator {
         templates::paragraph_optional(&mut writer, &machine.description)?;
         templates::new_line(&mut writer)?;
 
-        for peripheral in machine.peripherals.iter() {
-            self.peripheral(peripheral, machine, &mut writer)?;
+        for peripheral in machine
+            .peripherals
+            .iter()
+            .filter_map(|r| r.dereference().ok())
+        {
+            self.peripheral(&peripheral, machine, &mut writer)?;
         }
 
         if !machine.parameters.is_empty() {
