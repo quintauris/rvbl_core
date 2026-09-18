@@ -157,12 +157,9 @@ function(rvbl_compute_model_dependencies)
   get_property(rvbl_root GLOBAL PROPERTY rvbl_root)
 
   execute_process(
-    COMMAND
-      ${MODEL_PARSER} --input ${arg_MODEL} --meta-model
-      ${rvbl_root}/core/meta/machine.schema.json --search-path ${rvbl_root}
-      --dry-run
-    OUTPUT_VARIABLE model_files
-    # COMMAND_ECHO STDOUT ECHO_OUTPUT_VARIABLE
+    COMMAND ${MODEL_PARSER} --input ${arg_MODEL} --meta-model
+            ${rvbl_root}/core/meta --search-path ${rvbl_root} --dry-run
+    OUTPUT_VARIABLE model_files # COMMAND_ECHO STDOUT ECHO_OUTPUT_VARIABLE
   )
   string(STRIP "${model_files}" model_files)
   list(TRANSFORM model_files PREPEND "${rvbl_root}/")
@@ -183,10 +180,8 @@ function(rvbl_generate_c_files)
   get_property(rvbl_root GLOBAL PROPERTY rvbl_root)
 
   execute_process(
-    COMMAND
-      ${GENERATOR_C} --input ${arg_MODEL} --meta-model
-      ${rvbl_root}/core/meta/machine.schema.json --search-path ${rvbl_root}
-      --dry-run
+    COMMAND ${GENERATOR_C} --input ${arg_MODEL} --meta-model
+            ${rvbl_root}/core/meta --search-path ${rvbl_root} --dry-run
     WORKING_DIRECTORY ${arg_PATH}
     OUTPUT_VARIABLE generated_files
     # COMMAND_ECHO STDOUT ECHO_OUTPUT_VARIABLE
@@ -196,9 +191,8 @@ function(rvbl_generate_c_files)
 
   add_custom_command(
     OUTPUT ${generated_files}
-    COMMAND
-      ${GENERATOR_C} --input ${arg_MODEL} --meta-model
-      ${rvbl_root}/core/meta/machine.schema.json --search-path ${rvbl_root}
+    COMMAND ${GENERATOR_C} --input ${arg_MODEL} --meta-model
+            ${rvbl_root}/core/meta --search-path ${rvbl_root}
     DEPENDS ${arg_DEPENDENCIES}
     WORKING_DIRECTORY ${arg_PATH}
     COMMENT "Generating machine headers from ${arg_MODEL} ...")
@@ -218,10 +212,8 @@ function(rvbl_generate_linker_files)
   get_property(rvbl_root GLOBAL PROPERTY rvbl_root)
 
   execute_process(
-    COMMAND
-      ${GENERATOR_LINKER} --input ${arg_MODEL} --meta-model
-      ${rvbl_root}/core/meta/machine.schema.json --search-path ${rvbl_root}
-      --dry-run
+    COMMAND ${GENERATOR_LINKER} --input ${arg_MODEL} --meta-model
+            ${rvbl_root}/core/meta --search-path ${rvbl_root} --dry-run
     WORKING_DIRECTORY ${arg_PATH}
     OUTPUT_VARIABLE generated_files
     # COMMAND_ECHO STDOUT ECHO_OUTPUT_VARIABLE
@@ -231,9 +223,8 @@ function(rvbl_generate_linker_files)
 
   add_custom_command(
     OUTPUT ${generated_files}
-    COMMAND
-      ${GENERATOR_LINKER} --input ${arg_MODEL} --meta-model
-      ${rvbl_root}/core/meta/machine.schema.json --search-path ${rvbl_root}
+    COMMAND ${GENERATOR_LINKER} --input ${arg_MODEL} --meta-model
+            ${rvbl_root}/core/meta --search-path ${rvbl_root}
     DEPENDS ${arg_DEPENDENCIES}
     WORKING_DIRECTORY ${arg_PATH}
     COMMENT "Generating linker files from ${arg_MODEL} ..."
@@ -256,9 +247,8 @@ function(rvbl_generate_machine_documentation)
   # Model documentation
   add_custom_command(
     OUTPUT ${arg_PATH}/model.adoc ${arg_PATH}/model.html
-    COMMAND
-      ${GENERATOR_ASCIIDOC_MACHINE} --input ${arg_MODEL} --meta-model
-      ${rvbl_root}/core/meta/machine.schema.json --search-path ${rvbl_root}
+    COMMAND ${GENERATOR_ASCIIDOC_MACHINE} --input ${arg_MODEL} --meta-model
+            ${rvbl_root}/core/meta --search-path ${rvbl_root}
     COMMAND ${ASCIIDOCTOR} -o ${arg_PATH}/model.html ${arg_PATH}/model.adoc
     WORKING_DIRECTORY ${arg_PATH}
     DEPENDS ${arg_DEPENDENCIES}
@@ -715,9 +705,8 @@ function(rvbl_layer_documentation_model)
       OUTPUT ${output_adoc}
       COMMAND
         ${GENERATOR_ASCIIDOC_${arg_GENERATOR}} --input ${input} --meta-model
-        ${arg_RVBL_ROOT}/core/meta/${arg_GENERATOR}.schema.json --search-path
-        ${arg_RVBL_ROOT} $<$<BOOL:${arg_PARAMETERS}>:--parameter>
-        ${arg_PARAMETERS}
+        ${arg_RVBL_ROOT}/core/meta --search-path ${arg_RVBL_ROOT}
+        $<$<BOOL:${arg_PARAMETERS}>:--parameter> ${arg_PARAMETERS}
       COMMAND ${CMAKE_COMMAND} -E rename ${temp_dir}/model.adoc ${output_adoc}
       DEPENDS ${input}
       WORKING_DIRECTORY ${temp_dir}

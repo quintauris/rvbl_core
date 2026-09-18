@@ -1,0 +1,22 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "ref.schema.json",
+    "$comment": "Copyright 2026 Quintauris GmbH. Licensed under the Apache License, Version 2.0 (the \"License\", https://www.apache.org/licenses/LICENSE-2.0)",
+    "description": "(Symbolic) Reference schema for RISC-V",
+    "title": "Reference",
+    "type": "object",
+    "properties": {
+        "reference": {
+            "type": "string"
+        },
+        "description": {
+            "type": "string"
+        },
+        "substitutions": {
+            "type": "object"
+        }
+    },
+    "required": [
+        "reference"
+    ]
+}

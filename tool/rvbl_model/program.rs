@@ -18,13 +18,15 @@ fn main() -> ExitCode {
     let arguments = Arguments::parse();
     let mut dependencies: HashSet<PathBuf> = [].into();
     let mut parameters = argument::parse_parameters(&arguments);
+    let canonical_meta_model_path = arguments.meta_model.canonicalize().unwrap_or_default();
+    let canonical_search_path = arguments.search_path.canonicalize().unwrap_or_default();
 
     colog::init();
 
     match loader::load_model::<Machine>(
         &arguments.input,
-        &arguments.meta_model,
-        &arguments.search_path,
+        &canonical_meta_model_path,
+        &canonical_search_path,
         &mut parameters,
         &mut dependencies,
     ) {

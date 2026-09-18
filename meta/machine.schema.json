@@ -16,16 +16,36 @@
             "type": "integer",
             "multipleOf": 8
         },
+        "imports": {
+            "type": "array",
+            "items": {
+                "$ref": "import.schema.json"
+            }
+        },
         "memory_map": {
             "type": "array",
             "items": {
-                "$ref": "addressable.schema.json"
+                "anyOf": [
+                    {
+                        "$ref": "addressable.schema.json"
+                    },
+                    {
+                        "$ref": "reference.schema.json"
+                    }
+                ]
             }
         },
         "peripherals": {
             "type": "array",
             "items": {
-                "$ref": "peripheral.schema.json"
+                "anyOf": [
+                    {
+                        "$ref": "peripheral.schema.json"
+                    },
+                    {
+                        "$ref": "reference.schema.json"
+                    }
+                ]
             }
         },
         "parameters": {
