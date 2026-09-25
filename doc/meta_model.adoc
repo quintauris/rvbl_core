@@ -106,6 +106,7 @@ ctr_addr_005:: No two <<_register>>s can have the same name
 class (string):: Register class (assumed from enclosing <<_addressable>> `default_register_class` if not defined)
 width (integer):: Number of bits in the register (assumed from <<_addressable>> `word_size` if not defined)
 offset (string):: Zero-based offset of the register within the memory space that contains it, in bytes
+volatile (boolean):: Whether the register is considered __volatile__ i.e. it can be arbitrarily changed by hardware without any explicit software interaction (assumed `false` if not defined)
 values (array) :: Array of possible <<_value>>s for the register
 fields (array):: Array of register <<_field>>s within the register
 indexing (object):: If defined, the register is considered an array of individual registers
@@ -129,6 +130,7 @@ ctr_regs_008:: `indexing/stride` must evaluate to a signed integer number higher
 position (integer):: Zero-based offset of the field within its containing register, in bits
 length (integer):: Length of the field, in bits
 values (array):: Array of possible <<_value>>s for the field
+volatile (boolean):: Whether the field is considered __volatile__ i.e. it can be arbitrarily changed by hardware without any explicit software interaction (assumed from enclosing <<_register>> if not defined)
 
 === Constraints
 

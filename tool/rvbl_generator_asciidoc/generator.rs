@@ -7,7 +7,7 @@ use std::io::{BufWriter, Result, Write};
 use std::path::PathBuf;
 
 use rvbl_model::interface::Generator;
-use rvbl_model::model::{self, Addressable};
+use rvbl_model::model::{self, Described};
 
 use crate::templates;
 
@@ -59,13 +59,7 @@ impl AsciiDocGenerator {
                     level,
                     format!("Addressable {}", addressable.name).as_str(),
                 )?;
-                templates::paragraph_optional(
-                    writer,
-                    &addressable
-                        .description
-                        .as_ref()
-                        .map_or(None, |d| Some(d.content.clone())),
-                )?;
+                templates::paragraph_optional(writer, &addressable.resolve_description())?;
                 templates::new_line(writer)?;
 
                 if addressable.registers.is_some() {
@@ -94,15 +88,14 @@ impl AsciiDocGenerator {
 
         for parameter in parameters.iter() {
             let description = parameter
-                .description
-                .as_ref()
-                .map_or(None, |d| Some(d.content.clone()));
+                .resolve_description()
+                .unwrap_or(self.default.clone());
             let cells = vec![
                 parameter.name.as_str(),
                 parameter.stage.as_str(),
                 parameter.class.as_str(),
                 parameter.value.as_ref().unwrap_or(&self.default).as_str(),
-                &description.as_ref().unwrap_or(&self.default),
+                description.as_str(),
             ];
 
             templates::table_row(writer, &cells)?;
@@ -147,13 +140,7 @@ impl AsciiDocGenerator {
                 level,
                 format!("Register {}", register.name).as_str(),
             )?;
-            templates::paragraph_optional(
-                writer,
-                &register
-                    .description
-                    .as_ref()
-                    .map_or(None, |d| Some(d.content.clone())),
-            )?;
+            templates::paragraph_optional(writer, &register.resolve_description())?;
             templates::horizontal_list(
                 writer,
                 &vec![
@@ -223,13 +210,7 @@ impl AsciiDocGenerator {
                         level + 1,
                         format!("Field {}", field.name).as_str(),
                     )?;
-                    templates::paragraph_optional(
-                        writer,
-                        &field
-                            .description
-                            .as_ref()
-                            .map_or(None, |d| Some(d.content.clone())),
-                    )?;
+                    templates::paragraph_optional(writer, &field.resolve_description())?;
                     templates::horizontal_list(
                         writer,
                         &vec![
@@ -273,13 +254,7 @@ impl AsciiDocGenerator {
             2,
             format!("Peripheral {}", peripheral.name).as_str(),
         )?;
-        templates::paragraph_optional(
-            writer,
-            &peripheral
-                .description
-                .as_ref()
-                .map_or(None, |d| Some(d.content.clone())),
-        )?;
+        templates::paragraph_optional(writer, &peripheral.resolve_description())?;
         templates::new_line(writer)?;
 
         if !peripheral.addressables.is_empty() {
@@ -289,7 +264,7 @@ impl AsciiDocGenerator {
                     .iter()
                     .filter_map(|r| r.dereference().ok())
                     .map(|a| a.clone())
-                    .collect::<Vec<Addressable>>(),
+                    .collect::<Vec<model::Addressable>>(),
                 peripheral,
                 machine,
                 writer,
@@ -342,13 +317,7 @@ impl Generator for AsciiDocGenerator {
         templates::paragraph(&mut writer, &r"Quintauris GmbH".to_string())?;
         templates::new_line(&mut writer)?;
 
-        templates::paragraph_optional(
-            &mut writer,
-            &machine
-                .description
-                .as_ref()
-                .map_or(None, |d| Some(d.content.clone())),
-        )?;
+        templates::paragraph_optional(&mut writer, &machine.resolve_description())?;
         templates::new_line(&mut writer)?;
 
         for peripheral in machine

@@ -24,6 +24,9 @@
         "offset": {
             "type": "string"
         },
+        "volatile": {
+            "type": "boolean"
+        },
         "values": {
             "type": "array",
             "items": {

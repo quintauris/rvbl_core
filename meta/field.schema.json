@@ -23,6 +23,9 @@
             "items": {
                 "$ref": "value.schema.json"
             }
+        },
+        "volatile": {
+            "type": "boolean"
         }
     },
     "required": [
