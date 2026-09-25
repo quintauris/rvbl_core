@@ -1,0 +1,24 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "description.schema.json",
+    "$comment": "Copyright 2026 Quintauris GmbH. Licensed under the Apache License, Version 2.0 (the \"License\", https://www.apache.org/licenses/LICENSE-2.0)",
+    "description": "Description (content type and content itself) schema for RISC-V",
+    "title": "description",
+    "type": "object",
+    "properties": {
+        "content-type": {
+            "type": "string",
+            "enum": [
+                "text/plain",
+                "text/markdown",
+                "text/html"
+            ]
+        },
+        "content": {
+            "type": "string"
+        }
+    },
+    "required": [
+        "content"
+    ]
+}

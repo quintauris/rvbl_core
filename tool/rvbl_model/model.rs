@@ -12,16 +12,32 @@ use serde::{Deserialize, Serialize, de::DeserializeOwned};
 use crate::{evaluator, loader};
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct Description {
+    pub content_type: Option<String>,
+    pub content: String,
+}
+
+impl Description {
+    #[allow(unused)]
+    pub fn resolve_content_type(&self) -> String {
+        match &self.content_type {
+            Some(t) => t.clone(),
+            None => String::from("text/plain"),
+        }
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Value {
     pub name: String,
-    pub description: Option<String>,
+    pub description: Option<Description>,
     pub value: String,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Field {
     pub name: String,
-    pub description: Option<String>,
+    pub description: Option<Description>,
     pub position: i32,
     pub length: Option<u32>,
     pub values: Option<Vec<Value>>,
@@ -86,7 +102,7 @@ impl Indexing {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Register {
     pub name: String,
-    pub description: Option<String>,
+    pub description: Option<Description>,
     pub class: Option<String>,
     pub offset: String,
     pub width: Option<u32>,
@@ -127,7 +143,7 @@ pub trait Resolve {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Addressable {
     pub name: String,
-    pub description: Option<String>,
+    pub description: Option<Description>,
     pub base: String,
     pub size: String,
     pub registers: Option<Vec<Register>>,
@@ -143,7 +159,7 @@ impl Resolve for Addressable {}
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Parameter {
     pub name: String,
-    pub description: Option<String>,
+    pub description: Option<Description>,
     pub stage: String,
     pub class: String,
     pub value: Option<String>,
@@ -153,7 +169,7 @@ pub struct Parameter {
 pub struct Import {
     pub file: String,
     pub name: String,
-    pub description: Option<String>,
+    pub description: Option<Description>,
     pub substitutions: Option<HashMap<String, String>>,
 }
 
@@ -258,7 +274,7 @@ impl<T: Clone + DeserializeOwned + Resolve> Referenceable<T> {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Peripheral {
     pub name: String,
-    pub description: Option<String>,
+    pub description: Option<Description>,
     pub instance: String,
     pub word_size: Option<u32>,
     pub imports: Option<Vec<Import>>,
@@ -283,7 +299,7 @@ impl Resolve for Peripheral {
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Machine {
     pub name: String,
-    pub description: Option<String>,
+    pub description: Option<Description>,
     pub word_size: u32,
     pub imports: Option<Vec<Import>>,
     pub memory_map: Vec<Referenceable<Addressable>>,
@@ -317,6 +333,10 @@ impl Resolve for Machine {
 mod tests {
     use super::*;
 
+    static DESCRIPTION: Description = Description {
+        content_type: None,
+        content: String::new(),
+    };
     static MACHINE: Machine = Machine {
         name: String::new(),
         description: None,
@@ -364,6 +384,16 @@ mod tests {
         length: None,
         values: None,
     };
+
+    #[test]
+    fn test_description_resolve_content_type() {
+        let mut description = DESCRIPTION.clone();
+
+        assert_eq!(description.resolve_content_type(), "text/plain");
+
+        description.content_type = Some(String::from("text/markdown"));
+        assert_eq!(description.resolve_content_type(), "text/markdown");
+    }
 
     #[test]
     fn test_field_resolve_position() {
