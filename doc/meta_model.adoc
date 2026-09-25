@@ -32,14 +32,16 @@ The top-level machine meta-model is a composition of smaller, more purpose-speci
 All model entities share the follwoing attributes:
 
 name (string):: Name of the model entity
-description (string):: Human-friendly description of the entity, for documentation purposes
+description (object):: Human-friendly description of the entity, for documentation purposes
+description/content_type (string):: MIME type of `content` (`text/plain` assumed if not specified)
+description/content (string):: Description content in the format specified by `content_type`
 
 For conciseness and readability, these attributes are omitted in the following sections.
 
 === Constraints
 
 ctr_comm_001:: `name` must conform to the following regular expression: `[a-zA-Z]+[0-9a-zA-Z_]*`
-
+ctr_comm_002:: `description/content_type` must be one of `text/plain`, `text/markdown` or `text/html`
 
 == Computed values
 

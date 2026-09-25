@@ -13,7 +13,7 @@
             "type": "string"
         },
         "description": {
-            "type": "string"
+            "$ref": "description.schema.json"
         },
         "word_size": {
             "type": "integer",
