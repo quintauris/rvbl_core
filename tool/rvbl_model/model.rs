@@ -27,11 +27,25 @@ impl Description {
     }
 }
 
+#[allow(unused)]
+pub trait Described {
+    fn resolve_description(&self) -> Option<String>;
+}
+
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Value {
     pub name: String,
     pub description: Option<Description>,
     pub value: String,
+}
+
+impl Described for Value {
+    fn resolve_description(&self) -> Option<String> {
+        match &self.description {
+            Some(d) => Some(d.content.clone()),
+            None => None,
+        }
+    }
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -41,6 +55,16 @@ pub struct Field {
     pub position: i32,
     pub length: Option<u32>,
     pub values: Option<Vec<Value>>,
+    pub volatile: Option<bool>,
+}
+
+impl Described for Field {
+    fn resolve_description(&self) -> Option<String> {
+        match &self.description {
+            Some(d) => Some(d.content.clone()),
+            None => None,
+        }
+    }
 }
 
 impl Field {
@@ -74,6 +98,11 @@ impl Field {
 
         self.length.unwrap_or(width - position)
     }
+
+    #[allow(unused)]
+    pub fn resolve_volatility(&self) -> bool {
+        return self.volatile.unwrap_or(false);
+    }
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -106,9 +135,19 @@ pub struct Register {
     pub class: Option<String>,
     pub offset: String,
     pub width: Option<u32>,
+    pub volatile: Option<bool>,
     pub values: Option<Vec<Value>>,
     pub fields: Option<Vec<Field>>,
     pub indexing: Option<Indexing>,
+}
+
+impl Described for Register {
+    fn resolve_description(&self) -> Option<String> {
+        match &self.description {
+            Some(d) => Some(d.content.clone()),
+            None => None,
+        }
+    }
 }
 
 impl Register {
@@ -130,6 +169,22 @@ impl Register {
         match self.class.as_ref() {
             Some(class) => class.clone(),
             None => addressable.default_register_class.clone(),
+        }
+    }
+
+    #[allow(unused)]
+    pub fn resolve_volatility(&self) -> bool {
+        let field_volatilities: Vec<bool> = self
+            .fields
+            .iter()
+            .flatten()
+            .filter_map(|f| f.volatile)
+            .collect();
+
+        if field_volatilities.is_empty() {
+            self.volatile.unwrap_or(false)
+        } else {
+            field_volatilities.iter().any(|x| *x)
         }
     }
 }
@@ -154,6 +209,15 @@ pub struct Addressable {
     pub default_register_class: String,
 }
 
+impl Described for Addressable {
+    fn resolve_description(&self) -> Option<String> {
+        match &self.description {
+            Some(d) => Some(d.content.clone()),
+            None => None,
+        }
+    }
+}
+
 impl Resolve for Addressable {}
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -165,12 +229,30 @@ pub struct Parameter {
     pub value: Option<String>,
 }
 
+impl Described for Parameter {
+    fn resolve_description(&self) -> Option<String> {
+        match &self.description {
+            Some(d) => Some(d.content.clone()),
+            None => None,
+        }
+    }
+}
+
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Import {
     pub file: String,
     pub name: String,
     pub description: Option<Description>,
     pub substitutions: Option<HashMap<String, String>>,
+}
+
+impl Described for Import {
+    fn resolve_description(&self) -> Option<String> {
+        match &self.description {
+            Some(d) => Some(d.content.clone()),
+            None => None,
+        }
+    }
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -282,6 +364,15 @@ pub struct Peripheral {
     pub parameters: Option<Vec<Parameter>>,
 }
 
+impl Described for Peripheral {
+    fn resolve_description(&self) -> Option<String> {
+        match &self.description {
+            Some(d) => Some(d.content.clone()),
+            None => None,
+        }
+    }
+}
+
 impl Resolve for Peripheral {
     fn resolve(
         &mut self,
@@ -305,6 +396,15 @@ pub struct Machine {
     pub memory_map: Vec<Referenceable<Addressable>>,
     pub peripherals: Vec<Referenceable<Peripheral>>,
     pub parameters: Vec<Parameter>,
+}
+
+impl Described for Machine {
+    fn resolve_description(&self) -> Option<String> {
+        match &self.description {
+            Some(d) => Some(d.content.clone()),
+            None => None,
+        }
+    }
 }
 
 impl Resolve for Machine {
@@ -373,6 +473,7 @@ mod tests {
         class: None,
         offset: String::new(),
         width: None,
+        volatile: None,
         values: None,
         fields: None,
         indexing: None,
@@ -382,6 +483,7 @@ mod tests {
         description: None,
         position: 0,
         length: None,
+        volatile: None,
         values: None,
     };
 
@@ -441,6 +543,19 @@ mod tests {
             field.resolve_length(&register, &addressable, &peripheral, &machine),
             8
         );
+    }
+
+    #[test]
+    fn test_field_resolve_volatility() {
+        let mut field = FIELD.clone();
+
+        assert_eq!(field.resolve_volatility(), false);
+
+        field.volatile = Some(false);
+        assert_eq!(field.resolve_volatility(), false);
+
+        field.volatile = Some(true);
+        assert_eq!(field.resolve_volatility(), true);
     }
 
     #[test]
@@ -522,5 +637,43 @@ mod tests {
 
         register.class = None;
         assert_eq!(register.resolve_class(&addressable), "control_status");
+    }
+
+    #[test]
+    fn test_register_resolve_volatility() {
+        let mut register = REGISTER.clone();
+
+        // No fields, no explicit volatility: defaults to non-volatile.
+        assert_eq!(register.resolve_volatility(), false);
+
+        // No fields: falls back to the register's own volatility.
+        register.volatile = Some(true);
+        assert_eq!(register.resolve_volatility(), true);
+
+        // Fields present but none set their own volatility: still falls
+        // back to the register's own volatility.
+        let mut field_a = FIELD.clone();
+        field_a.name = String::from("a");
+        let mut field_b = FIELD.clone();
+        field_b.name = String::from("b");
+        register.fields = Some(vec![field_a.clone(), field_b.clone()]);
+        assert_eq!(register.resolve_volatility(), true);
+
+        register.volatile = Some(false);
+        assert_eq!(register.resolve_volatility(), false);
+
+        // At least one field is explicitly non-volatile, but none is
+        // volatile: register-level volatility is ignored, result is false.
+        field_a.volatile = Some(false);
+        register.volatile = Some(true);
+        register.fields = Some(vec![field_a.clone(), field_b.clone()]);
+        assert_eq!(register.resolve_volatility(), false);
+
+        // At least one field is explicitly volatile: register is volatile,
+        // regardless of the register's own volatility.
+        field_b.volatile = Some(true);
+        register.volatile = Some(false);
+        register.fields = Some(vec![field_a.clone(), field_b.clone()]);
+        assert_eq!(register.resolve_volatility(), true);
     }
 }
