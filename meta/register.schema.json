@@ -55,6 +55,9 @@
             "required": [
                 "upper_bound"
             ]
+        },
+        "vendor": {
+            "$ref": "vendor.schema.json"
         }
     },
     "required": [

@@ -12,6 +12,12 @@ use serde::{Deserialize, Serialize, de::DeserializeOwned};
 use crate::{evaluator, loader};
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct Vendor {
+    pub name: String,
+    pub data: serde_json::Value,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Description {
     pub content_type: Option<String>,
     pub content: String,
@@ -37,6 +43,7 @@ pub struct Value {
     pub name: String,
     pub description: Option<Description>,
     pub value: String,
+    pub vendor: Option<Vec<Vendor>>,
 }
 
 impl Described for Value {
@@ -56,6 +63,7 @@ pub struct Field {
     pub length: Option<u32>,
     pub values: Option<Vec<Value>>,
     pub volatile: Option<bool>,
+    pub vendor: Option<Vec<Vendor>>,
 }
 
 impl Described for Field {
@@ -139,6 +147,7 @@ pub struct Register {
     pub values: Option<Vec<Value>>,
     pub fields: Option<Vec<Field>>,
     pub indexing: Option<Indexing>,
+    pub vendor: Option<Vec<Vendor>>,
 }
 
 impl Described for Register {
@@ -207,6 +216,7 @@ pub struct Addressable {
     pub execute: Option<bool>,
     pub word_size: Option<u32>,
     pub default_register_class: String,
+    pub vendor: Option<Vec<Vendor>>,
 }
 
 impl Described for Addressable {
@@ -227,6 +237,7 @@ pub struct Parameter {
     pub stage: String,
     pub class: String,
     pub value: Option<String>,
+    pub vendor: Option<Vec<Vendor>>,
 }
 
 impl Described for Parameter {
@@ -244,6 +255,7 @@ pub struct Import {
     pub name: String,
     pub description: Option<Description>,
     pub substitutions: Option<HashMap<String, String>>,
+    pub vendor: Option<Vec<Vendor>>,
 }
 
 impl Described for Import {
@@ -259,6 +271,7 @@ impl Described for Import {
 pub struct Reference {
     pub reference: String,
     pub substitutions: Option<HashMap<String, String>>,
+    pub vendor: Option<Vec<Vendor>>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -362,6 +375,7 @@ pub struct Peripheral {
     pub imports: Option<Vec<Import>>,
     pub addressables: Vec<Referenceable<Addressable>>,
     pub parameters: Option<Vec<Parameter>>,
+    pub vendor: Option<Vec<Vendor>>,
 }
 
 impl Described for Peripheral {
@@ -396,6 +410,7 @@ pub struct Machine {
     pub memory_map: Vec<Referenceable<Addressable>>,
     pub peripherals: Vec<Referenceable<Peripheral>>,
     pub parameters: Vec<Parameter>,
+    pub vendor: Option<Vec<Vendor>>,
 }
 
 impl Described for Machine {
@@ -445,6 +460,7 @@ mod tests {
         memory_map: vec![],
         peripherals: vec![],
         parameters: vec![],
+        vendor: None,
     };
     static PERIPHERAL: Peripheral = Peripheral {
         name: String::new(),
@@ -454,6 +470,7 @@ mod tests {
         imports: None,
         addressables: vec![],
         parameters: None,
+        vendor: None,
     };
     static ADDRESSABLE: Addressable = Addressable {
         name: String::new(),
@@ -466,6 +483,7 @@ mod tests {
         execute: None,
         word_size: None,
         default_register_class: String::new(),
+        vendor: None,
     };
     static REGISTER: Register = Register {
         name: String::new(),
@@ -477,6 +495,7 @@ mod tests {
         values: None,
         fields: None,
         indexing: None,
+        vendor: None,
     };
     static FIELD: Field = Field {
         name: String::new(),
@@ -485,6 +504,7 @@ mod tests {
         length: None,
         volatile: None,
         values: None,
+        vendor: None,
     };
 
     #[test]

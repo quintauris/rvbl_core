@@ -17,6 +17,9 @@
         },
         "substitutions": {
             "type": "object"
+        },
+        "vendor": {
+            "$ref": "vendor.schema.json"
         }
     },
     "required": [

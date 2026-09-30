@@ -53,6 +53,9 @@
             "items": {
                 "$ref": "parameter.schema.json"
             }
+        },
+        "vendor": {
+            "$ref": "vendor.schema.json"
         }
     },
     "required": [

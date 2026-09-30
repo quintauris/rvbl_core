@@ -26,6 +26,9 @@
         },
         "volatile": {
             "type": "boolean"
+        },
+        "vendor": {
+            "$ref": "vendor.schema.json"
         }
     },
     "required": [

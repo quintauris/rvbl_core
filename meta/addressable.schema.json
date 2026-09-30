@@ -43,6 +43,9 @@
             "items": {
                 "$ref": "register.schema.json"
             }
+        },
+        "vendor": {
+            "$ref": "vendor.schema.json"
         }
     },
     "required": [

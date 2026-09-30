@@ -39,6 +39,7 @@ fn main() -> ExitCode {
                 memory_map: vec![],
                 peripherals: vec![],
                 parameters: vec![],
+                vendor: None,
             };
 
             match generator.generate_peripheral(&peripheral, &machine) {

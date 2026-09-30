@@ -35,6 +35,9 @@ name (string):: Name of the model entity
 description (object):: Human-friendly description of the entity, for documentation purposes
 description/content_type (string):: MIME type of `content` (`text/plain` assumed if not specified)
 description/content (string):: Description content in the format specified by `content_type`
+vendor (array):: Vendor-specific data associated to the entity
+vendor/__i__/name (string):: Vendor name
+vendor/__i__/data (object):: Vendor-specific data over a vendor-defined structure
 
 For conciseness and readability, these attributes are omitted in the following sections.
 
@@ -42,6 +45,7 @@ For conciseness and readability, these attributes are omitted in the following s
 
 ctr_comm_001:: `name` must conform to the following regular expression: `[a-zA-Z]+[0-9a-zA-Z_]*`
 ctr_comm_002:: `description/content_type` must be one of `text/plain`, `text/markdown` or `text/html`
+ctr_comm_003:: no two array elements under `vendor` shall have the same `name` value
 
 == Computed values
 
