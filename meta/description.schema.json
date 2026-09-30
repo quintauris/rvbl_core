@@ -16,6 +16,9 @@
         },
         "content": {
             "type": "string"
+        },
+        "vendor": {
+            "$ref": "vendor.schema.json"
         }
     },
     "required": [
