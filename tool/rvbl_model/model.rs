@@ -18,17 +18,27 @@ pub struct Vendor {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
+pub enum DescriptionContentType {
+    #[serde(rename = "text/plain")]
+    TextPlain,
+    #[serde(rename = "text/markdown")]
+    TextMarkdown,
+    #[serde(rename = "text/html")]
+    TextHtml,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Description {
-    pub content_type: Option<String>,
+    pub content_type: Option<DescriptionContentType>,
     pub content: String,
 }
 
 impl Description {
     #[allow(unused)]
-    pub fn resolve_content_type(&self) -> String {
+    pub fn resolve_content_type(&self) -> DescriptionContentType {
         match &self.content_type {
-            Some(t) => t.clone(),
-            None => String::from("text/plain"),
+            Some(c) => c.clone(),
+            None => DescriptionContentType::TextPlain,
         }
     }
 }
@@ -56,12 +66,31 @@ impl Described for Value {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
+pub enum FieldAction {
+    #[serde(rename = "clear")]
+    Clear,
+    #[serde(rename = "set")]
+    Set,
+    #[serde(rename = "toggle")]
+    Toggle,
+    #[serde(rename = "modify")]
+    Modify,
+    #[serde(rename = "modify_external")]
+    ModifyExternal,
+}
+
+type FieldOnRead = Vec<FieldAction>;
+type FieldOnWrite = HashMap<String, Vec<FieldAction>>;
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Field {
     pub name: String,
     pub description: Option<Description>,
     pub position: i32,
     pub length: Option<u32>,
     pub values: Option<Vec<Value>>,
+    pub on_read: Option<FieldOnRead>,
+    pub on_write: Option<FieldOnWrite>,
     pub volatile: Option<bool>,
     pub vendor: Option<Vec<Vendor>>,
 }
@@ -110,6 +139,22 @@ impl Field {
     #[allow(unused)]
     pub fn resolve_volatility(&self) -> bool {
         return self.volatile.unwrap_or(false);
+    }
+
+    #[allow(unused)]
+    pub fn resolve_on_read(&self) -> FieldOnRead {
+        match &self.on_read {
+            Some(o) => o.clone(),
+            None => vec![],
+        }
+    }
+
+    #[allow(unused)]
+    pub fn on_write_iter(&self) -> impl Iterator<Item = (Option<usize>, Vec<FieldAction>)> {
+        self.on_write
+            .iter()
+            .flatten()
+            .map(|w| (usize::from_str_radix(w.0, 2).ok(), w.1.clone()))
     }
 }
 
@@ -504,6 +549,8 @@ mod tests {
         length: None,
         volatile: None,
         values: None,
+        on_read: None,
+        on_write: None,
         vendor: None,
     };
 
@@ -511,10 +558,16 @@ mod tests {
     fn test_description_resolve_content_type() {
         let mut description = DESCRIPTION.clone();
 
-        assert_eq!(description.resolve_content_type(), "text/plain");
+        assert!(matches!(
+            description.resolve_content_type(),
+            DescriptionContentType::TextPlain
+        ));
 
-        description.content_type = Some(String::from("text/markdown"));
-        assert_eq!(description.resolve_content_type(), "text/markdown");
+        description.content_type = Some(DescriptionContentType::TextMarkdown);
+        assert!(matches!(
+            description.resolve_content_type(),
+            DescriptionContentType::TextMarkdown
+        ));
     }
 
     #[test]
@@ -576,6 +629,59 @@ mod tests {
 
         field.volatile = Some(true);
         assert_eq!(field.resolve_volatility(), true);
+    }
+
+    #[test]
+    fn test_field_resolve_on_read() {
+        let mut field = FIELD.clone();
+
+        // No explicit on-read behavior: defaults to no actions.
+        assert!(field.resolve_on_read().is_empty());
+
+        field.on_read = Some(vec![FieldAction::Clear]);
+        let on_read = field.resolve_on_read();
+        assert_eq!(on_read.len(), 1);
+        assert!(matches!(on_read[0], FieldAction::Clear));
+
+        // Multiple actions are returned as is, preserving their order.
+        field.on_read = Some(vec![FieldAction::Toggle, FieldAction::Modify]);
+        let on_read = field.resolve_on_read();
+        assert_eq!(on_read.len(), 2);
+        assert!(matches!(on_read[0], FieldAction::Toggle));
+        assert!(matches!(on_read[1], FieldAction::Modify));
+    }
+
+    #[test]
+    fn test_field_on_write_iter() {
+        let mut field = FIELD.clone();
+
+        // No on-write behavior: nothing to iterate over.
+        assert_eq!(field.on_write_iter().count(), 0);
+
+        // Keys are binary strings and are decoded into their numeric value.
+        field.on_write = Some(HashMap::from([
+            (String::from("1"), vec![FieldAction::Clear]),
+            (String::from("10"), vec![FieldAction::Set]),
+            (
+                String::from("0101"),
+                vec![FieldAction::Toggle, FieldAction::ModifyExternal],
+            ),
+            (String::from("123"), vec![FieldAction::Toggle]),
+        ]));
+
+        let mut on_write: Vec<(Option<usize>, Vec<FieldAction>)> = field.on_write_iter().collect();
+        // Keys that are not valid binary strings decode to None, which sorts
+        // before any Some.
+        on_write.sort_by_key(|w| w.0);
+
+        assert_eq!(on_write.len(), 4);
+        assert!(matches!(on_write[0], (None, ref a) if matches!(a[..], [FieldAction::Toggle])));
+        assert!(matches!(on_write[1], (Some(1), ref a) if matches!(a[..], [FieldAction::Clear])));
+        assert!(matches!(on_write[2], (Some(2), ref a) if matches!(a[..], [FieldAction::Set])));
+        assert!(matches!(
+            on_write[3],
+            (Some(5), ref a) if matches!(a[..], [FieldAction::Toggle, FieldAction::ModifyExternal])
+        ));
     }
 
     #[test]

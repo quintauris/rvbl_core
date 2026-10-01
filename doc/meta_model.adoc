@@ -135,12 +135,17 @@ position (integer):: Zero-based offset of the field within its containing regist
 length (integer):: Length of the field, in bits
 values (array):: Array of possible <<_value>>s for the field
 volatile (boolean):: Whether the field is considered __volatile__ i.e. it can be arbitrarily changed by hardware without any explicit software interaction (assumed from enclosing <<_register>> if not defined)
+on_read (array):: Effect(s) of reading the field, a restricted combination of `clear`, `set`, `toggle`, `modify` and `modify_external`
+on_write (object):: Key/value map of numeric values accepted by the field and their effect(s), also a restricted combination of `clear`, `set`, `toggle`, `modify` and `modify_external`
 
 === Constraints
 
 ctr_fild_001:: `position` must be an integer number in the range `[-(w-1), w-1]` where `w` is the value of the `width` attribute from the enclosing <<_register>>
 ctr_fild_002:: `length` must be an integer number in the range `[1, w]` where `w` is the value of the `width` attribute from the enclosing <<_register>>
 ctr_fild_003:: No two <<_value>>s can have the same name
+ctr_fild_004:: In `on_read` values `clear`, `set`, `toggle` and `modify` are mutually exclusive
+ctr_fild_005:: `on_write` keys shall be base-2 (i.e. binary) values
+ctr_fild_006:: In `on_write` values  `clear`, `set`, `toggle` and `modify` are mutually exclusive
 
 == Peripheral
 
