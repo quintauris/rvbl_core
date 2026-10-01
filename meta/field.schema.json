@@ -24,6 +24,39 @@
                 "$ref": "value.schema.json"
             }
         },
+        "on_read": {
+            "type": "array",
+            "items": {
+                "enum": [
+                    "clear",
+                    "set",
+                    "toggle",
+                    "modify",
+                    "modify_external"
+                ]
+            },
+            "required": [
+                "action"
+            ]
+        },
+        "on_write": {
+            "type": "object",
+            "patternProperties": {
+                "^[01]+$": {
+                    "type": "array",
+                    "items": {
+                        "enum": [
+                            "clear",
+                            "set",
+                            "toggle",
+                            "modify",
+                            "modify_external"
+                        ]
+                    }
+                }
+            },
+            "additionalProperties": false
+        },
         "volatile": {
             "type": "boolean"
         },
