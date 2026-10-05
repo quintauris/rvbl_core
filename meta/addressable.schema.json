@@ -44,6 +44,9 @@
                 "$ref": "register.schema.json"
             }
         },
+        "overlappings": {
+            "$ref": "overlapping.schema.json"
+        },
         "vendor": {
             "$ref": "vendor.schema.json"
         }

@@ -39,6 +39,9 @@
                 "$ref": "field.schema.json"
             }
         },
+        "overlappings": {
+            "$ref": "overlapping.schema.json"
+        },
         "indexing": {
             "type": "object",
             "properties": {

@@ -57,6 +57,9 @@ word_size (integer):: Default word size, in bits, of the machine (e.g. 32, 64)
 imports (array):: Array of <<_import>>s, describing elements imported from other files
 memory_map (array):: Array of <<_addressable>>s describing the machine's memory map
 peripherals (array):: Array of <<_peripheral>>s featured by the machine
+overlappings (object):: Overlapping <<_peripheral>>s and <<_addressable>>s
+overlappings/addressables/ (array of array of string):: Groups of overlapping (i.e. that represent the same hardware resource) <<_addressable>>s
+overlappings/peripherals/ (array of array of string):: Groups of overlapping (i.e. that represent the same hardware resource) <<_peripheral>>s
 parameters (array):: Array of machine-level <<_parameter>>s
 
 === Constraints
@@ -66,6 +69,9 @@ ctr_mach_002:: No two <<_import>>s can have the same name
 ctr_mach_003:: No two <<_addressable>>s under `memory_map` can have the same name
 ctr_mach_004:: No two <<_peripheral>>s under `peripherals` can have the same name
 ctr_mach_005:: No two <<_parameters>>s under `peripherals` can have the same name
+ctr_mach_006:: All <<_addressable>>s and <<_registers>>s under `memory_map` define `default_register_class` and `register_class` as `memory_mapped`, respectively
+ctr_mach_007:: All names under `overlappings/addressables` shall reference valid <<_addressable>> names under `memory_map`
+ctr_mach_008:: All names under `overlappings/peripherals` shall reference valid <<_peripheral>> instance names under `peripherals`
 
 == Import
 
@@ -96,6 +102,7 @@ execute (boolean):: Whether the addressable entity is executable
 word_size (integer):: Default word size, in bits, of the addressable entity (assumed from enclosing <<_machine>> or <<_peripheral>> `word_size` if not defined)
 default_register_class (string):: Default class for contained registers
 registers (array):: Array of <<_register>>s
+overlappings (array of array of string):: Groups of overlapping (i.e. that represent the same hardware resource) <<_register>>s
 
 === Constraints
 
@@ -104,6 +111,7 @@ ctr_addr_002:: `size` must evaluate to a signed integer number
 ctr_addr_003:: `word_size` must be a multiple of 8
 crt_addr_004:: `default_register_class` must be either `control_status` or `memory_mapped`
 ctr_addr_005:: No two <<_register>>s can have the same name
+ctr_addr_006:: All names under `overlappings` shall reference valid <<_register>> names under `registers`
 
 == Register
 
@@ -113,6 +121,7 @@ offset (string):: Zero-based offset of the register within the memory space that
 volatile (boolean):: Whether the register is considered __volatile__ i.e. it can be arbitrarily changed by hardware without any explicit software interaction (assumed `false` if not defined)
 values (array) :: Array of possible <<_value>>s for the register
 fields (array):: Array of register <<_field>>s within the register
+overlappings (array of array of string):: Groups of overlapping (i.e. that represent the same hardware resource) <<_field>>s
 indexing (object):: If defined, the register is considered an array of individual registers
 indexing/lower_bound (string, 🧮):: Lower bound for indexed access
 indexing/upper_bound (string, 🧮):: Upper bound for indexed access
@@ -128,6 +137,7 @@ ctr_regs_005:: No two <<_fields>>s can have the same name
 ctr_regs_006:: `indexing/lower_bound` must evaluate to a signed integer number equal to or higher than zero
 ctr_regs_007:: `indexing/upper_bound` must evaluate to a signed integer number equal to or higher than zero
 ctr_regs_008:: `indexing/stride` must evaluate to a signed integer number higher than zero
+ctr_regs_009:: All names under `overlappings` shall reference valid <<_field>> names under `fields`
 
 == Field
 
@@ -152,6 +162,7 @@ ctr_fild_006:: In `on_write` values  `clear`, `set`, `toggle` and `modify` are m
 instance (string):: Peripheral instance name, which differentiates it from other instantiations of the same peripheral
 word_size (integer):: Default word size, in bits, of the peripheral (assumed from <<_machine>> `word_size` if not defined)
 addressables (array):: Array of <<_addressable>>s featured by the peripheral
+overlappings (array of array of string):: Groups of overlapping (i.e. that represent the same hardware resource) <<_addressable>>s
 parameters (array):: Array of peripheral-level <<_parameter>>s
 
 === Constraints
@@ -160,6 +171,7 @@ ctr_perp_001:: `instance` must conform to the following regular expression: `[a-
 ctr_perp_002:: `word_size` must be a multiple of 8
 ctr_perp_003:: No two <<_addressable>>s can have the same name
 ctr_perp_004:: No two <<_parameter>>s can have the same name
+ctr_perp_005:: All names under `overlappings` shall reference valid <<_addressable>> names under `addressables`
 
 == Parameter
 
