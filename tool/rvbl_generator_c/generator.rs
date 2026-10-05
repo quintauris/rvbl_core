@@ -73,8 +73,9 @@ fn machine_header(machine: &model::Machine) -> Result<()> {
         .iter()
         .filter_map(|r| r.dereference().ok())
     {
+        let default_instance = String::from("<unnamed instace>");
         let type_ = &peripheral.name;
-        let instance = &peripheral.instance;
+        let instance = peripheral.instance.as_ref().unwrap_or(&default_instance);
 
         templates::extern_const_struct_declaration(
             &mut writer,
@@ -164,12 +165,13 @@ fn machine_instances_source(machine: &model::Machine) -> Result<()> {
         .filter_map(|r| r.dereference().ok())
     {
         let type_ = &peripheral.name;
-        let instance = &peripheral.instance;
+        let default_instance = String::from("<unnamed instace>");
+        let instance = peripheral.instance.as_ref().unwrap_or(&default_instance);
         let mut initializers = peripheral
             .addressables
             .iter()
             .filter_map(|r| r.dereference().ok())
-            .map(|x| parse_expression(&x.base))
+            .map(|x| x.resolve_base(&peripheral))
             .collect::<Vec<i64>>();
 
         if peripheral.parameters.is_some() {

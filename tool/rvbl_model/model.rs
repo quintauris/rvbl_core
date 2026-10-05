@@ -279,6 +279,14 @@ impl Described for Addressable {
 
 impl Resolve for Addressable {}
 
+impl Addressable {
+    #[allow(unused)]
+    pub fn resolve_base(&self, peripheral: &Peripheral) -> i64 {
+        evaluator::parse_expression_option(&peripheral.base)
+            + evaluator::parse_expression(&self.base)
+    }
+}
+
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Parameter {
     pub name: String,
@@ -317,8 +325,15 @@ impl Described for Import {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct ReferencePeripheral {
+    pub instance: String,
+    pub base: Option<String>,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Reference {
     pub reference: String,
+    pub peripheral: Option<ReferencePeripheral>,
     pub substitutions: Option<HashMap<String, String>>,
     pub vendor: Option<Vec<Vendor>>,
 }
@@ -418,8 +433,9 @@ impl<T: Clone + DeserializeOwned + Resolve> Referenceable<T> {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Peripheral {
     pub name: String,
+    pub base: Option<String>,
     pub description: Option<Description>,
-    pub instance: String,
+    pub instance: Option<String>,
     pub word_size: Option<u32>,
     pub imports: Option<Vec<Import>>,
     pub addressables: Vec<Referenceable<Addressable>>,
@@ -490,10 +506,32 @@ impl Resolve for Machine {
         }
 
         for reference in &mut self.peripherals {
-            reference.resolve(&self.imports, meta_model_search_path, include_search_path)?;
+            let mut reference_peripheral: Option<ReferencePeripheral> = None;
 
-            if let Ok(peripheral) = reference.dereference_mut() {
-                peripheral.resolve(meta_model_search_path, include_search_path)?;
+            match reference {
+                Referenceable::Reference(r) => reference_peripheral = r.peripheral.clone(),
+                Referenceable::Inplace(_) => {}
+            }
+
+            match reference_peripheral {
+                Some(parameters) => {
+                    reference.resolve(
+                        &self.imports,
+                        meta_model_search_path,
+                        include_search_path,
+                    )?;
+
+                    if let Ok(peripheral) = reference.dereference_mut() {
+                        peripheral.instance = Some(parameters.instance.clone());
+                        peripheral.base = parameters.base.clone();
+                        peripheral.resolve(meta_model_search_path, include_search_path)?;
+                    }
+                }
+                None => {
+                    return Err(loader::Error::ValidationError(format!(
+                        "Missing reference parameters."
+                    )));
+                }
             }
         }
 
@@ -523,8 +561,9 @@ mod tests {
     static PERIPHERAL: Peripheral = Peripheral {
         name: String::new(),
         description: None,
-        instance: String::new(),
+        instance: Some(String::new()),
         word_size: None,
+        base: None,
         imports: None,
         addressables: vec![],
         overlappings: None,
