@@ -12,6 +12,9 @@
         "instance": {
             "type": "string"
         },
+        "base": {
+            "type": "string"
+        },
         "description": {
             "$ref": "description.schema.json"
         },
@@ -54,7 +57,6 @@
     },
     "required": [
         "name",
-        "instance",
         "addressables"
     ]
 }

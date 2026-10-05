@@ -77,10 +77,15 @@ ctr_mach_008:: All names under `overlappings/peripherals` shall reference valid 
 
 file (string):: File containing the entity to import
 substitutions (object):: Key/value substitutions to apply to string values in the imported entity
+peripheral (object):: Peripheral instantiation parameters
+peripheral/instance (string):: Assumed peripheral instance name
+peripheral/base (string, 🧮):: Assumed peripheral base address
 
 === Constraints
 
 ctr_impr_001:: Keys within `substitutions` must be conform to the following regular expression: `[A-Z]+[0-9a-zA-Z_]*`
+ctr_impr_002:: `peripheral/instance` must conform to the following regular expression: `[a-zA-Z]+[0-9a-zA-Z_]*`
+ctr_impr_003:: `peripheral/base` must evaluate to a signed integer number
 
 == Reference
 
@@ -94,7 +99,7 @@ ctr_reft_001:: Keys within `substitutions` must be conform to the following regu
 
 == Addressable
 
-base (string, 🧮):: Base address of the addressable entity
+base (string, 🧮):: Base address of the addressable entity, relative to enclosing <<_peripheral>> if applicable
 size (string, 🧮):: Size of the addressable entity, in bytes
 read (boolean):: Whether the addressable entity is readable
 write (boolean):: Whether the addressable entity is writable
@@ -161,6 +166,7 @@ ctr_fild_006:: In `on_write` values  `clear`, `set`, `toggle` and `modify` are m
 
 instance (string):: Peripheral instance name, which differentiates it from other instantiations of the same peripheral
 word_size (integer):: Default word size, in bits, of the peripheral (assumed from <<_machine>> `word_size` if not defined)
+base (string, 🧮):: Base address of the peripheral
 addressables (array):: Array of <<_addressable>>s featured by the peripheral
 overlappings (array of array of string):: Groups of overlapping (i.e. that represent the same hardware resource) <<_addressable>>s
 parameters (array):: Array of peripheral-level <<_parameter>>s
@@ -169,9 +175,10 @@ parameters (array):: Array of peripheral-level <<_parameter>>s
 
 ctr_perp_001:: `instance` must conform to the following regular expression: `[a-zA-Z]+[0-9a-zA-Z_]*`
 ctr_perp_002:: `word_size` must be a multiple of 8
-ctr_perp_003:: No two <<_addressable>>s can have the same name
-ctr_perp_004:: No two <<_parameter>>s can have the same name
-ctr_perp_005:: All names under `overlappings` shall reference valid <<_addressable>> names under `addressables`
+ctr_perp_003:: `base` must evaluate to a signed integer number
+ctr_perp_004:: No two <<_addressable>>s can have the same name
+ctr_perp_005:: No two <<_parameter>>s can have the same name
+ctr_perp_006:: All names under `overlappings` shall reference valid <<_addressable>> names under `addressables`
 
 == Parameter
 
