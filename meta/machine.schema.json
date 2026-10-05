@@ -48,6 +48,17 @@
                 ]
             }
         },
+        "overlappings": {
+            "type": "object",
+            "properties": {
+                "addressables": {
+                    "$ref": "overlapping.schema.json"
+                },
+                "peripherals": {
+                    "$ref": "overlapping.schema.json"
+                }
+            }
+        },
         "parameters": {
             "type": "array",
             "items": {

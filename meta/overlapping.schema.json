@@ -1,0 +1,14 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "overlapping.schema.json",
+    "$comment": "Copyright 2026 Quintauris GmbH. Licensed under the Apache License, Version 2.0 (the \"License\", https://www.apache.org/licenses/LICENSE-2.0)",
+    "description": "Overlapping (peripheral, memory region, register group, etc) schema for RISC-V",
+    "title": "overlapping",
+    "type": "array",
+    "items": {
+        "type": "array",
+        "items": {
+            "type": "string"
+        }
+    }
+}

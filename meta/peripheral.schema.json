@@ -39,6 +39,9 @@
             },
             "minItems": 1
         },
+        "overlappings": {
+            "$ref": "overlapping.schema.json"
+        },
         "parameters": {
             "type": "array",
             "items": {

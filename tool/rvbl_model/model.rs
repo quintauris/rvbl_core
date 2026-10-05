@@ -181,6 +181,8 @@ impl Indexing {
     }
 }
 
+type Overlappings = Vec<Vec<String>>;
+
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Register {
     pub name: String,
@@ -191,6 +193,7 @@ pub struct Register {
     pub volatile: Option<bool>,
     pub values: Option<Vec<Value>>,
     pub fields: Option<Vec<Field>>,
+    pub overlappings: Option<Overlappings>,
     pub indexing: Option<Indexing>,
     pub vendor: Option<Vec<Vendor>>,
 }
@@ -256,6 +259,7 @@ pub struct Addressable {
     pub base: String,
     pub size: String,
     pub registers: Option<Vec<Register>>,
+    pub overlappings: Option<Overlappings>,
     pub read: Option<bool>,
     pub write: Option<bool>,
     pub execute: Option<bool>,
@@ -419,6 +423,7 @@ pub struct Peripheral {
     pub word_size: Option<u32>,
     pub imports: Option<Vec<Import>>,
     pub addressables: Vec<Referenceable<Addressable>>,
+    pub overlappings: Option<Overlappings>,
     pub parameters: Option<Vec<Parameter>>,
     pub vendor: Option<Vec<Vendor>>,
 }
@@ -447,6 +452,12 @@ impl Resolve for Peripheral {
 }
 
 #[derive(Serialize, Deserialize, Debug)]
+pub struct MachineOverlappings {
+    pub memory_regions: Option<Overlappings>,
+    pub peripherals: Option<Overlappings>,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
 pub struct Machine {
     pub name: String,
     pub description: Option<Description>,
@@ -454,6 +465,7 @@ pub struct Machine {
     pub imports: Option<Vec<Import>>,
     pub memory_map: Vec<Referenceable<Addressable>>,
     pub peripherals: Vec<Referenceable<Peripheral>>,
+    pub overlappings: Option<MachineOverlappings>,
     pub parameters: Vec<Parameter>,
     pub vendor: Option<Vec<Vendor>>,
 }
@@ -504,6 +516,7 @@ mod tests {
         imports: None,
         memory_map: vec![],
         peripherals: vec![],
+        overlappings: None,
         parameters: vec![],
         vendor: None,
     };
@@ -514,6 +527,7 @@ mod tests {
         word_size: None,
         imports: None,
         addressables: vec![],
+        overlappings: None,
         parameters: None,
         vendor: None,
     };
@@ -523,6 +537,7 @@ mod tests {
         base: String::new(),
         size: String::new(),
         registers: None,
+        overlappings: None,
         read: None,
         write: None,
         execute: None,
@@ -539,6 +554,7 @@ mod tests {
         volatile: None,
         values: None,
         fields: None,
+        overlappings: None,
         indexing: None,
         vendor: None,
     };
