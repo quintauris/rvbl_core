@@ -253,6 +253,34 @@ pub trait Resolve {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
+pub enum AddressableAtomicityAmoSupport {
+    #[serde(rename = "none")]
+    None,
+    #[serde(rename = "swap")]
+    Swap,
+    #[serde(rename = "logical")]
+    Logical,
+    #[serde(rename = "arithmetic")]
+    Arithmetic,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub enum AddressableAtomicityReservability {
+    #[serde(rename = "none")]
+    None,
+    #[serde(rename = "non_eventual")]
+    NonEventual,
+    #[serde(rename = "eventual")]
+    Eventual,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct AddressableAtomicity {
+    pub amo_support: Option<AddressableAtomicityAmoSupport>,
+    pub reservability: Option<AddressableAtomicityReservability>,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Addressable {
     pub name: String,
     pub description: Option<Description>,
@@ -265,6 +293,7 @@ pub struct Addressable {
     pub execute: Option<bool>,
     pub word_size: Option<u32>,
     pub default_register_class: String,
+    pub atomicity: Option<AddressableAtomicity>,
     pub vendor: Option<Vec<Vendor>>,
 }
 
@@ -582,6 +611,7 @@ mod tests {
         execute: None,
         word_size: None,
         default_register_class: String::new(),
+        atomicity: None,
         vendor: None,
     };
     static REGISTER: Register = Register {

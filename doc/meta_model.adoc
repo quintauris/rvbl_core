@@ -108,6 +108,10 @@ word_size (integer):: Default word size, in bits, of the addressable entity (ass
 default_register_class (string):: Default class for contained registers
 registers (array):: Array of <<_register>>s
 overlappings (array of array of string):: Groups of overlapping (i.e. that represent the same hardware resource) <<_register>>s
+attributes (object):: Address space attributes
+attributes/atomicity (object):: Address space atomicity attributes
+attributes/atomicity/amo_support (string):: Atomic Memory Operations support
+attributes/atomicity/reservability (string):: Reservability (LR/SC) support
 
 === Constraints
 
@@ -117,6 +121,8 @@ ctr_addr_003:: `word_size` must be a multiple of 8
 crt_addr_004:: `default_register_class` must be either `control_status` or `memory_mapped`
 ctr_addr_005:: No two <<_register>>s can have the same name
 ctr_addr_006:: All names under `overlappings` shall reference valid <<_register>> names under `registers`
+crt_addr_007:: `attributes/atomicity/amo_support` must be one of `none`, `swap`, `logical` or `arithmetic`
+crt_addr_008:: `attributes/atomicity/reservability` must be one of `none`, `non_eventual` or `eventual`
 
 == Register
 
