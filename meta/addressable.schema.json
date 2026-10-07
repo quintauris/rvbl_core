@@ -47,6 +47,33 @@
         "overlappings": {
             "$ref": "overlapping.schema.json"
         },
+        "attributes": {
+            "type": "object",
+            "properties": {
+                "atomicity": {
+                    "type": "object",
+                    "properties": {
+                        "amo_support": {
+                            "type": "string",
+                            "enum": [
+                                "none",
+                                "swap",
+                                "logical",
+                                "arithmetic"
+                            ]
+                        },
+                        "reservability": {
+                            "type": "string",
+                            "enum": [
+                                "none",
+                                "non_eventual",
+                                "eventual"
+                            ]
+                        }
+                    }
+                }
+            }
+        },
         "vendor": {
             "$ref": "vendor.schema.json"
         }
