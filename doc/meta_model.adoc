@@ -155,9 +155,12 @@ ctr_regs_009:: All names under `overlappings` shall reference valid <<_field>> n
 position (integer):: Zero-based offset of the field within its containing register, in bits
 length (integer):: Length of the field, in bits
 values (array):: Array of possible <<_value>>s for the field
+ranges (array):: Array of acceptable value ranges for the field
 volatile (boolean):: Whether the field is considered __volatile__ i.e. it can be arbitrarily changed by hardware without any explicit software interaction (assumed from enclosing <<_register>> if not defined)
 on_read (array):: Effect(s) of reading the field, a restricted combination of `clear`, `set`, `toggle`, `modify` and `modify_external`
 on_write (object):: Key/value map of numeric values accepted by the field and their effect(s), also a restricted combination of `clear`, `set`, `toggle`, `modify` and `modify_external`
+write_policy (string):: One of `preserve` (writes must mirror last read value), `legal` (writes must hold legal values) or `any` (any value is acceptable, default if not specified)
+read_policy (string):: One of `ignore` (read values shall be ignored), `legal` (read values are always legal) or `any` (any value can be read, default if not specified)
 
 === Constraints
 
@@ -167,6 +170,16 @@ ctr_fild_003:: No two <<_value>>s can have the same name
 ctr_fild_004:: In `on_read` values `clear`, `set`, `toggle` and `modify` are mutually exclusive
 ctr_fild_005:: `on_write` keys shall be base-2 (i.e. binary) values
 ctr_fild_006:: In `on_write` values  `clear`, `set`, `toggle` and `modify` are mutually exclusive
+ctr_fild_007:: Each element of `ranges` must be a 2-element array of strings that evaluate to integer numbers
+ctr_fild_008:: If both `values` and `ranges` are defined, values in `values` must all be contained by `ranges`
+
+== Value
+
+value (string):: Numeric value associated to the named value
+
+=== Constraints
+
+ctr_valu_001:: `value` must evaluate to an integer number
 
 == Peripheral
 
