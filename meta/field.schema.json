@@ -24,6 +24,17 @@
                 "$ref": "value.schema.json"
             }
         },
+        "ranges": {
+            "type": "array",
+            "items": {
+                "type": "array",
+                "minItems": 2,
+                "maxItems": 2,
+                "items": {
+                    "type": "string"
+                }
+            }
+        },
         "on_read": {
             "type": "array",
             "items": {
@@ -56,6 +67,22 @@
                 }
             },
             "additionalProperties": false
+        },
+        "read_policy": {
+            "type": "string",
+            "enum": [
+                "ignore",
+                "legal",
+                "any"
+            ]
+        },
+        "write_policy": {
+            "type": "string",
+            "enum": [
+                "preserve",
+                "legal",
+                "any"
+            ]
         },
         "volatile": {
             "type": "boolean"

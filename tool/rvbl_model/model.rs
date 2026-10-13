@@ -79,6 +79,26 @@ pub enum FieldAction {
     ModifyExternal,
 }
 
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub enum FieldReadPolicy {
+    #[serde(rename = "ignore")]
+    Ignore,
+    #[serde(rename = "legal")]
+    Legal,
+    #[serde(rename = "any")]
+    Any,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub enum FieldWritePolicy {
+    #[serde(rename = "preserve")]
+    Preserve,
+    #[serde(rename = "legal")]
+    Legal,
+    #[serde(rename = "any")]
+    Any,
+}
+
 type FieldOnRead = Vec<FieldAction>;
 type FieldOnWrite = HashMap<String, Vec<FieldAction>>;
 
@@ -89,8 +109,11 @@ pub struct Field {
     pub position: i32,
     pub length: Option<u32>,
     pub values: Option<Vec<Value>>,
+    pub ranges: Option<Vec<(String, String)>>,
     pub on_read: Option<FieldOnRead>,
     pub on_write: Option<FieldOnWrite>,
+    pub read_policy: Option<FieldReadPolicy>,
+    pub write_policy: Option<FieldWritePolicy>,
     pub volatile: Option<bool>,
     pub vendor: Option<Vec<Vendor>>,
 }
@@ -634,8 +657,11 @@ mod tests {
         length: None,
         volatile: None,
         values: None,
+        ranges: None,
         on_read: None,
         on_write: None,
+        read_policy: None,
+        write_policy: None,
         vendor: None,
     };
 
