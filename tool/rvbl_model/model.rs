@@ -179,6 +179,16 @@ impl Field {
             .flatten()
             .map(|w| (usize::from_str_radix(w.0, 2).ok(), w.1.clone()))
     }
+
+    #[allow(unused)]
+    pub fn resolve_read_policy(&self) -> FieldReadPolicy {
+        self.read_policy.clone().unwrap_or(FieldReadPolicy::Any)
+    }
+
+    #[allow(unused)]
+    pub fn resolve_write_policy(&self) -> FieldWritePolicy {
+        self.write_policy.clone().unwrap_or(FieldWritePolicy::Any)
+    }
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -815,6 +825,60 @@ mod tests {
         assert!(matches!(
             on_write[3],
             (Some(5), ref a) if matches!(a[..], [FieldAction::Toggle, FieldAction::ModifyExternal])
+        ));
+    }
+
+    #[test]
+    fn test_field_resolve_read_policy() {
+        let mut field = FIELD.clone();
+
+        // No explicit read policy: defaults to any.
+        assert!(matches!(field.resolve_read_policy(), FieldReadPolicy::Any));
+
+        // An explicit read policy is returned as is.
+        field.read_policy = Some(FieldReadPolicy::Ignore);
+        assert!(matches!(
+            field.resolve_read_policy(),
+            FieldReadPolicy::Ignore
+        ));
+
+        field.read_policy = Some(FieldReadPolicy::Legal);
+        assert!(matches!(
+            field.resolve_read_policy(),
+            FieldReadPolicy::Legal
+        ));
+
+        field.read_policy = Some(FieldReadPolicy::Any);
+        assert!(matches!(field.resolve_read_policy(), FieldReadPolicy::Any));
+    }
+
+    #[test]
+    fn test_field_resolve_write_policy() {
+        let mut field = FIELD.clone();
+
+        // No explicit write policy: defaults to any.
+        assert!(matches!(
+            field.resolve_write_policy(),
+            FieldWritePolicy::Any
+        ));
+
+        // An explicit write policy is returned as is.
+        field.write_policy = Some(FieldWritePolicy::Preserve);
+        assert!(matches!(
+            field.resolve_write_policy(),
+            FieldWritePolicy::Preserve
+        ));
+
+        field.write_policy = Some(FieldWritePolicy::Legal);
+        assert!(matches!(
+            field.resolve_write_policy(),
+            FieldWritePolicy::Legal
+        ));
+
+        field.write_policy = Some(FieldWritePolicy::Any);
+        assert!(matches!(
+            field.resolve_write_policy(),
+            FieldWritePolicy::Any
         ));
     }
 
