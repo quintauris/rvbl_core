@@ -133,6 +133,7 @@ volatile (boolean):: Whether the register is considered __volatile__ i.e. it can
 values (array) :: Array of possible <<_value>>s for the register
 fields (array):: Array of register <<_field>>s within the register
 overlappings (array of array of string):: Groups of overlapping (i.e. that represent the same hardware resource) <<_field>>s
+access_policy (string):: Register access policy, one of `read_only`, `write_only`, `read_write` (default if not defined), `write_once` and `read_write_once`
 indexing (object):: If defined, the register is considered an array of individual registers
 indexing/lower_bound (string, 🧮):: Lower bound for indexed access
 indexing/upper_bound (string, 🧮):: Upper bound for indexed access

@@ -204,6 +204,20 @@ impl Indexing {
     }
 }
 
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub enum RegisterAccessPolicy {
+    #[serde(rename = "read_only")]
+    ReadOnly,
+    #[serde(rename = "write_only")]
+    WriteOnly,
+    #[serde(rename = "read_write")]
+    ReadWrite,
+    #[serde(rename = "write_once")]
+    WriteOnce,
+    #[serde(rename = "read_write_once")]
+    ReadWriteOnce,
+}
+
 type Overlappings = Vec<Vec<String>>;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -217,6 +231,7 @@ pub struct Register {
     pub values: Option<Vec<Value>>,
     pub fields: Option<Vec<Field>>,
     pub overlappings: Option<Overlappings>,
+    pub access_policy: Option<RegisterAccessPolicy>,
     pub indexing: Option<Indexing>,
     pub vendor: Option<Vec<Vendor>>,
 }
@@ -266,6 +281,13 @@ impl Register {
         } else {
             field_volatilities.iter().any(|x| *x)
         }
+    }
+
+    #[allow(unused)]
+    pub fn resolve_access_policy(&self) -> RegisterAccessPolicy {
+        self.access_policy
+            .clone()
+            .unwrap_or(RegisterAccessPolicy::ReadWrite)
     }
 }
 
@@ -647,6 +669,7 @@ mod tests {
         values: None,
         fields: None,
         overlappings: None,
+        access_policy: None,
         indexing: None,
         vendor: None,
     };
@@ -912,5 +935,47 @@ mod tests {
         register.volatile = Some(false);
         register.fields = Some(vec![field_a.clone(), field_b.clone()]);
         assert_eq!(register.resolve_volatility(), true);
+    }
+
+    #[test]
+    fn test_register_resolve_access_policy() {
+        let mut register = REGISTER.clone();
+
+        // No explicit access policy: defaults to read-write.
+        assert!(matches!(
+            register.resolve_access_policy(),
+            RegisterAccessPolicy::ReadWrite
+        ));
+
+        // An explicit access policy is returned as is.
+        register.access_policy = Some(RegisterAccessPolicy::ReadOnly);
+        assert!(matches!(
+            register.resolve_access_policy(),
+            RegisterAccessPolicy::ReadOnly
+        ));
+
+        register.access_policy = Some(RegisterAccessPolicy::WriteOnly);
+        assert!(matches!(
+            register.resolve_access_policy(),
+            RegisterAccessPolicy::WriteOnly
+        ));
+
+        register.access_policy = Some(RegisterAccessPolicy::ReadWrite);
+        assert!(matches!(
+            register.resolve_access_policy(),
+            RegisterAccessPolicy::ReadWrite
+        ));
+
+        register.access_policy = Some(RegisterAccessPolicy::WriteOnce);
+        assert!(matches!(
+            register.resolve_access_policy(),
+            RegisterAccessPolicy::WriteOnce
+        ));
+
+        register.access_policy = Some(RegisterAccessPolicy::ReadWriteOnce);
+        assert!(matches!(
+            register.resolve_access_policy(),
+            RegisterAccessPolicy::ReadWriteOnce
+        ));
     }
 }
