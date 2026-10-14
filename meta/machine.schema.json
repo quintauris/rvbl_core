@@ -59,6 +59,12 @@
                 }
             }
         },
+        "resets": {
+            "type": "array",
+            "items": {
+                "$ref": "reset.schema.json"
+            }
+        },
         "parameters": {
             "type": "array",
             "items": {
