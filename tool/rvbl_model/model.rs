@@ -49,6 +49,20 @@ pub trait Described {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct Reset {
+    pub name: String,
+    pub description: Option<Description>,
+    pub vendor: Option<Vec<Vendor>>,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct ResetAction {
+    pub name: String,
+    pub value: String,
+    pub mask: Option<String>,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Value {
     pub name: String,
     pub description: Option<Description>,
@@ -101,6 +115,7 @@ pub enum FieldWritePolicy {
 
 type FieldOnRead = Vec<FieldAction>;
 type FieldOnWrite = HashMap<String, Vec<FieldAction>>;
+type FieldOnReset = ResetAction;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Field {
@@ -112,6 +127,7 @@ pub struct Field {
     pub ranges: Option<Vec<(String, String)>>,
     pub on_read: Option<FieldOnRead>,
     pub on_write: Option<FieldOnWrite>,
+    pub on_reset: Option<Vec<FieldOnReset>>,
     pub read_policy: Option<FieldReadPolicy>,
     pub write_policy: Option<FieldWritePolicy>,
     pub volatile: Option<bool>,
@@ -229,6 +245,7 @@ pub enum RegisterAccessPolicy {
 }
 
 type Overlappings = Vec<Vec<String>>;
+type RegisterOnReset = ResetAction;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Register {
@@ -242,6 +259,7 @@ pub struct Register {
     pub fields: Option<Vec<Field>>,
     pub overlappings: Option<Overlappings>,
     pub access_policy: Option<RegisterAccessPolicy>,
+    pub on_reset: Option<Vec<RegisterOnReset>>,
     pub indexing: Option<Indexing>,
     pub vendor: Option<Vec<Vendor>>,
 }
@@ -566,6 +584,7 @@ pub struct Machine {
     pub memory_map: Vec<Referenceable<Addressable>>,
     pub peripherals: Vec<Referenceable<Peripheral>>,
     pub overlappings: Option<MachineOverlappings>,
+    pub resets: Option<Vec<Reset>>,
     pub parameters: Vec<Parameter>,
     pub vendor: Option<Vec<Vendor>>,
 }
@@ -639,6 +658,7 @@ mod tests {
         memory_map: vec![],
         peripherals: vec![],
         overlappings: None,
+        resets: None,
         parameters: vec![],
         vendor: None,
     };
@@ -680,6 +700,7 @@ mod tests {
         fields: None,
         overlappings: None,
         access_policy: None,
+        on_reset: None,
         indexing: None,
         vendor: None,
     };
@@ -693,6 +714,7 @@ mod tests {
         ranges: None,
         on_read: None,
         on_write: None,
+        on_reset: None,
         read_policy: None,
         write_policy: None,
         vendor: None,

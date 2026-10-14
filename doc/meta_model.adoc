@@ -26,6 +26,7 @@ The top-level machine meta-model is a composition of smaller, more purpose-speci
 ***** (0..*) <<_field>>
 *** (0..*) <<_parameter>>
 ** (0..*) <<_parameter>>
+** (0..*) <<_reset>>
 
 == Common Attributes
 
@@ -60,6 +61,7 @@ peripherals (array):: Array of <<_peripheral>>s featured by the machine
 overlappings (object):: Overlapping <<_peripheral>>s and <<_addressable>>s
 overlappings/addressables/ (array of array of string):: Groups of overlapping (i.e. that represent the same hardware resource) <<_addressable>>s
 overlappings/peripherals/ (array of array of string):: Groups of overlapping (i.e. that represent the same hardware resource) <<_peripheral>>s
+resets (array):: Array of <<_reset>>s describing the machine's reset types
 parameters (array):: Array of machine-level <<_parameter>>s
 
 === Constraints
@@ -72,6 +74,7 @@ ctr_mach_005:: No two <<_parameters>>s under `peripherals` can have the same nam
 ctr_mach_006:: All <<_addressable>>s and <<_registers>>s under `memory_map` define `default_register_class` and `register_class` as `memory_mapped`, respectively
 ctr_mach_007:: All names under `overlappings/addressables` shall reference valid <<_addressable>> names under `memory_map`
 ctr_mach_008:: All names under `overlappings/peripherals` shall reference valid <<_peripheral>> instance names under `peripherals`
+ctr_mach_009:: No two <<_reset>>s under `resets` can have the same name
 
 == Import
 
@@ -138,6 +141,10 @@ indexing (object):: If defined, the register is considered an array of individua
 indexing/lower_bound (string, 🧮):: Lower bound for indexed access
 indexing/upper_bound (string, 🧮):: Upper bound for indexed access
 indexing/stride (string, 🧮):: Distance between entries, in bytes
+on_reset (array):: Array of reset values/masks applicable to the register
+on_reset/__i__/name (string):: Name of applicable <<_reset>> defined at <<_machine>> level
+on_reset/__i__/value (string):: Reset value applicable to the register for the named <<_reset>>
+on_reset/__i__/mask (string):: Reset mask applicable to the register for the named <<_reset>>, all `1` s assumed if not defined
 
 === Constraints
 
@@ -150,6 +157,9 @@ ctr_regs_006:: `indexing/lower_bound` must evaluate to a signed integer number e
 ctr_regs_007:: `indexing/upper_bound` must evaluate to a signed integer number equal to or higher than zero
 ctr_regs_008:: `indexing/stride` must evaluate to a signed integer number higher than zero
 ctr_regs_009:: All names under `overlappings` shall reference valid <<_field>> names under `fields`
+ctr_regs_010:: `on_reset/`__i__`/name` shall reference a valid <<_reset>> defiend at <<_machine>> level
+ctr_regs_011:: `on_reset/`__i__`/value` shall be valid base-2 (i.e. binary) values, with no more bits than `width*8` bits
+ctr_regs_012:: `on_reset/`__i__`/mask` shall be valid base-2 (i.e. binary) values, with no more bits than `width*8` bits
 
 == Field
 
@@ -160,6 +170,10 @@ ranges (array):: Array of acceptable value ranges for the field
 volatile (boolean):: Whether the field is considered __volatile__ i.e. it can be arbitrarily changed by hardware without any explicit software interaction (assumed from enclosing <<_register>> if not defined)
 on_read (array):: Effect(s) of reading the field, a restricted combination of `clear`, `set`, `toggle`, `modify` and `modify_external`
 on_write (object):: Key/value map of numeric values accepted by the field and their effect(s), also a restricted combination of `clear`, `set`, `toggle`, `modify` and `modify_external`
+on_reset (array):: Array of reset values/masks applicable to the field
+on_reset/__i__/name (string):: Name of applicable <<_reset>> defined at <<_machine>> level
+on_reset/__i__/value (string):: Reset value applicable to the field for the named <<_reset>>
+on_reset/__i__/mask (string):: Reset mask applicable to the field for the named <<_reset>>
 write_policy (string):: One of `preserve` (writes must mirror last read value), `legal` (writes must hold legal values) or `any` (any value is acceptable, default if not specified)
 read_policy (string):: One of `ignore` (read values shall be ignored), `legal` (read values are always legal) or `any` (any value can be read, default if not specified)
 
@@ -173,6 +187,9 @@ ctr_fild_005:: `on_write` keys shall be base-2 (i.e. binary) values
 ctr_fild_006:: In `on_write` values  `clear`, `set`, `toggle` and `modify` are mutually exclusive
 ctr_fild_007:: Each element of `ranges` must be a 2-element array of strings that evaluate to integer numbers
 ctr_fild_008:: If both `values` and `ranges` are defined, values in `values` must all be contained by `ranges`
+ctr_fild_009:: `on_reset/`__i__`/name` shall reference a valid <<_reset>> defiend at <<_machine>> level
+ctr_fild_010:: `on_reset/`__i__`/value` shall be valid base-2 (i.e. binary) values, with no more bits than `length` bits
+ctr_fild_011:: `on_reset/`__i__`/mask` shall be valid base-2 (i.e. binary) values, with no more bits than `length` bits
 
 == Value
 
@@ -209,3 +226,7 @@ value (string, 🧮):: String representation of the parameter's numerical defaul
 === Constraints
 
 ctr_parm_001:: `value` must evaluate to a signed integer number
+
+== Reset
+
+Only <<_common_attributes>> and their constraints apply.

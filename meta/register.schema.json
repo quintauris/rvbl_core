@@ -52,6 +52,29 @@
                 "read_write_once"
             ]
         },
+        "on_reset": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "name": {
+                        "type": "string"
+                    },
+                    "value": {
+                        "type": "string",
+                        "pattern": "^[01]+$"
+                    },
+                    "mask": {
+                        "type": "string",
+                        "pattern": "^[01]+$"
+                    }
+                },
+                "required": [
+                    "name",
+                    "value"
+                ]
+            }
+        },
         "indexing": {
             "type": "object",
             "properties": {

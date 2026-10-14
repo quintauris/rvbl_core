@@ -39,6 +39,7 @@ fn main() -> ExitCode {
                 memory_map: vec![],
                 peripherals: vec![],
                 overlappings: None,
+                resets: None,
                 parameters: vec![],
                 vendor: None,
             };
