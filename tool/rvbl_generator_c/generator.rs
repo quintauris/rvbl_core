@@ -229,9 +229,11 @@ fn peripheral_header_register(
     let mut indexing_stride: i64 = (register_width / 8).into();
 
     if let Some(indexing) = &register.indexing {
-        indexing_lower_bound = parse_expression_option(&indexing.lower_bound);
-        indexing_upper_bound = indexing.upper_bound.clone();
-        indexing_stride = match &indexing.stride {
+        let dimension = indexing.dimensions.iter().next().unwrap();
+
+        indexing_lower_bound = parse_expression(&dimension.ranges.first().unwrap().0);
+        indexing_upper_bound = dimension.ranges.first().unwrap().1.clone();
+        indexing_stride = match &dimension.stride {
             Some(stride) => parse_expression(&stride),
             None => indexing_stride,
         }

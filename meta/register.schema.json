@@ -76,21 +76,7 @@
             }
         },
         "indexing": {
-            "type": "object",
-            "properties": {
-                "stride": {
-                    "type": "string"
-                },
-                "lower_bound": {
-                    "type": "string"
-                },
-                "upper_bound": {
-                    "type": "string"
-                }
-            },
-            "required": [
-                "upper_bound"
-            ]
+            "$ref": "indexing.schema.json"
         },
         "vendor": {
             "$ref": "vendor.schema.json"

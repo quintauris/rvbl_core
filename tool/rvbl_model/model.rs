@@ -208,13 +208,22 @@ impl Field {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct Indexing {
-    pub stride: Option<String>,
-    pub lower_bound: Option<String>,
-    pub upper_bound: String,
+pub enum IndexingLayout {
+    #[serde(rename = "rows")]
+    Rows,
+    #[serde(rename = "columns")]
+    Columns,
 }
 
-impl Indexing {
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct IndexingDimension {
+    pub name: String,
+    pub stride: Option<String>,
+    pub ranges: Vec<(String, String)>,
+    pub values: Option<Vec<Value>>,
+}
+
+impl IndexingDimension {
     #[allow(unused)]
     pub fn resolve_stride(
         &self,
@@ -227,6 +236,19 @@ impl Indexing {
             None => register.resolve_width(&addressable, &peripheral, &machine) / 8,
             Some(x) => evaluator::parse_expression(x.as_str()).try_into().unwrap(),
         }
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct Indexing {
+    pub layout: Option<IndexingLayout>,
+    pub dimensions: Vec<IndexingDimension>,
+}
+
+impl Indexing {
+    #[allow(unused)]
+    pub fn resolve_layout(&self) -> IndexingLayout {
+        self.layout.clone().unwrap_or(IndexingLayout::Rows)
     }
 }
 
@@ -644,6 +666,8 @@ impl Resolve for Machine {
 
 #[cfg(test)]
 mod tests {
+    use std::vec;
+
     use super::*;
 
     static DESCRIPTION: Description = Description {
@@ -912,35 +936,75 @@ mod tests {
         let mut register = REGISTER.clone();
 
         register.indexing = Some(Indexing {
-            stride: Some(String::from("8")),
-            lower_bound: None,
-            upper_bound: String::from("8"),
+            layout: None,
+            dimensions: vec![IndexingDimension {
+                name: String::from("dim0"),
+                stride: Some(String::from("8")),
+                ranges: vec![("0".into(), "1".into())],
+                values: None,
+            }],
         });
 
-        assert_eq!(
-            register.indexing.as_ref().unwrap().resolve_stride(
-                &register,
-                &addressable,
-                &peripheral,
-                &machine
-            ),
-            8
-        );
-
-        match &mut register.indexing {
-            Some(indexing) => indexing.stride = None,
-            None => {}
+        match &register.indexing {
+            Some(i) => {
+                assert_eq!(
+                    i.dimensions.first().unwrap().resolve_stride(
+                        &register,
+                        &addressable,
+                        &peripheral,
+                        &machine
+                    ),
+                    8
+                );
+            }
+            None => unreachable!(),
         }
 
-        assert_eq!(
-            register.indexing.as_ref().unwrap().resolve_stride(
-                &register,
-                &addressable,
-                &peripheral,
-                &machine
-            ),
-            16
-        );
+        register.indexing = Some(Indexing {
+            layout: None,
+            dimensions: vec![IndexingDimension {
+                name: String::from("dim0"),
+                stride: None,
+                ranges: vec![("0".into(), "1".into())],
+                values: None,
+            }],
+        });
+
+        match &register.indexing {
+            Some(i) => {
+                assert_eq!(
+                    i.dimensions.first().unwrap().resolve_stride(
+                        &register,
+                        &addressable,
+                        &peripheral,
+                        &machine
+                    ),
+                    16
+                );
+            }
+            None => unreachable!(),
+        }
+    }
+
+    #[test]
+    fn test_indexing_resolve_layout() {
+        let mut indexing = Indexing {
+            layout: None,
+            dimensions: vec![IndexingDimension {
+                name: String::from("dim0"),
+                stride: None,
+                ranges: vec![("0".into(), "1".into())],
+                values: None,
+            }],
+        };
+
+        assert!(matches!(indexing.resolve_layout(), IndexingLayout::Rows));
+
+        indexing.layout = Some(IndexingLayout::Columns);
+        assert!(matches!(indexing.resolve_layout(), IndexingLayout::Columns));
+
+        indexing.layout = Some(IndexingLayout::Rows);
+        assert!(matches!(indexing.resolve_layout(), IndexingLayout::Rows));
     }
 
     #[test]

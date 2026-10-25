@@ -137,10 +137,7 @@ values (array) :: Array of possible <<_value>>s for the register
 fields (array):: Array of register <<_field>>s within the register
 overlappings (array of array of string):: Groups of overlapping (i.e. that represent the same hardware resource) <<_field>>s
 access_policy (string):: Register access policy, one of `read_only`, `write_only`, `read_write` (default if not defined), `write_once` and `read_write_once`
-indexing (object):: If defined, the register is considered an array of individual registers
-indexing/lower_bound (string, 🧮):: Lower bound for indexed access
-indexing/upper_bound (string, 🧮):: Upper bound for indexed access
-indexing/stride (string, 🧮):: Distance between entries, in bytes
+indexing (object):: If defined, the register is considered a (possibly multidimensional) array of individual registers (see <<_indexing>>)
 on_reset (array):: Array of reset values/masks applicable to the register
 on_reset/__i__/name (string):: Name of applicable <<_reset>> defined at <<_machine>> level
 on_reset/__i__/value (string):: Reset value applicable to the register for the named <<_reset>>
@@ -153,13 +150,34 @@ ctr_regs_002:: `width` must be a multiple of 8
 ctr_regs_003:: `offset` must evaluate to a signed integer number
 ctr_regs_004:: No two <<_value>>s can have the same name
 ctr_regs_005:: No two <<_fields>>s can have the same name
-ctr_regs_006:: `indexing/lower_bound` must evaluate to a signed integer number equal to or higher than zero
-ctr_regs_007:: `indexing/upper_bound` must evaluate to a signed integer number equal to or higher than zero
-ctr_regs_008:: `indexing/stride` must evaluate to a signed integer number higher than zero
-ctr_regs_009:: All names under `overlappings` shall reference valid <<_field>> names under `fields`
-ctr_regs_010:: `on_reset/`__i__`/name` shall reference a valid <<_reset>> defiend at <<_machine>> level
-ctr_regs_011:: `on_reset/`__i__`/value` shall be valid base-2 (i.e. binary) values, with no more bits than `width*8` bits
-ctr_regs_012:: `on_reset/`__i__`/mask` shall be valid base-2 (i.e. binary) values, with no more bits than `width*8` bits
+ctr_regs_006:: No two <<_indexing>>s can have the same name
+ctr_regs_007:: All names under `overlappings` shall reference valid <<_field>> names under `fields`
+ctr_regs_008:: `on_reset/`__i__`/name` shall reference a valid <<_reset>> defiend at <<_machine>> level
+ctr_regs_009:: `on_reset/`__i__`/value` shall be valid base-2 (i.e. binary) values, with no more bits than `width*8` bits
+ctr_regs_010:: `on_reset/`__i__`/mask` shall be valid base-2 (i.e. binary) values, with no more bits than `width*8` bits
+
+== Indexing
+
+layout (string):: Array layout
+dimensions (array):: List of array dimension properties
+dimensions/__i__/name (string, 🧮):: Dimension name (e.g. `dim0`)
+dimensions/__i__/stride (string, 🧮):: Distance between entries, in bytes, computed automatically from element size if not defined
+dimensions/__i__/ranges (array):: List of indexing ranges
+dimensions/__i__/ranges/__j__ (array):: Pair (i.e. exactly two items) of range bounds
+dimensions/__i__/ranges/__j__/0 (string, 🧮):: Lower bound of indexing range
+dimensions/__i__/ranges/__j__/1 (string, 🧮):: Upper bound of indexing range
+dimensions/__i__/values (string, 🧮):: List of named <<_value>>s within the indexing ranges
+
+=== Constraints
+
+ctr_indx_001:: `layoyt` must be one of `rows` or `columns`
+ctr_indx_002:: `dimensions/`__i__`/name` must conform to the following regular expression: `[a-zA-Z]+[0-9a-zA-Z_]*`
+ctr_indx_003:: `dimensions/`__i__`/ranges` must contain one or more elements
+ctr_indx_004:: `dimensions/`__i__`/ranges/`__j__ must be an array of exactly two string elements
+ctr_indx_005:: `dimensions/`__i__`/ranges/`__j__`/0` must evaluate to a signed integer number equal to or higher than zero
+ctr_indx_006:: `dimensions/`__i__`/ranges/`__j__`/1` must evaluate to a signed integer number equal to or higher than `dimensions/`__i__`/ranges/`__j__`/0`
+ctr_indx_007:: No two `dimension` s can have the same `name`
+ctr_indx_008:: All `value` s under `values` must fall within one or more `ranges`
 
 == Field
 
