@@ -163,31 +163,17 @@ impl AsciiDocGenerator {
                 ],
             )?;
 
-            if register.indexing.is_some() {
+            if let Some(indexing) = &register.indexing {
+                let dimension = indexing.dimensions.first().unwrap();
+
                 templates::horizontal_list(
                     writer,
                     &vec![
-                        (
-                            "Lower bound",
-                            register
-                                .indexing
-                                .as_ref()
-                                .unwrap()
-                                .lower_bound
-                                .as_ref()
-                                .unwrap_or(&String::from("0"))
-                                .as_str(),
-                        ),
-                        (
-                            "Upper bound",
-                            register.indexing.as_ref().unwrap().upper_bound.as_str(),
-                        ),
+                        ("Lower bound", dimension.ranges.first().unwrap().0.as_str()),
+                        ("Upper bound", dimension.ranges.first().unwrap().0.as_str()),
                         (
                             "Stride",
-                            register
-                                .indexing
-                                .as_ref()
-                                .unwrap()
+                            dimension
                                 .resolve_stride(register, addressable, peripheral, machine)
                                 .to_string()
                                 .as_str(),

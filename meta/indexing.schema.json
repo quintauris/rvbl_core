@@ -1,0 +1,60 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "indexing.schema.json",
+    "$comment": "Copyright 2026 Quintauris GmbH. Licensed under the Apache License, Version 2.0 (the \"License\", https://www.apache.org/licenses/LICENSE-2.0)",
+    "description": "Indexing schema for RISC-V",
+    "title": "Indexing",
+    "type": "object",
+    "properties": {
+        "layout": {
+            "type": "string",
+            "enum": [
+                "rows",
+                "columns"
+            ]
+        },
+        "description": {
+            "$ref": "description.schema.json"
+        },
+        "dimensions": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "name": {
+                        "type": "string"
+                    },
+                    "stride": {
+                        "type": "string"
+                    },
+                    "ranges": {
+                        "type": "array",
+                        "items": {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            },
+                            "minItems": 2,
+                            "maxItems": 2
+                        },
+                        "minItems": 1
+                    },
+                    "values": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "value.schema.json"
+                        }
+                    }
+                },
+                "required": [
+                    "name",
+                    "ranges"
+                ]
+            },
+            "minItems": 1
+        },
+        "vendor": {
+            "$ref": "vendor.schema.json"
+        }
+    }
+}
