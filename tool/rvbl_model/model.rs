@@ -132,6 +132,7 @@ pub struct Field {
     pub write_policy: Option<FieldWritePolicy>,
     pub volatile: Option<bool>,
     pub vendor: Option<Vec<Vendor>>,
+    pub indexing: Option<Indexing>,
 }
 
 impl Described for Field {
@@ -282,8 +283,8 @@ pub struct Register {
     pub overlappings: Option<Overlappings>,
     pub access_policy: Option<RegisterAccessPolicy>,
     pub on_reset: Option<Vec<RegisterOnReset>>,
-    pub indexing: Option<Indexing>,
     pub vendor: Option<Vec<Vendor>>,
+    pub indexing: Option<Indexing>,
 }
 
 impl Described for Register {
@@ -390,6 +391,7 @@ pub struct Addressable {
     pub default_register_class: String,
     pub atomicity: Option<AddressableAtomicity>,
     pub vendor: Option<Vec<Vendor>>,
+    pub indexing: Option<Indexing>,
 }
 
 impl Described for Addressable {
@@ -566,6 +568,7 @@ pub struct Peripheral {
     pub overlappings: Option<Overlappings>,
     pub parameters: Option<Vec<Parameter>>,
     pub vendor: Option<Vec<Vendor>>,
+    pub indexing: Option<Indexing>,
 }
 
 impl Described for Peripheral {
@@ -697,6 +700,7 @@ mod tests {
         overlappings: None,
         parameters: None,
         vendor: None,
+        indexing: None,
     };
     static ADDRESSABLE: Addressable = Addressable {
         name: String::new(),
@@ -712,6 +716,7 @@ mod tests {
         default_register_class: String::new(),
         atomicity: None,
         vendor: None,
+        indexing: None,
     };
     static REGISTER: Register = Register {
         name: String::new(),
@@ -742,6 +747,7 @@ mod tests {
         read_policy: None,
         write_policy: None,
         vendor: None,
+        indexing: None,
     };
 
     #[test]
