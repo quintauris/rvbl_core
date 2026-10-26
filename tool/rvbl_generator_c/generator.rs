@@ -7,7 +7,7 @@ use rvbl_model::evaluator::{parse_expression, parse_expression_option};
 use rvbl_model::{interface::Generator, model};
 use std::collections::HashSet;
 use std::fs::{File, create_dir_all};
-use std::io::{BufWriter, Error, ErrorKind, Result, Write};
+use std::io::{BufWriter, Result, Write};
 use std::path::{Path, PathBuf};
 use std::{format, vec};
 
@@ -379,8 +379,8 @@ fn peripheral_header_register(
         &register_type,
     )?;
 
-    match register.resolve_class(addressable).as_str() {
-        "memory_mapped" => templates::memory_mapped_register(
+    match register.resolve_class(addressable) {
+        model::RegisterClass::MemoryMapped => templates::memory_mapped_register(
             &mut writer,
             "=".repeat(4).as_str(),
             &peripheral.name,
@@ -394,7 +394,7 @@ fn peripheral_header_register(
             &indexing_upper_bound,
             indexing_stride,
         ),
-        "control_status" => templates::control_status_register(
+        model::RegisterClass::ControlStatus => templates::control_status_register(
             &mut writer,
             "=".repeat(4).as_str(),
             &peripheral.name,
@@ -408,7 +408,6 @@ fn peripheral_header_register(
             &indexing_upper_bound,
             indexing_stride,
         ),
-        _ => Result::Err(Error::from(ErrorKind::InvalidInput)),
     }?;
 
     templates::new_line(&mut writer)?;
@@ -472,8 +471,8 @@ fn peripheral_header(peripheral: &model::Peripheral, machine: &model::Machine) -
     {
         if addressable.registers.is_some() {
             for register in addressable.registers.as_ref().unwrap().iter() {
-                match register.resolve_class(addressable).as_str() {
-                    "memory_mapped" => peripheral_header_register(
+                match register.resolve_class(addressable) {
+                    model::RegisterClass::MemoryMapped => peripheral_header_register(
                         register,
                         addressable,
                         peripheral,
@@ -481,7 +480,7 @@ fn peripheral_header(peripheral: &model::Peripheral, machine: &model::Machine) -
                         machine,
                         &mut writer,
                     ),
-                    "control_status" => peripheral_header_register(
+                    model::RegisterClass::ControlStatus => peripheral_header_register(
                         register,
                         addressable,
                         peripheral,
@@ -489,7 +488,6 @@ fn peripheral_header(peripheral: &model::Peripheral, machine: &model::Machine) -
                         machine,
                         &mut writer,
                     ),
-                    _ => Result::Err(ErrorKind::InvalidInput.into()),
                 }?
             }
         }

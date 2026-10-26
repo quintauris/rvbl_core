@@ -45,10 +45,7 @@
                     "modify",
                     "modify_external"
                 ]
-            },
-            "required": [
-                "action"
-            ]
+            }
         },
         "on_write": {
             "type": "object",

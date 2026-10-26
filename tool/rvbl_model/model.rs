@@ -286,6 +286,14 @@ pub enum RegisterAccessPolicy {
     ReadWriteOnce,
 }
 
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
+pub enum RegisterClass {
+    #[serde(rename = "memory_mapped")]
+    MemoryMapped,
+    #[serde(rename = "control_status")]
+    ControlStatus,
+}
+
 type Overlappings = Vec<Vec<String>>;
 type RegisterOnReset = ResetAction;
 
@@ -293,7 +301,7 @@ type RegisterOnReset = ResetAction;
 pub struct Register {
     pub name: String,
     pub description: Option<Description>,
-    pub class: Option<String>,
+    pub class: Option<RegisterClass>,
     pub offset: String,
     pub width: Option<u32>,
     pub volatile: Option<bool>,
@@ -316,6 +324,14 @@ impl Described for Register {
 }
 
 impl Register {
+    #[allow(unused)]
+    pub fn resolve_class(&self, addressable: &Addressable) -> RegisterClass {
+        match self.class.as_ref() {
+            Some(class) => class.clone(),
+            None => addressable.default.register.class.clone(),
+        }
+    }
+
     pub fn resolve_width(
         &self,
         addressable: &Addressable,
@@ -324,21 +340,15 @@ impl Register {
     ) -> u32 {
         self.width.unwrap_or(
             addressable
-                .word_size
+                .default
+                .register
+                .width
                 .unwrap_or(peripheral.word_size.unwrap_or(machine.word_size)),
         )
     }
 
     #[allow(unused)]
-    pub fn resolve_class(&self, addressable: &Addressable) -> String {
-        match self.class.as_ref() {
-            Some(class) => class.clone(),
-            None => addressable.default_register_class.clone(),
-        }
-    }
-
-    #[allow(unused)]
-    pub fn resolve_volatility(&self) -> bool {
+    pub fn resolve_volatility(&self, addressable: &Addressable) -> bool {
         let field_volatilities: Vec<bool> = self
             .fields
             .iter()
@@ -347,17 +357,23 @@ impl Register {
             .collect();
 
         if field_volatilities.is_empty() {
-            self.volatile.unwrap_or(false)
+            self.volatile
+                .unwrap_or(addressable.default.register.volatile.unwrap_or(false))
         } else {
             field_volatilities.iter().any(|x| *x)
         }
     }
 
     #[allow(unused)]
-    pub fn resolve_access_policy(&self) -> RegisterAccessPolicy {
-        self.access_policy
-            .clone()
-            .unwrap_or(RegisterAccessPolicy::ReadWrite)
+    pub fn resolve_access_policy(&self, addressable: &Addressable) -> RegisterAccessPolicy {
+        self.access_policy.clone().unwrap_or(
+            addressable
+                .default
+                .register
+                .access_policy
+                .clone()
+                .unwrap_or(RegisterAccessPolicy::ReadWrite),
+        )
     }
 }
 
@@ -396,6 +412,19 @@ pub struct AddressableAtomicity {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct AddressableRegisterDefaults {
+    pub class: RegisterClass,
+    pub width: Option<u32>,
+    pub volatile: Option<bool>,
+    pub access_policy: Option<RegisterAccessPolicy>,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct AddressableDefaults {
+    pub register: AddressableRegisterDefaults,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Addressable {
     pub name: String,
     pub description: Option<Description>,
@@ -406,11 +435,10 @@ pub struct Addressable {
     pub read: Option<bool>,
     pub write: Option<bool>,
     pub execute: Option<bool>,
-    pub word_size: Option<u32>,
-    pub default_register_class: String,
     pub atomicity: Option<AddressableAtomicity>,
     pub vendor: Option<Vec<Vendor>>,
     pub indexing: Option<Indexing>,
+    pub default: AddressableDefaults,
 }
 
 impl Described for Addressable {
@@ -731,11 +759,17 @@ mod tests {
         read: None,
         write: None,
         execute: None,
-        word_size: None,
-        default_register_class: String::new(),
         atomicity: None,
         vendor: None,
         indexing: None,
+        default: AddressableDefaults {
+            register: AddressableRegisterDefaults {
+                class: RegisterClass::MemoryMapped,
+                width: None,
+                volatile: Some(false),
+                access_policy: Some(RegisterAccessPolicy::ReadOnly),
+            },
+        },
     };
     static REGISTER: Register = Register {
         name: String::new(),
@@ -1069,7 +1103,7 @@ mod tests {
             register.resolve_width(&addressable, &peripheral, &machine),
             64
         );
-        addressable.word_size = Some(32);
+        addressable.default.register.width = Some(32);
         assert_eq!(
             register.resolve_width(&addressable, &peripheral, &machine),
             32
@@ -1086,92 +1120,138 @@ mod tests {
         let mut addressable = ADDRESSABLE.clone();
         let mut register = REGISTER.clone();
 
-        addressable.default_register_class = String::from("control_status");
+        addressable.default.register.class = RegisterClass::ControlStatus;
 
-        register.class = Some(String::from("memory_mapped"));
-        assert_eq!(register.resolve_class(&addressable), "memory_mapped");
+        register.class = Some(RegisterClass::MemoryMapped);
+        assert_eq!(
+            register.resolve_class(&addressable),
+            RegisterClass::MemoryMapped
+        );
 
         register.class = None;
-        assert_eq!(register.resolve_class(&addressable), "control_status");
+        assert_eq!(
+            register.resolve_class(&addressable),
+            RegisterClass::ControlStatus
+        );
     }
 
     #[test]
     fn test_register_resolve_volatility() {
+        let mut addressable = ADDRESSABLE.clone();
         let mut register = REGISTER.clone();
 
-        // No fields, no explicit volatility: defaults to non-volatile.
-        assert_eq!(register.resolve_volatility(), false);
+        // No fields, no explicit volatility, no addressable default:
+        // defaults to non-volatile.
+        addressable.default.register.volatile = None;
+        assert_eq!(register.resolve_volatility(&addressable), false);
 
-        // No fields: falls back to the register's own volatility.
+        // No fields, no explicit volatility: falls back to the addressable
+        // default.
+        addressable.default.register.volatile = Some(true);
+        assert_eq!(register.resolve_volatility(&addressable), true);
+
+        addressable.default.register.volatile = Some(false);
+        assert_eq!(register.resolve_volatility(&addressable), false);
+
+        // No fields: the register's own volatility overrides the addressable
+        // default.
         register.volatile = Some(true);
-        assert_eq!(register.resolve_volatility(), true);
+        assert_eq!(register.resolve_volatility(&addressable), true);
+
+        addressable.default.register.volatile = Some(true);
+        register.volatile = Some(false);
+        assert_eq!(register.resolve_volatility(&addressable), false);
 
         // Fields present but none set their own volatility: still falls
-        // back to the register's own volatility.
+        // back to the register's own volatility, then the addressable
+        // default.
         let mut field_a = FIELD.clone();
         field_a.name = String::from("a");
         let mut field_b = FIELD.clone();
         field_b.name = String::from("b");
         register.fields = Some(vec![field_a.clone(), field_b.clone()]);
-        assert_eq!(register.resolve_volatility(), true);
+        assert_eq!(register.resolve_volatility(&addressable), false);
 
-        register.volatile = Some(false);
-        assert_eq!(register.resolve_volatility(), false);
+        register.volatile = None;
+        assert_eq!(register.resolve_volatility(&addressable), true);
 
         // At least one field is explicitly non-volatile, but none is
-        // volatile: register-level volatility is ignored, result is false.
+        // volatile: register-level volatility and addressable default are
+        // ignored, result is false.
         field_a.volatile = Some(false);
         register.volatile = Some(true);
         register.fields = Some(vec![field_a.clone(), field_b.clone()]);
-        assert_eq!(register.resolve_volatility(), false);
+        assert_eq!(register.resolve_volatility(&addressable), false);
 
         // At least one field is explicitly volatile: register is volatile,
-        // regardless of the register's own volatility.
+        // regardless of the register's own volatility and addressable
+        // default.
         field_b.volatile = Some(true);
         register.volatile = Some(false);
+        addressable.default.register.volatile = Some(false);
         register.fields = Some(vec![field_a.clone(), field_b.clone()]);
-        assert_eq!(register.resolve_volatility(), true);
+        assert_eq!(register.resolve_volatility(&addressable), true);
     }
 
     #[test]
     fn test_register_resolve_access_policy() {
+        let mut addressable = ADDRESSABLE.clone();
         let mut register = REGISTER.clone();
 
-        // No explicit access policy: defaults to read-write.
+        // No explicit access policy, no addressable default: defaults to
+        // read-write.
+        addressable.default.register.access_policy = None;
         assert!(matches!(
-            register.resolve_access_policy(),
+            register.resolve_access_policy(&addressable),
             RegisterAccessPolicy::ReadWrite
         ));
 
-        // An explicit access policy is returned as is.
-        register.access_policy = Some(RegisterAccessPolicy::ReadOnly);
+        // No explicit access policy: falls back to the addressable default.
+        addressable.default.register.access_policy = Some(RegisterAccessPolicy::ReadOnly);
         assert!(matches!(
-            register.resolve_access_policy(),
+            register.resolve_access_policy(&addressable),
             RegisterAccessPolicy::ReadOnly
         ));
 
+        addressable.default.register.access_policy = Some(RegisterAccessPolicy::WriteOnce);
+        assert!(matches!(
+            register.resolve_access_policy(&addressable),
+            RegisterAccessPolicy::WriteOnce
+        ));
+
+        // An explicit access policy is returned as is, regardless of the
+        // addressable default.
+        addressable.default.register.access_policy = Some(RegisterAccessPolicy::ReadOnly);
+
         register.access_policy = Some(RegisterAccessPolicy::WriteOnly);
         assert!(matches!(
-            register.resolve_access_policy(),
+            register.resolve_access_policy(&addressable),
             RegisterAccessPolicy::WriteOnly
         ));
 
         register.access_policy = Some(RegisterAccessPolicy::ReadWrite);
         assert!(matches!(
-            register.resolve_access_policy(),
+            register.resolve_access_policy(&addressable),
             RegisterAccessPolicy::ReadWrite
         ));
 
         register.access_policy = Some(RegisterAccessPolicy::WriteOnce);
         assert!(matches!(
-            register.resolve_access_policy(),
+            register.resolve_access_policy(&addressable),
             RegisterAccessPolicy::WriteOnce
         ));
 
         register.access_policy = Some(RegisterAccessPolicy::ReadWriteOnce);
         assert!(matches!(
-            register.resolve_access_policy(),
+            register.resolve_access_policy(&addressable),
             RegisterAccessPolicy::ReadWriteOnce
+        ));
+
+        addressable.default.register.access_policy = Some(RegisterAccessPolicy::WriteOnly);
+        register.access_policy = Some(RegisterAccessPolicy::ReadOnly);
+        assert!(matches!(
+            register.resolve_access_policy(&addressable),
+            RegisterAccessPolicy::ReadOnly
         ));
     }
 }

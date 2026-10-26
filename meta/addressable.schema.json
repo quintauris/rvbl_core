@@ -27,17 +27,6 @@
         "execute": {
             "type": "boolean"
         },
-        "word_size": {
-            "type": "integer",
-            "multipleOf": 8
-        },
-        "default_register_class": {
-            "type": "string",
-            "enum": [
-                "control_status",
-                "memory_mapped"
-            ]
-        },
         "registers": {
             "type": "array",
             "items": {
@@ -79,12 +68,50 @@
         },
         "indexing": {
             "$ref": "indexing.schema.json"
+        },
+        "default": {
+            "properties": {
+                "register": {
+                    "properties": {
+                        "class": {
+                            "type": "string",
+                            "enum": [
+                                "control_status",
+                                "memory_mapped"
+                            ]
+                        },
+                        "width": {
+                            "type": "integer",
+                            "multipleOf": 8
+                        },
+                        "volatile": {
+                            "type": "boolean"
+                        },
+                        "access_policy": {
+                            "type": "string",
+                            "enum": [
+                                "read_only",
+                                "write_only",
+                                "read_write",
+                                "write_once",
+                                "read_write_once"
+                            ]
+                        }
+                    },
+                    "required": [
+                        "class"
+                    ]
+                }
+            },
+            "required": [
+                "register"
+            ]
         }
     },
     "required": [
         "name",
         "base",
         "size",
-        "default_register_class"
+        "default"
     ]
 }
