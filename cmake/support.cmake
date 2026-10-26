@@ -768,29 +768,39 @@ function(rvbl_layer_documentation)
 
   # Main documents and common files
   file(GLOB inputs "${arg_SOURCE_DIR}/*.adoc")
+  file(GLOB diagrams "${arg_SOURCE_DIR}/*.puml")
   list(APPEND inputs ${outputs_model_peripheral})
   set(outputs_doc "")
+  set(outputs_diagrams "")
 
   foreach(input ${inputs})
     get_filename_component(file_name_we ${input} NAME_WE)
     list(APPEND outputs_doc ${target_dir_html}/${file_name_we}.html)
   endforeach()
 
+  foreach(diagram ${diagrams})
+    get_filename_component(file_name_we ${diagram} NAME_WE)
+    list(APPEND outputs_diagrams ${target_dir_html}/${file_name_we}.png)
+  endforeach()
+
   add_custom_command(
     OUTPUT ${outputs_doc}
-    COMMAND
-      ${ASCIIDOCTOR} -r asciidoctor-diagram
-      --attribute=plantuml-native=${PLANTUML} --doctype book -D
-      ${target_dir_html} ${inputs}
+    COMMAND ${ASCIIDOCTOR} --doctype book -D ${target_dir_html} ${inputs}
     DEPENDS ${inputs} ${outputs_api} ${outputs_model_peripheral}
     COMMENT "Generating documentation...")
+
+  add_custom_command(
+    OUTPUT ${outputs_diagrams}
+    COMMAND ${PLANTUML} -tsvg -o ${target_dir_html} ${diagrams}
+    DEPENDS ${diagrams}
+    COMMENT "Generating diagrams...")
 
   file(GLOB glob "${arg_RVBL_ROOT}/doc/*.png" "${arg_RVBL_ROOT}/doc/*.css")
   file(COPY ${glob} DESTINATION ${target_dir_html})
 
   add_custom_target(
     ${layer_name}_docs ALL DEPENDS ${outputs_api} ${outputs_model_peripheral}
-                                   ${outputs_doc})
+                                   ${outputs_doc} ${outputs_diagrams})
 
   install(DIRECTORY ${target_dir_html} DESTINATION doc/layer/${layer_name})
 endfunction()

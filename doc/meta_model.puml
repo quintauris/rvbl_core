@@ -1,0 +1,31 @@
+/'
+  Copyright 2026 Quintauris GmbH
+  Licensed under the Apache License, Version 2.0 (the "License").
+  https://www.apache.org/licenses/LICENSE-2.0
+'/
+@startuml
+Machine "0" *-- "*" Import : "imports"
+Machine "0" *-- "*" Addressable : "memory_map"
+Machine "0" *-- "*" Peripheral : "peripherals"
+Machine "0" *-- "*" Overlapping : "overlappings"
+Machine "0" *-- "*" Reset : "resets"
+Machine "0" *-- "*" Parameter : "parameters"
+
+Addressable "0" *-- "*" Register : "registers"
+Addressable "0" *-- "*" Overlapping : "overlappings"
+Addressable "0" *-- "1" Indexing : "indexing"
+
+Register "0" *-- "*" Field : "fields"
+Register "0" *-- "*" Value : "values"
+Register "0" *-- "*" Overlapping : "overlappings"
+Register "0" *-- "1" Indexing : "indexing"
+
+Field "0" *-- "*" Value : "values"
+Field "0" *-- "1" Indexing : "indexing"
+
+Peripheral "0" *-- "*" Import : "imports"
+Peripheral "0" *-- "*" Addressable : "addressables"
+Peripheral "0" *-- "*" Overlapping : "overlappings"
+Peripheral "0" *-- "*" Parameter : "parameters"
+Peripheral "0" *-- "1" Indexing : "indexing"
+@enduml

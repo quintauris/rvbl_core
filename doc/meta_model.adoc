@@ -15,35 +15,7 @@ Quintauris' machine meta-model defines the structure and properties of machine m
 
 The top-level machine meta-model is a composition of smaller, more purpose-specific meta-models. The following is a simplified, top-level description of the meta-model hierarchy:
 
-[plantuml, target="meta_model", format="svg"]
-....
-@startuml
-Machine "0" *-- "*" Import : "imports"
-Machine "0" *-- "*" Addressable : "memory_map"
-Machine "0" *-- "*" Peripheral : "peripherals"
-Machine "0" *-- "*" Overlapping : "overlappings"
-Machine "0" *-- "*" Reset : "resets"
-Machine "0" *-- "*" Parameter : "parameters"
-
-Addressable "0" *-- "*" Register : "registers"
-Addressable "0" *-- "*" Overlapping : "overlappings"
-Addressable "0" *-- "1" Indexing : "indexing"
-
-Register "0" *-- "*" Field : "fields"
-Register "0" *-- "*" Value : "values"
-Register "0" *-- "*" Overlapping : "overlappings"
-Register "0" *-- "1" Indexing : "indexing"
-
-Field "0" *-- "*" Value : "values"
-Field "0" *-- "1" Indexing : "indexing"
-
-Peripheral "0" *-- "*" Import : "imports"
-Peripheral "0" *-- "*" Addressable : "addressables"
-Peripheral "0" *-- "*" Overlapping : "overlappings"
-Peripheral "0" *-- "*" Parameter : "parameters"
-Peripheral "0" *-- "1" Indexing : "indexing"
-@enduml
-....
+image::meta_model.svg[]
 
 == Common Attributes
 
