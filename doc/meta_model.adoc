@@ -24,7 +24,14 @@ The top-level machine meta-model is a composition of smaller, more purpose-speci
 *** (0..*) <<_addressable>> (inline or <<_reference>>d)
 **** (0..*) <<_register>>
 ***** (0..*) <<_field>>
+****** (0..*) <<_value>>
+****** (0..*) <<_indexing>>
+***** (0..*) <<_indexing>>
+***** (0..*) <<_value>>
+***** (0..*) <<_indexing>>
+**** (0..*) <<_indexing>>
 *** (0..*) <<_parameter>>
+*** (0..*) <<_indexing>>
 ** (0..*) <<_parameter>>
 ** (0..*) <<_reset>>
 
@@ -115,6 +122,7 @@ attributes (object):: Address space attributes
 attributes/atomicity (object):: Address space atomicity attributes
 attributes/atomicity/amo_support (string):: Atomic Memory Operations support
 attributes/atomicity/reservability (string):: Reservability (LR/SC) support
+indexing (array):: Array of <<_indexing>>s, each representing an array dimension
 
 === Constraints
 
@@ -126,6 +134,7 @@ ctr_addr_005:: No two <<_register>>s can have the same name
 ctr_addr_006:: All names under `overlappings` shall reference valid <<_register>> names under `registers`
 crt_addr_007:: `attributes/atomicity/amo_support` must be one of `none`, `swap`, `logical` or `arithmetic`
 crt_addr_008:: `attributes/atomicity/reservability` must be one of `none`, `non_eventual` or `eventual`
+ctr_addr_009:: No two <<_indexing>>s can have the same name
 
 == Register
 
@@ -137,11 +146,11 @@ values (array) :: Array of possible <<_value>>s for the register
 fields (array):: Array of register <<_field>>s within the register
 overlappings (array of array of string):: Groups of overlapping (i.e. that represent the same hardware resource) <<_field>>s
 access_policy (string):: Register access policy, one of `read_only`, `write_only`, `read_write` (default if not defined), `write_once` and `read_write_once`
-indexing (object):: If defined, the register is considered a (possibly multidimensional) array of individual registers (see <<_indexing>>)
 on_reset (array):: Array of reset values/masks applicable to the register
 on_reset/__i__/name (string):: Name of applicable <<_reset>> defined at <<_machine>> level
 on_reset/__i__/value (string):: Reset value applicable to the register for the named <<_reset>>
 on_reset/__i__/mask (string):: Reset mask applicable to the register for the named <<_reset>>, all `1` s assumed if not defined
+indexing (array):: Array of <<_indexing>>s, each representing an array dimension
 
 === Constraints
 
@@ -150,11 +159,11 @@ ctr_regs_002:: `width` must be a multiple of 8
 ctr_regs_003:: `offset` must evaluate to a signed integer number
 ctr_regs_004:: No two <<_value>>s can have the same name
 ctr_regs_005:: No two <<_fields>>s can have the same name
-ctr_regs_006:: No two <<_indexing>>s can have the same name
-ctr_regs_007:: All names under `overlappings` shall reference valid <<_field>> names under `fields`
-ctr_regs_008:: `on_reset/`__i__`/name` shall reference a valid <<_reset>> defiend at <<_machine>> level
-ctr_regs_009:: `on_reset/`__i__`/value` shall be valid base-2 (i.e. binary) values, with no more bits than `width*8` bits
-ctr_regs_010:: `on_reset/`__i__`/mask` shall be valid base-2 (i.e. binary) values, with no more bits than `width*8` bits
+ctr_regs_006:: All names under `overlappings` shall reference valid <<_field>> names under `fields`
+ctr_regs_007:: `on_reset/`__i__`/name` shall reference a valid <<_reset>> defiend at <<_machine>> level
+ctr_regs_008:: `on_reset/`__i__`/value` shall be valid base-2 (i.e. binary) values, with no more bits than `width*8` bits
+ctr_regs_009:: `on_reset/`__i__`/mask` shall be valid base-2 (i.e. binary) values, with no more bits than `width*8` bits
+ctr_regs_010:: No two <<_indexing>>s can have the same name
 
 == Indexing
 
@@ -194,6 +203,7 @@ on_reset/__i__/value (string):: Reset value applicable to the field for the name
 on_reset/__i__/mask (string):: Reset mask applicable to the field for the named <<_reset>>
 write_policy (string):: One of `preserve` (writes must mirror last read value), `legal` (writes must hold legal values) or `any` (any value is acceptable, default if not specified)
 read_policy (string):: One of `ignore` (read values shall be ignored), `legal` (read values are always legal) or `any` (any value can be read, default if not specified)
+indexing (array):: Array of <<_indexing>>s, each representing an array dimension
 
 === Constraints
 
@@ -208,6 +218,7 @@ ctr_fild_008:: If both `values` and `ranges` are defined, values in `values` mus
 ctr_fild_009:: `on_reset/`__i__`/name` shall reference a valid <<_reset>> defiend at <<_machine>> level
 ctr_fild_010:: `on_reset/`__i__`/value` shall be valid base-2 (i.e. binary) values, with no more bits than `length` bits
 ctr_fild_011:: `on_reset/`__i__`/mask` shall be valid base-2 (i.e. binary) values, with no more bits than `length` bits
+ctr_fild_012:: No two <<_indexing>>s can have the same name
 
 == Value
 
@@ -225,6 +236,7 @@ base (string, 🧮):: Base address of the peripheral
 addressables (array):: Array of <<_addressable>>s featured by the peripheral
 overlappings (array of array of string):: Groups of overlapping (i.e. that represent the same hardware resource) <<_addressable>>s
 parameters (array):: Array of peripheral-level <<_parameter>>s
+indexing (array):: Array of <<_indexing>>s, each representing an array dimension
 
 === Constraints
 
@@ -234,6 +246,7 @@ ctr_perp_003:: `base` must evaluate to a signed integer number
 ctr_perp_004:: No two <<_addressable>>s can have the same name
 ctr_perp_005:: No two <<_parameter>>s can have the same name
 ctr_perp_006:: All names under `overlappings` shall reference valid <<_addressable>> names under `addressables`
+ctr_perp_007:: No two <<_indexing>>s can have the same name
 
 == Parameter
 
