@@ -114,8 +114,6 @@ size (string, 🧮):: Size of the addressable entity, in bytes
 read (boolean):: Whether the addressable entity is readable
 write (boolean):: Whether the addressable entity is writable
 execute (boolean):: Whether the addressable entity is executable
-word_size (integer):: Default word size, in bits, of the addressable entity (assumed from enclosing <<_machine>> or <<_peripheral>> `word_size` if not defined)
-default_register_class (string):: Default class for contained registers
 registers (array):: Array of <<_register>>s
 overlappings (array of array of string):: Groups of overlapping (i.e. that represent the same hardware resource) <<_register>>s
 attributes (object):: Address space attributes
@@ -123,6 +121,10 @@ attributes/atomicity (object):: Address space atomicity attributes
 attributes/atomicity/amo_support (string):: Atomic Memory Operations support
 attributes/atomicity/reservability (string):: Reservability (LR/SC) support
 indexing (array):: Array of <<_indexing>>s, each representing an array dimension
+default/register/class:: Default class for contained registers
+default/register/width:: Default width for contained registers
+default/register/volatile:: Default volatile for contained registers
+default/register/access_policy:: Default access_policy for contained registers
 
 === Constraints
 
@@ -135,6 +137,10 @@ ctr_addr_006:: All names under `overlappings` shall reference valid <<_register>
 crt_addr_007:: `attributes/atomicity/amo_support` must be one of `none`, `swap`, `logical` or `arithmetic`
 crt_addr_008:: `attributes/atomicity/reservability` must be one of `none`, `non_eventual` or `eventual`
 ctr_addr_009:: No two <<_indexing>>s can have the same name
+ctr_addr_010:: `default/register/class` values must be one of those supported by <<_register>>'s `class` attribute
+ctr_addr_011:: `default/register/width` values must be one of those supported by <<_register>>'s `width` attribute
+ctr_addr_012:: `default/register/volatile` values must be one of those supported by <<_register>>'s `volatile` attribute
+ctr_addr_013:: `default/register/access_policy` values must be one of those supported by <<_register>>'s `access_policy` attribute
 
 == Register
 
