@@ -44,6 +44,31 @@
                         "items": {
                             "$ref": "value.schema.json"
                         }
+                    },
+                    "lists": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "name": {
+                                    "type": "string"
+                                },
+                                "start": {
+                                    "type": "string"
+                                },
+                                "count": {
+                                    "type": "string"
+                                },
+                                "stride": {
+                                    "type": "string"
+                                }
+                            },
+                            "required": [
+                                "name",
+                                "start",
+                                "count"
+                            ]
+                        }
                     }
                 },
                 "required": [

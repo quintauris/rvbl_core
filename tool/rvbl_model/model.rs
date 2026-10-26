@@ -217,11 +217,30 @@ pub enum IndexingLayout {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct IndexingList {
+    pub name: String,
+    pub start: String,
+    pub count: String,
+    pub stride: Option<String>,
+}
+
+impl IndexingList {
+    #[allow(unused)]
+    pub fn resolve_stride(&self) -> i64 {
+        match &self.stride {
+            Some(s) => evaluator::parse_expression(&s),
+            None => 1,
+        }
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct IndexingDimension {
     pub name: String,
     pub stride: Option<String>,
     pub ranges: Vec<(String, String)>,
     pub values: Option<Vec<Value>>,
+    pub lists: Option<Vec<IndexingList>>,
 }
 
 impl IndexingDimension {
@@ -948,6 +967,7 @@ mod tests {
                 stride: Some(String::from("8")),
                 ranges: vec![("0".into(), "1".into())],
                 values: None,
+                lists: None,
             }],
         });
 
@@ -973,6 +993,7 @@ mod tests {
                 stride: None,
                 ranges: vec![("0".into(), "1".into())],
                 values: None,
+                lists: None,
             }],
         });
 
@@ -1001,6 +1022,7 @@ mod tests {
                 stride: None,
                 ranges: vec![("0".into(), "1".into())],
                 values: None,
+                lists: None,
             }],
         };
 
@@ -1011,6 +1033,24 @@ mod tests {
 
         indexing.layout = Some(IndexingLayout::Rows);
         assert!(matches!(indexing.resolve_layout(), IndexingLayout::Rows));
+    }
+
+    #[test]
+    fn test_indexing_list_resolve_stride() {
+        let mut list = IndexingList {
+            name: String::from("list0"),
+            start: String::from("0"),
+            count: String::from("4"),
+            stride: None,
+        };
+
+        assert_eq!(list.resolve_stride(), 1);
+
+        list.stride = Some(String::from("8"));
+        assert_eq!(list.resolve_stride(), 8);
+
+        list.stride = Some(String::from("0x10 * 2"));
+        assert_eq!(list.resolve_stride(), 32);
     }
 
     #[test]

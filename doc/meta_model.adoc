@@ -176,6 +176,11 @@ dimensions/__i__/ranges/__j__ (array):: Pair (i.e. exactly two items) of range b
 dimensions/__i__/ranges/__j__/0 (string, 🧮):: Lower bound of indexing range
 dimensions/__i__/ranges/__j__/1 (string, 🧮):: Upper bound of indexing range
 dimensions/__i__/values (string, 🧮):: List of named <<_value>>s within the indexing ranges
+dimensions/__i__/lists (array):: Lists of (possibly non-contiguous) elements within the dimension
+dimensions/__i__/lists/__j__/name (string):: List name
+dimensions/__i__/lists/__j__/start (string, 🧮):: Starting index of the list
+dimensions/__i__/lists/__j__/count (string, 🧮):: Number of elements in the list
+dimensions/__i__/lists/__j__/stride (string, 🧮):: Stride of elements to choose from the list, assumed `1` if not defined
 
 === Constraints
 
@@ -187,6 +192,12 @@ ctr_indx_005:: `dimensions/`__i__`/ranges/`__j__`/0` must evaluate to a signed i
 ctr_indx_006:: `dimensions/`__i__`/ranges/`__j__`/1` must evaluate to a signed integer number equal to or higher than `dimensions/`__i__`/ranges/`__j__`/0`
 ctr_indx_007:: No two `dimension` s can have the same `name`
 ctr_indx_008:: All `value` s under `values` must fall within one or more `ranges`
+ctr_indx_009:: No two `list` s can have the same `name`
+ctr_indx_010:: `dimensions/`__i__`/lists/`__j__`/name` must conform to the following regular expression: `[a-zA-Z]+[0-9a-zA-Z_]*`
+ctr_indx_011:: `dimensions/`__i__`/lists/`__j__`/start` must evaluate to a signed integer number equal to or higher than zero
+ctr_indx_012:: `dimensions/`__i__`/lists/`__j__`/count` must evaluate to a signed integer number equal to or higher than zero
+ctr_indx_013:: `dimensions/`__i__`/lists/`__j__`/stride` must evaluate to a signed integer number equal to or higher than zero
+ctr_indx_014:: All indexes specified by `dimensions/`__i__`/lists` must be contained by `dimensions/`__i__`/ranges`
 
 == Field
 
