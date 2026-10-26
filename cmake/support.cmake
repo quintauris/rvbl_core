@@ -729,6 +729,7 @@ function(rvbl_layer_documentation)
   make_directory(${target_dir_html})
 
   find_program(ASCIIDOCTOR NAMES asciidoctor REQUIRED)
+  find_program(PLANTUML NAMES plantuml REQUIRED)
   find_program(EXTRACTOR_ASCIIDOC NAMES asciidoc_extractor REQUIRED)
 
   # Libraries
@@ -777,7 +778,10 @@ function(rvbl_layer_documentation)
 
   add_custom_command(
     OUTPUT ${outputs_doc}
-    COMMAND ${ASCIIDOCTOR} --doctype book -D ${target_dir_html} ${inputs}
+    COMMAND
+      ${ASCIIDOCTOR} -r asciidoctor-diagram
+      --attribute=plantuml-native=${PLANTUML} --doctype book -D
+      ${target_dir_html} ${inputs}
     DEPENDS ${inputs} ${outputs_api} ${outputs_model_peripheral}
     COMMENT "Generating documentation...")
 
