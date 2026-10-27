@@ -780,7 +780,7 @@ function(rvbl_layer_documentation)
 
   foreach(diagram ${diagrams})
     get_filename_component(file_name_we ${diagram} NAME_WE)
-    list(APPEND outputs_diagrams ${target_dir_html}/${file_name_we}.png)
+    list(APPEND outputs_diagrams ${target_dir_html}/${file_name_we}.svg)
   endforeach()
 
   add_custom_command(
