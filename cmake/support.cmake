@@ -773,8 +773,6 @@ function(rvbl_layer_documentation)
   set(outputs_doc "")
   set(outputs_diagrams "")
 
-  message("diagrams ${diagrams}")
-
   foreach(input ${inputs})
     get_filename_component(file_name_we ${input} NAME_WE)
     list(APPEND outputs_doc ${target_dir_html}/${file_name_we}.html)
@@ -785,19 +783,19 @@ function(rvbl_layer_documentation)
     list(APPEND outputs_diagrams ${target_dir_html}/${file_name_we}.svg)
   endforeach()
 
-  message("outputs_diagrams ${outputs_diagrams}")
-
   add_custom_command(
     OUTPUT ${outputs_doc}
     COMMAND ${ASCIIDOCTOR} --doctype book -D ${target_dir_html} ${inputs}
     DEPENDS ${inputs} ${outputs_api} ${outputs_model_peripheral}
     COMMENT "Generating documentation...")
 
-  add_custom_command(
-    OUTPUT ${outputs_diagrams}
-    COMMAND ${PLANTUML} -tsvg -o ${target_dir_html} ${diagrams}
-    DEPENDS ${diagrams}
-    COMMENT "Generating diagrams...")
+  if(outputs_diagrams)
+    add_custom_command(
+      OUTPUT ${outputs_diagrams}
+      COMMAND ${PLANTUML} -tsvg -o ${target_dir_html} ${diagrams}
+      DEPENDS ${diagrams}
+      COMMENT "Generating diagrams...")
+  endif()
 
   file(GLOB glob "${arg_RVBL_ROOT}/doc/*.png" "${arg_RVBL_ROOT}/doc/*.css")
   file(COPY ${glob} DESTINATION ${target_dir_html})
