@@ -773,6 +773,8 @@ function(rvbl_layer_documentation)
   set(outputs_doc "")
   set(outputs_diagrams "")
 
+  message("diagrams ${diagrams}")
+
   foreach(input ${inputs})
     get_filename_component(file_name_we ${input} NAME_WE)
     list(APPEND outputs_doc ${target_dir_html}/${file_name_we}.html)
@@ -782,6 +784,8 @@ function(rvbl_layer_documentation)
     get_filename_component(file_name_we ${diagram} NAME_WE)
     list(APPEND outputs_diagrams ${target_dir_html}/${file_name_we}.svg)
   endforeach()
+
+  message("outputs_diagrams ${outputs_diagrams}")
 
   add_custom_command(
     OUTPUT ${outputs_doc}
