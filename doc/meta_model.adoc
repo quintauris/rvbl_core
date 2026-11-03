@@ -9,6 +9,24 @@ include::common.adoc[]
 = Meta-Model
 Quintauris <www.quintauris.com> (generated {localdatetime})
 
+////
+It not clear from this documentation:
+- how multicore machines are represented in the meta-model
+- which attributes are mandatory or optional (for readability in order to avoid to go always to json schema)
+- there is a general pattern decision regarding unique id. In some places it is requested to use a unique name for item in array
+   Why not use object ? this means that name shall be removed from common attributes.
+   Approach to uniqueness of items shall be uniform. I see 3 options:
+    1. Use object only when the key are defined in schema --> object will mapped internally to a type/struct for tooling. 
+       We use `name` as unique identified inside array.
+    2. Use object for all cases, with the key being the unique identifier for the item and order of declaration doesn't matter. This ensures uniformity and avoids ambiguity regarding uniqueness. --> in tools code we have to use hashmaps.
+       This allow to use JSON Pointer for referencing items within objects. https://datatracker.ietf.org/doc/html/rfc6901.
+       It is a proposal but already widely adopted. in Rust, Javascript etc..
+       If order matters we use index and we don't need a unique identifier for the item.
+   3. Use Yaml > 1.2version, which supports merge keys and anchors to handle uniqueness and references within arrays. Moreover YAML 1.2 is a superset of Json and also yaml schema is superset of JSON schema.
+       
+
+////
+
 == Overview
 
 Quintauris' machine meta-model defines the structure and properties of machine models employed across the {project}.
@@ -19,12 +37,19 @@ image::meta_model.svg[]
 
 == Common Attributes
 
+////
+Entity is not defined. 
+Maybe a marker in the title to indicate what is an entity ?
+////
+
 All model entities share the following attributes:
 
 name (string):: Name of the model entity
 description (object):: Human-friendly description of the entity, for documentation purposes
 description/content_type (string):: MIME type of `content` (`text/plain` assumed if not specified)
 description/content (string):: Description content in the format specified by `content_type`
+// As discussed in conf call, a use case / example should be added.
+// As discussed in conf call, instead of array use object with named keys
 vendor (array):: Vendor-specific data associated with the entity
 vendor/__array-index__/name (string):: Vendor name
 vendor/__array-index__/data (object):: Vendor-specific data over a vendor-defined structure
@@ -35,21 +60,38 @@ For conciseness and readability, these attributes are omitted in the following s
 
 ctr_comm_001:: `name` must conform to the following regular expression: `[a-zA-Z]+[0-9a-zA-Z_]*`
 ctr_comm_002:: `description/content_type` must be one of `text/plain`, `text/markdown` or `text/html`
+// Not needed if `vendor` is an object
 ctr_comm_003:: No two array elements under `vendor` shall have the same `name` value
 
 == Computed values
-
+// It shall be described the syntax and semantics of computed values e.g. javascript integer expression...
 Attributes annotated with the 🧮 icon are strings that should be evaluated to produce an integer result.
 
 == Machine
 
+////
+The root entity is not explicitly defined. 
+I guess is machine
+////
+
+// it is not clear the purpose of word_size
+// do you mean "Default bit-width of any register contained in the device" ?
+// I think we miss also a value that describe maximum single data transfer supported by the bus infrastructure (svd has it. in case register size is bigger than maximum transfer size). This could be useful for debuggers
 word_size (integer):: Default word size, in bits, of the machine (e.g. 32, 64)
 imports (array):: Array of <<_import>>s, describing elements imported from other files
 memory_map (array):: Array of <<_addressable>>s describing the machine's memory map
 peripherals (array):: Array of <<_peripheral>>s featured by the machine
 overlappings (object):: Overlapping <<_peripheral>>s and <<_addressable>>s
+////
+Overlapping need more clarification of intended use case.
+peripherals contains addressable
+is it allowed to overlap peripheral and also a single addressable contained in the peripheral? 
+
+I guess you mean here overlapping/memory_map rather than overlapping/addressable.
+////
 overlappings/addressables (array of array of string):: Groups of overlapping (i.e. that represent the same hardware resource) <<_addressable>>s
 overlappings/peripherals (array of array of string):: Groups of overlapping (i.e. that represent the same hardware resource) <<_peripheral>>s
+// I would use reset_types instead of resets. It looks me clearer and inline with description.
 resets (array):: Array of <<_reset>>s describing the machine's reset types
 parameters (array):: Array of machine-level <<_parameter>>s
 
@@ -57,18 +99,30 @@ parameters (array):: Array of machine-level <<_parameter>>s
 
 ctr_mach_001:: `word_size` must be a multiple of 8
 ctr_mach_002:: No two <<_import>>s can have the same name
-ctr_mach_003:: No two <<_addressable>>s under `memory_map` can have the same name
+// the below constraints ensure uniqueness of names within their respective arrays can be avoided by using object.
+// if we remove name from common attributes and we add name only in the few cases where it is necessary.
+ctr_mach_003:: No two <<_addressable>>s under `memory_map` can have the same name 
 ctr_mach_004:: No two <<_peripheral>>s under `peripherals` can have the same name
 ctr_mach_005:: No two <<_parameter>>s under `parameters` can have the same name
+// As discussed in conf call, it is not explained how the reference works. unique global id or path to refer to nested elements?
 ctr_mach_006:: All names under `overlappings/addressables` shall reference valid <<_addressable>> names under `memory_map`
 ctr_mach_007:: All names under `overlappings/peripherals` shall reference valid <<_peripheral>> instance names under `peripherals`
+// As earlier why not object?
+// see comment at start of this document
 ctr_mach_008:: No two <<_reset>>s under `resets` can have the same name
 
 == Import
 
+// There is an ambiguity. It seems that you can import an identity but there are fields that suggest that you import peripherals.
+
+// It is not explained how import works and how substitutions are applied to the imported entity
+// Which are the differences substitutions and peripheral instantiation parameters?
+
+// is the path relative to the current file ?
 file (string):: File containing the entity to import
 substitutions (object):: Key/value substitutions to apply to string values in the imported entity
 peripheral (object):: Peripheral instantiation parameters
+// Assumed is confusion adjective. I would remove it.
 peripheral/instance (string):: Assumed peripheral instance name
 peripheral/base (string, 🧮):: Assumed peripheral base address
 
@@ -76,10 +130,13 @@ peripheral/base (string, 🧮):: Assumed peripheral base address
 
 ctr_impr_001:: Keys within `substitutions` must conform to the following regular expression: `[A-Z]+[0-9a-zA-Z_]*`
 ctr_impr_002:: `peripheral/instance` must conform to the following regular expression: `[a-zA-Z]+[0-9a-zA-Z_]*`
+// Why signed ? I expect unsigned integer for peripheral base addresses
 ctr_impr_003:: `peripheral/base` must evaluate to a signed integer number
 
 == Reference
-
+////
+This is not referenced anywhere and it seems redundant.
+////
 reference (string):: Name assigned to an <<_import>>ed entity
 substitutions (object):: Key/value substitutions to apply to string values in the referenced entity
 
@@ -89,9 +146,22 @@ ctr_refr_001:: `reference` must be a `name` assigned to an <<_import>> in the co
 ctr_reft_002:: Keys within `substitutions` must conform to the following regular expression: `[A-Z]+[0-9a-zA-Z_]*`
 
 == Addressable
+////
+Usually is used based address for absolute addressing within the peripheral's address space and `offset` for a value that need to be added to the base address.
+I recommend to change from `base` to `offset` to better reflect its role in address calculation.
 
+For memory maps, you can add that when and addressable has no parent entity with base specified, it is assumed to base address 0.
+In this way you can support also memory map.
+
+Moreover I understood from our conversation that an addressable can be contained in another addressable, so the description shall include not only peripheral but also other addressable entities.
+
+////
+// I think that base or offset that are relative to the enclosing entity shall be moved out. 
+// e.g. when peripheral refer to enclose addressable it declares its base relative to that enclosing peripheral.
+// advantages reuse the declaration of addressable,register... in other location by reference.
+// This concept is inline with software where type declaration is decoupled from instantiation. --> need futher discussion 
 base (string, 🧮):: Base address of the addressable entity, relative to the enclosing <<_peripheral>> if applicable
-size (string, 🧮):: Size of the addressable entity, in bytes
+size (string, 🧮):: Size of the addressable entity, in bytes 
 read (boolean):: Whether the addressable entity is readable
 write (boolean):: Whether the addressable entity is writable
 execute (boolean):: Whether the addressable entity is executable
@@ -101,17 +171,34 @@ attributes (object):: Address space attributes
 attributes/atomicity (object):: Address space atomicity attributes
 attributes/atomicity/amo_support (string):: Atomic Memory Operations support
 attributes/atomicity/reservability (string):: Reservability (LR/SC) support
+
+// Missing attribute for AMO Misaligned granule: https://docs.riscv.org/reference/isa/v20260120/priv/machine.html#2-1-6-4-misaligned-atomicity-granule-pma
+// Missing attribute I/O or main memory. Important for fence instructions. https://docs.riscv.org/reference/isa/v20260120/priv/machine.html#2-1-6-5-memory-ordering-pmas
+// Missing attribute cacheability. Important for memory ordering and performance considerations. https://docs.riscv.org/reference/isa/v20260120/priv/machine.html#2-1-6-6-coherence-and-cacheability-pmas
+// Missing attribute for I/O region. Idempotency https://docs.riscv.org/reference/isa/v20260120/priv/machine.html#2-1-6-7-idempotency-pmas
+
 indexing (array):: Array of <<_indexing>>s, each representing an array dimension
+// What is a class ? Only in the constraint is disclosed. For readability add here.
 default/register/class (string):: Default class for contained registers
 default/register/width (string):: Default width for contained registers
+// What is a volatile ? Only in the constraint is disclosed. For readability add here.
 default/register/volatile (boolean):: Default volatility for contained registers
+// What is an access policy ? Only in the constraint is disclosed. For readability add here.
 default/register/access_policy (string):: Default access policy for contained registers
+
+// Missing support for nested addressable. This is supported by SVD and used by our internal model.
+
 
 === Constraints
 
-ctr_addr_001:: `base` must evaluate to a signed integer number
+// Why signed ? this create a list of issue as same location with different base and offset. 
+ctr_addr_001:: `base` must evaluate to a signed integer number 
+// What does mean an addressable with negative size ???????
 ctr_addr_002:: `size` must evaluate to a signed integer number
+// As earlier why not using an object for registers
 ctr_addr_003:: No two <<_register>>s can have the same name
+// What does mean "valid" ? Do you mean "existing in the `registers` array"
+// We shall support nested addressable and therefore we need to support overlapping addressable.
 ctr_addr_004:: All names under `overlappings` shall reference valid <<_register>> names under `registers`
 ctr_addr_005:: `attributes/atomicity/amo_support` must be one of `none`, `swap`, `logical` or `arithmetic`
 ctr_addr_006:: `attributes/atomicity/reservability` must be one of `none`, `non_eventual` or `eventual`
@@ -123,18 +210,36 @@ ctr_addr_011:: `default/register/access_policy` values must be one of those supp
 
 == Register
 
+////
+
+Declaration of register is not separated from instantiation.
+This allow to reuse register structure definition in very different context or nested <<_addressable>>s.
+This is helpfull in code generation in order to re-use the same type/struct across the code and identify the software compatibility of single registers or a group or registers.
+
+////
+
+
+// For reader convenience, describe the possibile values for the `class` attribute of a register and its meaning for software.
 class (string):: Register class (assumed from enclosing <<_addressable>> `default/register/class` if not defined)
 width (integer):: Number of bits in the register (assumed from <<_addressable>> `word_size` if not defined)
+// I think you missed 🧮 in the offset. The description shall cover the case of `control_status` registers as well.
+// Instead of `memory space` use `addressable` to cover both memory-mapped and control_status registers.
 offset (string):: Zero-based offset of the register within the memory space that contains it, in bytes
+// Volatile overlap with fields declaration. Clarify if it is just a default value for fields.
 volatile (boolean):: Whether the register is considered __volatile__, i.e. it can be arbitrarily changed by hardware without any explicit software interaction (assumed `false` if not defined)
-values (array) :: Array of possible <<_value>>s for the register
+// Not explained what is happening if `values` and fields are both defined.
+values (array):: Array of possible <<_value>>s for the register
 fields (array):: Array of <<_field>>s within the register
 overlappings (array of array of string):: Groups of overlapping (i.e. that represent the same hardware resource) <<_field>>s
+// Need description of different values expecially write_once and read_write_once
 access_policy (string):: Register access policy, one of `read_only`, `write_only`, `read_write` (default if not defined), `write_once` or `read_write_once`
+// on_reset is described also for bitfields. What is happening if both the register and its fields have `on_reset` defined?
+// Are they mutally exclusive ?
 on_reset (array):: Array of reset values/masks applicable to the register
 on_reset/__array-index__/name (string):: Name of applicable <<_reset>> defined at <<_machine>> level
 on_reset/__array-index__/value (string):: Reset value applicable to the register for the named <<_reset>>
 on_reset/__array-index__/mask (string):: Reset mask applicable to the register for the named <<_reset>>, all `1` s assumed if not defined
+// I would move the declaration of array dimensions (`indexing`) to the enclosing addressable, similar to how we handle peripheral.
 indexing (array):: Array of <<_indexing>>s, each representing an array dimension
 
 === Constraints
@@ -151,16 +256,21 @@ ctr_regs_009:: `on_reset/__array-index__/mask` shall be valid base-2 (i.e. binar
 ctr_regs_010:: No two <<_indexing>>s can have the same name
 
 == Indexing
-
+// Missing description of indexing and use cases
+// We discussed the possibility to defined a formula to compute the offset. No sign of it is present here.
 layout (string):: Array layout
 dimensions (array):: List of array dimension properties
+// Why name has symbol 🧮 ? Previously this symbols has been defined as expression that shall result in a integer.
 dimensions/__array-index__/name (string, 🧮):: Dimension name (e.g. `dim0`)
 dimensions/__array-index__/stride (string, 🧮):: Distance between entries, in bytes, computed automatically from element size if not defined
 dimensions/__array-index__/ranges (array):: List of indexing ranges
+// Why not use object with two keys `lower` and `upper` instead of an array for range bounds?
 dimensions/__array-index__/ranges/__array-index__ (array):: Pair (i.e. exactly two items) of range bounds
 dimensions/__array-index__/ranges/__array-index__/0 (string, 🧮):: Lower bound of indexing range
 dimensions/__array-index__/ranges/__array-index__/1 (string, 🧮):: Upper bound of indexing range
+// Not clear the use case of names values. Moreover I guess an array of values is meant here.
 dimensions/__array-index__/values (string, 🧮):: List of named <<_value>>s within the indexing ranges
+// I think the use case of list can be addressed by array of ranges 
 dimensions/__array-index__/lists (array):: Lists of (possibly non-contiguous) elements within the dimension
 dimensions/__array-index__/lists/__array-index__/name (string):: List name
 dimensions/__array-index__/lists/__array-index__/start (string, 🧮):: Starting index of the list
@@ -168,7 +278,7 @@ dimensions/__array-index__/lists/__array-index__/count (string, 🧮):: Number o
 dimensions/__array-index__/lists/__array-index__/stride (string, 🧮):: Stride of elements to choose from the list, assumed `1` if not defined
 
 === Constraints
-
+// Need more explanation about `rows` and `columns` and how relate with address calculation of single element.
 ctr_indx_001:: `layout` must be one of `rows` or `columns`
 ctr_indx_002:: `dimensions/__array-index__/name` must conform to the following regular expression: `[a-zA-Z]+[0-9a-zA-Z_]*`
 ctr_indx_003:: `dimensions/__array-index__/ranges` must contain one or more elements
@@ -182,31 +292,43 @@ ctr_indx_010:: `dimensions/__array-index__/lists/__array-index__/name` must conf
 ctr_indx_011:: `dimensions/__array-index__/lists/__array-index__/start` must evaluate to a signed integer number equal to or higher than zero
 ctr_indx_012:: `dimensions/__array-index__/lists/__array-index__/count` must evaluate to a signed integer number equal to or higher than zero
 ctr_indx_013:: `dimensions/__array-index__/lists/__array-index__/stride` must evaluate to a signed integer number equal to or higher than zero
+// Not clear
 ctr_indx_014:: All indexes specified by `dimensions/__array-index__/lists` must be contained by `dimensions/__array-index__/ranges`
 
 == Field
+
+// How should be handled reserved fields ?
 
 position (integer):: Zero-based offset of the field within its containing register, in bits
 length (integer):: Length of the field, in bits
 values (array):: Array of possible <<_value>>s for the field
 ranges (array):: Array of acceptable value ranges for the field
 volatile (boolean):: Whether the field is considered __volatile__, i.e. it can be arbitrarily changed by hardware without any explicit software interaction (assumed from enclosing <<_register>> if not defined)
+// It shall be clarified the meaning and what is happening when not specified for a field. It shall be added that debuggers shall not read registers that contains this bitfield.
 on_read (array):: Effect(s) of reading the field, a restricted combination of `clear`, `set`, `toggle`, `modify` and `modify_external`
+// Not clear the usage of `on_write`. It seems a mix of enumenration value to write and the effect it has on the field.
+// This is replaced by oneToCler, zeroToClear and similar policies at the field level for finer control of write behavior at the bitfield level
 on_write (object):: Key/value map of numeric values accepted by the field and their effect(s), also a restricted combination of `clear`, `set`, `toggle`, `modify` and `modify_external`
 on_reset (array):: Array of reset values/masks applicable to the field
 on_reset/__array-index__/name (string):: Name of applicable <<_reset>> defined at <<_machine>> level
 on_reset/__array-index__/value (string):: Reset value applicable to the field for the named <<_reset>>
 on_reset/__array-index__/mask (string):: Reset mask applicable to the field for the named <<_reset>>
+//
 write_policy (string):: One of `preserve` (writes must mirror the last read value), `legal` (writes must hold legal values) or `any` (any value is acceptable, default if not specified)
+// is ignore for reserved fields ?
 read_policy (string):: One of `ignore` (read values shall be ignored), `legal` (read values are always legal) or `any` (any value can be read, default if not specified)
+// The description of `indexing` doesn't fit the field use case e.g stride.
+// I would more the declaration of array of bitifield in enclosing register as suggested for peripheral.
 indexing (array):: Array of <<_indexing>>s, each representing an array dimension
 
 === Constraints
-
+//  `[-(w-1), w-1]` why negative bit positions. What does mean. I have not seen it in any other specification.
 ctr_fild_001:: `position` must be an integer number in the range `[-(w-1), w-1]` where `w` is the value of the `width` attribute from the enclosing <<_register>>
 ctr_fild_002:: `length` must be an integer number in the range `[1, w]` where `w` is the value of the `width` attribute from the enclosing <<_register>>
 ctr_fild_003:: No two <<_value>>s can have the same name
 ctr_fild_004:: In `on_read` values `clear`, `set`, `toggle` and `modify` are mutually exclusive
+// Why base 2. This could cause very long string.
+// I would support hex, binary and decimal values.
 ctr_fild_005:: `on_write` keys shall be base-2 (i.e. binary) values
 ctr_fild_006:: In `on_write` values `clear`, `set`, `toggle` and `modify` are mutually exclusive
 ctr_fild_007:: Each element of `ranges` must be a 2-element array of strings that evaluate to integer numbers
@@ -217,7 +339,7 @@ ctr_fild_011:: `on_reset/__array-index__/mask` shall be valid base-2 (i.e. binar
 ctr_fild_012:: No two <<_indexing>>s can have the same name
 
 == Value
-
+// Why is a string ? Missing 🧮 ?
 value (string):: Numeric value associated with the named value
 
 === Constraints
@@ -229,16 +351,21 @@ ctr_valu_001:: `value` must evaluate to an integer number
 instance (string):: Peripheral instance name, which differentiates it from other instantiations of the same peripheral
 imports (array):: Array of <<_import>>s, describing elements imported from other files
 word_size (integer):: Default word size, in bits, of the peripheral (assumed from <<_machine>> `word_size` if not defined)
+// As discussed earlier we can remove from here and require base decalration when instantiatiing at machine level.
 base (string, 🧮):: Base address of the peripheral
 addressables (array):: Array of <<_addressable>>s featured by the peripheral
 overlappings (array of array of string):: Groups of overlapping (i.e. that represent the same hardware resource) <<_addressable>>s
 parameters (array):: Array of peripheral-level <<_parameter>>s
+// As for base I would move it to the machine-level instantiation, rather than defining it at the peripheral level.
+// This allows reuse of the same peripheral definition at different base addresses within the machine.
+// Moreover if we put a peripheral in separated file and then we import in multiple machines, we don't want to force to have an predefined array of peripheral.
 indexing (array):: Array of <<_indexing>>s, each representing an array dimension
 
 === Constraints
 
 ctr_perp_001:: `instance` must conform to the following regular expression: `[a-zA-Z]+[0-9a-zA-Z_]*`
 ctr_perp_002:: `word_size` must be a multiple of 8
+// Why signed integer for base address? Typically base addresses are unsigned.
 ctr_perp_003:: `base` must evaluate to a signed integer number
 ctr_perp_004:: No two <<_import>>s can have the same name
 ctr_perp_005:: No two <<_addressable>>s can have the same name
@@ -249,11 +376,12 @@ ctr_perp_008:: No two <<_indexing>>s can have the same name
 == Parameter
 
 stage (string):: One of `compile`, `link`, `run`. Determines the stage at which the parameter value is to be defined
+// Missing 128 bits. Now supported also by C and Rust.
 class (string):: One of `uint8`, `uint16`, `uint32`, `uint64`, `int8`, `int16`, `int32`, `int64`. Determines the type of the parameter
 value (string, 🧮):: String representation of the parameter's numerical default value
 
 === Constraints
-
+// usually it is used unsigned. if really want to use signed we need to declare the binary representation e.g. complementary of two.
 ctr_parm_001:: `value` must evaluate to a signed integer number
 
 == Reset
