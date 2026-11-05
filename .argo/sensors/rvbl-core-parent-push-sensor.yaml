@@ -15,7 +15,7 @@ spec:
     serviceAccountName: argo-events-sa
   dependencies:
     - name: parent-push
-      eventSourceName: github-eventsource
+      eventSourceName: github-webhook
       eventName: github
       filters:
         data:
@@ -23,7 +23,7 @@ spec:
             type: string
             value:
               - "quintauris-tech/rvbl_core"
-          - path: header.X-Github-Event
+          - path: headers.X-Github-Event
             type: string
             value:
               - push
