@@ -6,9 +6,6 @@
     "title": "Import",
     "type": "object",
     "properties": {
-        "name": {
-            "type": "string"
-        },
         "file": {
             "type": "string"
         },
@@ -23,7 +20,6 @@
         }
     },
     "required": [
-        "file",
-        "name"
+        "file"
     ]
 }

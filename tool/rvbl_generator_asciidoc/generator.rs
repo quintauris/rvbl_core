@@ -2,6 +2,7 @@
 // Licensed under the Apache License, Version 2.0 (the "License").
 // https://www.apache.org/licenses/LICENSE-2.0
 
+use std::collections::HashMap;
 use std::fs::File;
 use std::io::{BufWriter, Result, Write};
 use std::path::PathBuf;
@@ -32,7 +33,7 @@ impl Default for AsciiDocGenerator {
 impl AsciiDocGenerator {
     fn addressables(
         self: &AsciiDocGenerator,
-        addressables: &Vec<model::Addressable>,
+        addressables: &HashMap<String, model::Addressable>,
         peripheral: &model::Peripheral,
         machine: &model::Machine,
         writer: &mut BufWriter<File>,
@@ -40,9 +41,9 @@ impl AsciiDocGenerator {
     ) -> Result<()> {
         templates::table_header(writer, &self.addressables_header)?;
 
-        for addressable in addressables {
+        for (name, addressable) in addressables {
             let cells = vec![
-                addressable.name.as_str(),
+                name.as_str(),
                 addressable.base.as_str(),
                 addressable.size.as_str(),
             ];
@@ -52,13 +53,9 @@ impl AsciiDocGenerator {
 
         templates::table_footer(writer)?;
 
-        for addressable in addressables {
+        for (name, addressable) in addressables {
             if addressable.description.is_some() || addressable.registers.is_some() {
-                templates::section(
-                    writer,
-                    level,
-                    format!("Addressable {}", addressable.name).as_str(),
-                )?;
+                templates::section(writer, level, format!("Addressable {}", name).as_str())?;
                 templates::paragraph_optional(writer, &addressable.resolve_description())?;
                 templates::new_line(writer)?;
 
@@ -80,18 +77,18 @@ impl AsciiDocGenerator {
 
     fn parameters(
         self: &AsciiDocGenerator,
-        parameters: &Vec<model::Parameter>,
+        parameters: &HashMap<String, model::Parameter>,
         writer: &mut BufWriter<File>,
         _level: usize,
     ) -> Result<()> {
         templates::table_header(writer, &self.parameters_header)?;
 
-        for parameter in parameters.iter() {
+        for (name, parameter) in parameters.iter() {
             let description = parameter
                 .resolve_description()
                 .unwrap_or(self.default.clone());
             let cells = vec![
-                parameter.name.as_str(),
+                name.as_str(),
                 parameter.stage.as_str(),
                 parameter.class.as_str(),
                 parameter.value.as_ref().unwrap_or(&self.default).as_str(),
@@ -108,14 +105,14 @@ impl AsciiDocGenerator {
 
     fn values(
         self: &AsciiDocGenerator,
-        values: &Vec<model::Value>,
+        values: &HashMap<String, model::Value>,
         writer: &mut BufWriter<File>,
         _level: usize,
     ) -> Result<()> {
         templates::table_header(writer, &self.values_header)?;
 
-        for value in values.iter() {
-            let cells = vec![value.name.as_str(), value.value.as_str()];
+        for (name, value) in values {
+            let cells = vec![name.as_str(), value.value.as_str()];
 
             templates::table_row(writer, &cells)?;
         }
@@ -127,19 +124,15 @@ impl AsciiDocGenerator {
 
     fn registers(
         self: &AsciiDocGenerator,
-        registers: &Vec<model::Register>,
+        registers: &HashMap<String, model::Register>,
         addressable: &model::Addressable,
         peripheral: &model::Peripheral,
         machine: &model::Machine,
         writer: &mut BufWriter<File>,
         level: usize,
     ) -> Result<()> {
-        for register in registers {
-            templates::section(
-                writer,
-                level,
-                format!("Register {}", register.name).as_str(),
-            )?;
+        for (name, register) in registers {
+            templates::section(writer, level, format!("Register {}", name).as_str())?;
             templates::paragraph_optional(writer, &register.resolve_description())?;
             templates::horizontal_list(
                 writer,
@@ -167,7 +160,7 @@ impl AsciiDocGenerator {
             )?;
 
             if let Some(indexing) = &register.indexing {
-                let dimension = indexing.dimensions.first().unwrap();
+                let (_, dimension) = indexing.dimensions.iter().next().unwrap();
 
                 templates::horizontal_list(
                     writer,
@@ -193,12 +186,8 @@ impl AsciiDocGenerator {
             templates::new_line(writer)?;
 
             if register.fields.is_some() {
-                for field in register.fields.as_ref().unwrap().iter() {
-                    templates::section(
-                        writer,
-                        level + 1,
-                        format!("Field {}", field.name).as_str(),
-                    )?;
+                for (name, field) in register.fields.iter().flatten() {
+                    templates::section(writer, level + 1, format!("Field {}", name).as_str())?;
                     templates::paragraph_optional(writer, &field.resolve_description())?;
                     templates::horizontal_list(
                         writer,
@@ -251,9 +240,12 @@ impl AsciiDocGenerator {
                 &peripheral
                     .addressables
                     .iter()
-                    .filter_map(|r| r.dereference().ok())
+                    .filter_map(|(k, r)| match r.dereference() {
+                        Ok(a) => Some((k.clone(), a.clone())),
+                        Err(_) => None,
+                    })
                     .map(|a| a.clone())
-                    .collect::<Vec<model::Addressable>>(),
+                    .collect::<HashMap<String, model::Addressable>>(),
                 peripheral,
                 machine,
                 writer,
@@ -284,7 +276,7 @@ impl AsciiDocGenerator {
     #[allow(unused)]
     pub fn generate_register_set(
         &self,
-        registers: &Vec<model::Register>,
+        registers: &HashMap<String, model::Register>,
         addressable: &model::Addressable,
         peripheral: &model::Peripheral,
         machine: &model::Machine,
@@ -312,7 +304,7 @@ impl Generator for AsciiDocGenerator {
         for peripheral in machine
             .peripherals
             .iter()
-            .filter_map(|r| r.dereference().ok())
+            .filter_map(|(_, r)| r.dereference().ok())
         {
             self.peripheral(&peripheral, machine, &mut writer)?;
         }

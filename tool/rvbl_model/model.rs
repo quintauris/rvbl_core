@@ -11,11 +11,7 @@ use serde::{Deserialize, Serialize, de::DeserializeOwned};
 
 use crate::{evaluator, loader};
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct Vendor {
-    pub name: String,
-    pub data: serde_json::Value,
-}
+type Vendor = HashMap<String, serde_json::Value>;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub enum DescriptionContentType {
@@ -50,24 +46,21 @@ pub trait Described {
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Reset {
-    pub name: String,
     pub description: Option<Description>,
-    pub vendor: Option<Vec<Vendor>>,
+    pub vendor: Option<Vendor>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct ResetAction {
-    pub name: String,
     pub value: String,
     pub mask: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Value {
-    pub name: String,
     pub description: Option<Description>,
     pub value: String,
-    pub vendor: Option<Vec<Vendor>>,
+    pub vendor: Option<Vendor>,
 }
 
 impl Described for Value {
@@ -119,19 +112,18 @@ type FieldOnReset = ResetAction;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Field {
-    pub name: String,
     pub description: Option<Description>,
     pub position: i32,
     pub length: Option<u32>,
-    pub values: Option<Vec<Value>>,
+    pub values: Option<HashMap<String, Value>>,
     pub ranges: Option<Vec<(String, String)>>,
     pub on_read: Option<FieldOnRead>,
     pub on_write: Option<FieldOnWrite>,
-    pub on_reset: Option<Vec<FieldOnReset>>,
+    pub on_reset: Option<HashMap<String, FieldOnReset>>,
     pub read_policy: Option<FieldReadPolicy>,
     pub write_policy: Option<FieldWritePolicy>,
     pub volatile: Option<bool>,
-    pub vendor: Option<Vec<Vendor>>,
+    pub vendor: Option<Vendor>,
     pub indexing: Option<Indexing>,
 }
 
@@ -236,10 +228,9 @@ impl IndexingList {
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct IndexingDimension {
-    pub name: String,
     pub stride: Option<String>,
     pub ranges: Vec<(String, String)>,
-    pub values: Option<Vec<Value>>,
+    pub values: Option<HashMap<String, Value>>,
     pub lists: Option<Vec<IndexingList>>,
 }
 
@@ -262,7 +253,7 @@ impl IndexingDimension {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Indexing {
     pub layout: Option<IndexingLayout>,
-    pub dimensions: Vec<IndexingDimension>,
+    pub dimensions: HashMap<String, IndexingDimension>,
 }
 
 impl Indexing {
@@ -299,18 +290,17 @@ type RegisterOnReset = ResetAction;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Register {
-    pub name: String,
     pub description: Option<Description>,
     pub class: Option<RegisterClass>,
     pub offset: String,
     pub width: Option<u32>,
     pub volatile: Option<bool>,
-    pub values: Option<Vec<Value>>,
-    pub fields: Option<Vec<Field>>,
+    pub values: Option<HashMap<String, Value>>,
+    pub fields: Option<HashMap<String, Field>>,
     pub overlappings: Option<Overlappings>,
     pub access_policy: Option<RegisterAccessPolicy>,
-    pub on_reset: Option<Vec<RegisterOnReset>>,
-    pub vendor: Option<Vec<Vendor>>,
+    pub on_reset: Option<HashMap<String, RegisterOnReset>>,
+    pub vendor: Option<Vendor>,
     pub indexing: Option<Indexing>,
 }
 
@@ -353,7 +343,7 @@ impl Register {
             .fields
             .iter()
             .flatten()
-            .filter_map(|f| f.volatile)
+            .filter_map(|(_, f)| f.volatile)
             .collect();
 
         if field_volatilities.is_empty() {
@@ -426,17 +416,16 @@ pub struct AddressableDefaults {
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Addressable {
-    pub name: String,
     pub description: Option<Description>,
     pub base: String,
     pub size: String,
-    pub registers: Option<Vec<Register>>,
+    pub registers: Option<HashMap<String, Register>>,
     pub overlappings: Option<Overlappings>,
     pub read: Option<bool>,
     pub write: Option<bool>,
     pub execute: Option<bool>,
     pub atomicity: Option<AddressableAtomicity>,
-    pub vendor: Option<Vec<Vendor>>,
+    pub vendor: Option<Vendor>,
     pub indexing: Option<Indexing>,
     pub default: AddressableDefaults,
 }
@@ -462,12 +451,11 @@ impl Addressable {
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Parameter {
-    pub name: String,
     pub description: Option<Description>,
     pub stage: String,
     pub class: String,
     pub value: Option<String>,
-    pub vendor: Option<Vec<Vendor>>,
+    pub vendor: Option<Vendor>,
 }
 
 impl Described for Parameter {
@@ -482,10 +470,9 @@ impl Described for Parameter {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Import {
     pub file: String,
-    pub name: String,
     pub description: Option<Description>,
     pub substitutions: Option<HashMap<String, String>>,
-    pub vendor: Option<Vec<Vendor>>,
+    pub vendor: Option<Vendor>,
 }
 
 impl Described for Import {
@@ -499,7 +486,6 @@ impl Described for Import {
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct ReferencePeripheral {
-    pub instance: String,
     pub base: Option<String>,
 }
 
@@ -508,7 +494,7 @@ pub struct Reference {
     pub reference: String,
     pub peripheral: Option<ReferencePeripheral>,
     pub substitutions: Option<HashMap<String, String>>,
-    pub vendor: Option<Vec<Vendor>>,
+    pub vendor: Option<Vendor>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -521,16 +507,16 @@ pub enum Referenceable<T> {
 impl<T: Clone + DeserializeOwned + Resolve> Referenceable<T> {
     fn lookup(
         reference: &Reference,
-        imports: &Option<Vec<Import>>,
+        imports: &Option<HashMap<String, Import>>,
         meta_model_search_path: &PathBuf,
         search_path: &PathBuf,
     ) -> loader::Result<T> {
         match imports
             .iter()
             .flatten()
-            .find(|i| i.name == reference.reference)
+            .find(|(k, _)| **k == reference.reference)
         {
-            Some(import) => {
+            Some((_, import)) => {
                 let mut dependencies: HashSet<PathBuf> = [].into();
                 let mut parameters = match &import.substitutions {
                     Some(s) => s.clone(),
@@ -561,7 +547,7 @@ impl<T: Clone + DeserializeOwned + Resolve> Referenceable<T> {
 
     pub fn resolve(
         &mut self,
-        imports: &Option<Vec<Import>>,
+        imports: &Option<HashMap<String, Import>>,
         meta_model_search_path: &PathBuf,
         include_search_path: &PathBuf,
     ) -> loader::Result<()> {
@@ -610,11 +596,11 @@ pub struct Peripheral {
     pub description: Option<Description>,
     pub instance: Option<String>,
     pub word_size: Option<u32>,
-    pub imports: Option<Vec<Import>>,
-    pub addressables: Vec<Referenceable<Addressable>>,
+    pub imports: Option<HashMap<String, Import>>,
+    pub addressables: HashMap<String, Referenceable<Addressable>>,
     pub overlappings: Option<Overlappings>,
-    pub parameters: Option<Vec<Parameter>>,
-    pub vendor: Option<Vec<Vendor>>,
+    pub parameters: Option<HashMap<String, Parameter>>,
+    pub vendor: Option<Vendor>,
     pub indexing: Option<Indexing>,
 }
 
@@ -633,7 +619,7 @@ impl Resolve for Peripheral {
         meta_model_search_path: &PathBuf,
         include_search_path: &PathBuf,
     ) -> loader::Result<()> {
-        for reference in &mut self.addressables {
+        for (_, reference) in &mut self.addressables {
             reference.resolve(&self.imports, meta_model_search_path, include_search_path)?;
         }
 
@@ -652,13 +638,13 @@ pub struct Machine {
     pub name: String,
     pub description: Option<Description>,
     pub word_size: u32,
-    pub imports: Option<Vec<Import>>,
-    pub memory_map: Vec<Referenceable<Addressable>>,
-    pub peripherals: Vec<Referenceable<Peripheral>>,
+    pub imports: Option<HashMap<String, Import>>,
+    pub memory_map: HashMap<String, Referenceable<Addressable>>,
+    pub peripherals: HashMap<String, Referenceable<Peripheral>>,
     pub overlappings: Option<MachineOverlappings>,
-    pub resets: Option<Vec<Reset>>,
-    pub parameters: Vec<Parameter>,
-    pub vendor: Option<Vec<Vendor>>,
+    pub resets: Option<HashMap<String, Reset>>,
+    pub parameters: HashMap<String, Parameter>,
+    pub vendor: Option<Vendor>,
 }
 
 impl Described for Machine {
@@ -676,11 +662,11 @@ impl Resolve for Machine {
         meta_model_search_path: &PathBuf,
         include_search_path: &PathBuf,
     ) -> loader::Result<()> {
-        for reference in &mut self.memory_map {
+        for (_, reference) in &mut self.memory_map {
             reference.resolve(&self.imports, meta_model_search_path, include_search_path)?;
         }
 
-        for reference in &mut self.peripherals {
+        for (key, reference) in &mut self.peripherals {
             let mut reference_peripheral: Option<ReferencePeripheral> = None;
 
             match reference {
@@ -697,7 +683,7 @@ impl Resolve for Machine {
                     )?;
 
                     if let Ok(peripheral) = reference.dereference_mut() {
-                        peripheral.instance = Some(parameters.instance.clone());
+                        peripheral.instance = Some(key.clone());
                         peripheral.base = parameters.base.clone();
                         peripheral.resolve(meta_model_search_path, include_search_path)?;
                     }
@@ -716,6 +702,7 @@ impl Resolve for Machine {
 
 #[cfg(test)]
 mod tests {
+    use once_cell::sync::Lazy;
     use std::vec;
 
     use super::*;
@@ -724,33 +711,32 @@ mod tests {
         content_type: None,
         content: String::new(),
     };
-    static MACHINE: Machine = Machine {
+    static MACHINE: Lazy<Machine> = Lazy::new(|| Machine {
         name: String::new(),
         description: None,
         word_size: 128,
         imports: None,
-        memory_map: vec![],
-        peripherals: vec![],
+        memory_map: HashMap::new(),
+        peripherals: HashMap::new(),
         overlappings: None,
         resets: None,
-        parameters: vec![],
+        parameters: HashMap::new(),
         vendor: None,
-    };
-    static PERIPHERAL: Peripheral = Peripheral {
+    });
+    static PERIPHERAL: Lazy<Peripheral> = Lazy::new(|| Peripheral {
         name: String::new(),
         description: None,
         instance: Some(String::new()),
         word_size: None,
         base: None,
         imports: None,
-        addressables: vec![],
+        addressables: HashMap::new(),
         overlappings: None,
         parameters: None,
         vendor: None,
         indexing: None,
-    };
+    });
     static ADDRESSABLE: Addressable = Addressable {
-        name: String::new(),
         description: None,
         base: String::new(),
         size: String::new(),
@@ -772,7 +758,6 @@ mod tests {
         },
     };
     static REGISTER: Register = Register {
-        name: String::new(),
         description: None,
         class: None,
         offset: String::new(),
@@ -787,7 +772,6 @@ mod tests {
         vendor: None,
     };
     static FIELD: Field = Field {
-        name: String::new(),
         description: None,
         position: 0,
         length: None,
@@ -996,19 +980,21 @@ mod tests {
 
         register.indexing = Some(Indexing {
             layout: None,
-            dimensions: vec![IndexingDimension {
-                name: String::from("dim0"),
-                stride: Some(String::from("8")),
-                ranges: vec![("0".into(), "1".into())],
-                values: None,
-                lists: None,
-            }],
+            dimensions: HashMap::from([(
+                String::from("dim0"),
+                IndexingDimension {
+                    stride: Some(String::from("8")),
+                    ranges: vec![("0".into(), "1".into())],
+                    values: None,
+                    lists: None,
+                },
+            )]),
         });
 
         match &register.indexing {
             Some(i) => {
                 assert_eq!(
-                    i.dimensions.first().unwrap().resolve_stride(
+                    i.dimensions.get("dim0").unwrap().resolve_stride(
                         &register,
                         &addressable,
                         &peripheral,
@@ -1022,19 +1008,21 @@ mod tests {
 
         register.indexing = Some(Indexing {
             layout: None,
-            dimensions: vec![IndexingDimension {
-                name: String::from("dim0"),
-                stride: None,
-                ranges: vec![("0".into(), "1".into())],
-                values: None,
-                lists: None,
-            }],
+            dimensions: HashMap::from([(
+                String::from("dim0"),
+                IndexingDimension {
+                    stride: None,
+                    ranges: vec![("0".into(), "1".into())],
+                    values: None,
+                    lists: None,
+                },
+            )]),
         });
 
         match &register.indexing {
             Some(i) => {
                 assert_eq!(
-                    i.dimensions.first().unwrap().resolve_stride(
+                    i.dimensions.get("dim0").unwrap().resolve_stride(
                         &register,
                         &addressable,
                         &peripheral,
@@ -1051,13 +1039,15 @@ mod tests {
     fn test_indexing_resolve_layout() {
         let mut indexing = Indexing {
             layout: None,
-            dimensions: vec![IndexingDimension {
-                name: String::from("dim0"),
-                stride: None,
-                ranges: vec![("0".into(), "1".into())],
-                values: None,
-                lists: None,
-            }],
+            dimensions: HashMap::from([(
+                String::from("dim0"),
+                IndexingDimension {
+                    stride: None,
+                    ranges: vec![("0".into(), "1".into())],
+                    values: None,
+                    lists: None,
+                },
+            )]),
         };
 
         assert!(matches!(indexing.resolve_layout(), IndexingLayout::Rows));
@@ -1166,10 +1156,11 @@ mod tests {
         // back to the register's own volatility, then the addressable
         // default.
         let mut field_a = FIELD.clone();
-        field_a.name = String::from("a");
         let mut field_b = FIELD.clone();
-        field_b.name = String::from("b");
-        register.fields = Some(vec![field_a.clone(), field_b.clone()]);
+        register.fields = Some(HashMap::from([
+            (String::from("a"), field_a.clone()),
+            (String::from("b"), field_b.clone()),
+        ]));
         assert_eq!(register.resolve_volatility(&addressable), false);
 
         register.volatile = None;
@@ -1180,7 +1171,10 @@ mod tests {
         // ignored, result is false.
         field_a.volatile = Some(false);
         register.volatile = Some(true);
-        register.fields = Some(vec![field_a.clone(), field_b.clone()]);
+        register.fields = Some(HashMap::from([
+            (String::from("a"), field_a.clone()),
+            (String::from("b"), field_b.clone()),
+        ]));
         assert_eq!(register.resolve_volatility(&addressable), false);
 
         // At least one field is explicitly volatile: register is volatile,
@@ -1189,7 +1183,10 @@ mod tests {
         field_b.volatile = Some(true);
         register.volatile = Some(false);
         addressable.default.register.volatile = Some(false);
-        register.fields = Some(vec![field_a.clone(), field_b.clone()]);
+        register.fields = Some(HashMap::from([
+            (String::from("a"), field_a.clone()),
+            (String::from("b"), field_b.clone()),
+        ]));
         assert_eq!(register.resolve_volatility(&addressable), true);
     }
 
