@@ -18,16 +18,10 @@
         "peripheral": {
             "type": "object",
             "properties": {
-                "instance": {
-                    "type": "string"
-                },
                 "base": {
                     "type": "string"
                 }
-            },
-            "required": [
-                "instance"
-            ]
+            }
         },
         "vendor": {
             "$ref": "vendor.schema.json"

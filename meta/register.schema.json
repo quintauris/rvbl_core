@@ -6,9 +6,6 @@
     "title": "Register",
     "type": "object",
     "properties": {
-        "name": {
-            "type": "string"
-        },
         "description": {
             "$ref": "description.schema.json"
         },
@@ -28,15 +25,19 @@
             "type": "boolean"
         },
         "values": {
-            "type": "array",
-            "items": {
-                "$ref": "value.schema.json"
+            "type": "object",
+            "patternProperties": {
+                ".+": {
+                    "$ref": "value.schema.json"
+                }
             }
         },
         "fields": {
-            "type": "array",
-            "items": {
-                "$ref": "field.schema.json"
+            "type": "object",
+            "patternProperties": {
+                ".+": {
+                    "$ref": "field.schema.json"
+                }
             }
         },
         "overlappings": {
@@ -53,13 +54,9 @@
             ]
         },
         "on_reset": {
-            "type": "array",
-            "items": {
-                "type": "object",
-                "properties": {
-                    "name": {
-                        "type": "string"
-                    },
+            "type": "object",
+            "patternProperties": {
+                ".+": {
                     "value": {
                         "type": "string",
                         "pattern": "^[01]+$"
@@ -67,12 +64,11 @@
                     "mask": {
                         "type": "string",
                         "pattern": "^[01]+$"
-                    }
-                },
-                "required": [
-                    "name",
-                    "value"
-                ]
+                    },
+                    "required": [
+                        "value"
+                    ]
+                }
             }
         },
         "indexing": {
@@ -83,7 +79,6 @@
         }
     },
     "required": [
-        "name",
         "offset"
     ]
 }

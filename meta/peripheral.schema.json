@@ -9,9 +9,6 @@
         "name": {
             "type": "string"
         },
-        "instance": {
-            "type": "string"
-        },
         "base": {
             "type": "string"
         },
@@ -23,32 +20,38 @@
             "multipleof": 8
         },
         "imports": {
-            "type": "array",
-            "items": {
-                "$ref": "import.schema.json"
+            "type": "object",
+            "patternProperties": {
+                ".+": {
+                    "$ref": "import.schema.json"
+                }
             }
         },
         "addressables": {
-            "type": "array",
-            "items": {
-                "anyOf": [
-                    {
-                        "$ref": "addressable.schema.json"
-                    },
-                    {
-                        "$ref": "reference.schema.json"
-                    }
-                ]
+            "type": "object",
+            "patternProperties": {
+                ".+": {
+                    "anyOf": [
+                        {
+                            "$ref": "addressable.schema.json"
+                        },
+                        {
+                            "$ref": "reference.schema.json"
+                        }
+                    ]
+                }
             },
-            "minItems": 1
+            "minProperties": 1
         },
         "overlappings": {
             "$ref": "overlapping.schema.json"
         },
         "parameters": {
-            "type": "array",
-            "items": {
-                "$ref": "parameter.schema.json"
+            "type": "object",
+            "patternProperties": {
+                ".+": {
+                    "$ref": "parameter.schema.json"
+                }
             }
         },
         "vendor": {

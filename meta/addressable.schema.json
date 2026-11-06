@@ -6,9 +6,6 @@
     "title": "addressable",
     "type": "object",
     "properties": {
-        "name": {
-            "type": "string"
-        },
         "description": {
             "$ref": "description.schema.json"
         },
@@ -28,9 +25,11 @@
             "type": "boolean"
         },
         "registers": {
-            "type": "array",
-            "items": {
-                "$ref": "register.schema.json"
+            "type": "object",
+            "patternProperties": {
+                ".+": {
+                    "$ref": "register.schema.json"
+                }
             }
         },
         "overlappings": {
@@ -109,7 +108,6 @@
         }
     },
     "required": [
-        "name",
         "base",
         "size",
         "default"

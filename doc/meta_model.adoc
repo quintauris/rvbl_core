@@ -21,19 +21,17 @@ image::meta_model.svg[]
 
 All model entities share the following attributes:
 
-name (string):: Name of the model entity
 description (object):: Human-friendly description of the entity, for documentation purposes
 description/content_type (string):: MIME type of `content` (`text/plain` assumed if not specified)
 description/content (string):: Description content in the format specified by `content_type`
-vendor (array):: Vendor-specific data associated with the entity
-vendor/__array-index__/name (string):: Vendor name
-vendor/__array-index__/data (object):: Vendor-specific data over a vendor-defined structure
+vendor (object):: Vendor-specific data associated with the entity
+vendor/__vendor_name__ (object):: Vendor-specific data over a vendor-defined structure
 
 For conciseness and readability, these attributes are omitted in the following sections.
 
 === Constraints
 
-ctr_comm_001:: `name` must conform to the following regular expression: `[a-zA-Z]+[0-9a-zA-Z_]*`
+ctr_comm_001:: __vendor_name__ must conform to the following regular expression: `[a-zA-Z]+[0-9a-zA-Z_]*`
 ctr_comm_002:: `description/content_type` must be one of `text/plain`, `text/markdown` or `text/html`
 ctr_comm_003:: No two array elements under `vendor` shall have the same `name` value
 
@@ -44,33 +42,30 @@ Attributes annotated with the 🧮 icon are strings that should be evaluated to 
 == Machine
 
 word_size (integer):: Default word size, in bits, of the machine (e.g. 32, 64)
-imports (array):: Array of <<_import>>s, describing elements imported from other files
-memory_map (array):: Array of <<_addressable>>s describing the machine's memory map
-peripherals (array):: Array of <<_peripheral>>s featured by the machine
+imports (object):: Set of <<_import>>s, describing elements imported from other files
+memory_map (object):: Set of <<_addressable>>s describing the machine's memory map
+peripherals (object):: Set of <<_peripheral>>s featured by the machine
 overlappings (object):: Overlapping <<_peripheral>>s and <<_addressable>>s
 overlappings/addressables (array of array of string):: Groups of overlapping (i.e. that represent the same hardware resource) <<_addressable>>s
 overlappings/peripherals (array of array of string):: Groups of overlapping (i.e. that represent the same hardware resource) <<_peripheral>>s
-resets (array):: Array of <<_reset>>s describing the machine's reset types
-parameters (array):: Array of machine-level <<_parameter>>s
+resets (object):: Set of <<_reset>>s describing the machine's reset types
+parameters (object):: Set of machine-level <<_parameter>>s
 
 === Constraints
 
 ctr_mach_001:: `word_size` must be a multiple of 8
-ctr_mach_002:: No two <<_import>>s can have the same name
-ctr_mach_003:: No two <<_addressable>>s under `memory_map` can have the same name
-ctr_mach_004:: No two <<_peripheral>>s under `peripherals` can have the same name
-ctr_mach_005:: No two <<_parameter>>s under `parameters` can have the same name
+ctr_mach_002:: <<_import>> keys shall conform to the following regular expression: `[a-zA-Z]+[0-9a-zA-Z_]*`
+ctr_mach_003:: <<_addressable>> keys shall conform to the following regular expression: `[a-zA-Z]+[0-9a-zA-Z_]*`
+ctr_mach_004:: <<_peripheral>> keys shall conform to the following regular expression: `[a-zA-Z]+[0-9a-zA-Z_]*`
+ctr_mach_005:: <<_parameter>> keys shall conform to the following regular expression: `[a-zA-Z]+[0-9a-zA-Z_]*`
 ctr_mach_006:: All names under `overlappings/addressables` shall reference valid <<_addressable>> names under `memory_map`
 ctr_mach_007:: All names under `overlappings/peripherals` shall reference valid <<_peripheral>> instance names under `peripherals`
-ctr_mach_008:: No two <<_reset>>s under `resets` can have the same name
+ctr_mach_008:: <<_reset>> keys shall conform to the following regular expression: `[a-zA-Z]+[0-9a-zA-Z_]*`
 
 == Import
 
 file (string):: File containing the entity to import
 substitutions (object):: Key/value substitutions to apply to string values in the imported entity
-peripheral (object):: Peripheral instantiation parameters
-peripheral/instance (string):: Assumed peripheral instance name
-peripheral/base (string, 🧮):: Assumed peripheral base address
 
 === Constraints
 
@@ -82,11 +77,14 @@ ctr_impr_003:: `peripheral/base` must evaluate to a signed integer number
 
 reference (string):: Name assigned to an <<_import>>ed entity
 substitutions (object):: Key/value substitutions to apply to string values in the referenced entity
+peripheral (object):: Peripheral-specific parameters to override
+peripheral/base (string, 🧮):: Assumed peripheral base address
 
 === Constraints
 
 ctr_refr_001:: `reference` must be a `name` assigned to an <<_import>> in the context of the reference (<<_machine>> or <<_peripheral>>)
 ctr_reft_002:: Keys within `substitutions` must conform to the following regular expression: `[A-Z]+[0-9a-zA-Z_]*`
+ctr_reft_003:: `peripheral/base` must evaluate to a signed integer number
 
 == Addressable
 
@@ -95,13 +93,13 @@ size (string, 🧮):: Size of the addressable entity, in bytes
 read (boolean):: Whether the addressable entity is readable
 write (boolean):: Whether the addressable entity is writable
 execute (boolean):: Whether the addressable entity is executable
-registers (array):: Array of <<_register>>s
+registers (object):: Set of <<_register>>s
 overlappings (array of array of string):: Groups of overlapping (i.e. that represent the same hardware resource) <<_register>>s
 attributes (object):: Address space attributes
 attributes/atomicity (object):: Address space atomicity attributes
 attributes/atomicity/amo_support (string):: Atomic Memory Operations support
 attributes/atomicity/reservability (string):: Reservability (LR/SC) support
-indexing (array):: Array of <<_indexing>>s, each representing an array dimension
+indexing (object):: Set of <<_indexing>>s, each representing an array dimension
 default/register/class (string):: Default class for contained registers
 default/register/width (string):: Default width for contained registers
 default/register/volatile (boolean):: Default volatility for contained registers
@@ -111,11 +109,11 @@ default/register/access_policy (string):: Default access policy for contained re
 
 ctr_addr_001:: `base` must evaluate to a signed integer number
 ctr_addr_002:: `size` must evaluate to a signed integer number
-ctr_addr_003:: No two <<_register>>s can have the same name
+ctr_addr_003:: <<_register>> keys shall conform to the following regular expression: `[a-zA-Z]+[0-9a-zA-Z_]*`
 ctr_addr_004:: All names under `overlappings` shall reference valid <<_register>> names under `registers`
 ctr_addr_005:: `attributes/atomicity/amo_support` must be one of `none`, `swap`, `logical` or `arithmetic`
 ctr_addr_006:: `attributes/atomicity/reservability` must be one of `none`, `non_eventual` or `eventual`
-ctr_addr_007:: No two <<_indexing>>s can have the same name
+ctr_addr_007:: <<_indexing>> keys shall conform to the following regular expression: `[a-zA-Z]+[0-9a-zA-Z_]*`
 ctr_addr_008:: `default/register/class` values must be one of those supported by <<_register>>'s `class` attribute
 ctr_addr_009:: `default/register/width` values must be one of those supported by <<_register>>'s `width` attribute
 ctr_addr_010:: `default/register/volatile` values must be one of those supported by <<_register>>'s `volatile` attribute
@@ -127,85 +125,83 @@ class (string):: Register class (assumed from enclosing <<_addressable>> `defaul
 width (integer):: Number of bits in the register (assumed from <<_addressable>> `word_size` if not defined)
 offset (string):: Zero-based offset of the register within the memory space that contains it, in bytes
 volatile (boolean):: Whether the register is considered __volatile__, i.e. it can be arbitrarily changed by hardware without any explicit software interaction (assumed `false` if not defined)
-values (array) :: Array of possible <<_value>>s for the register
-fields (array):: Array of <<_field>>s within the register
+values (object) :: Set of possible <<_value>>s for the register
+fields (object):: Set of <<_field>>s within the register
 overlappings (array of array of string):: Groups of overlapping (i.e. that represent the same hardware resource) <<_field>>s
 access_policy (string):: Register access policy, one of `read_only`, `write_only`, `read_write` (default if not defined), `write_once` or `read_write_once`
-on_reset (array):: Array of reset values/masks applicable to the register
-on_reset/__array-index__/name (string):: Name of applicable <<_reset>> defined at <<_machine>> level
-on_reset/__array-index__/value (string):: Reset value applicable to the register for the named <<_reset>>
-on_reset/__array-index__/mask (string):: Reset mask applicable to the register for the named <<_reset>>, all `1` s assumed if not defined
-indexing (array):: Array of <<_indexing>>s, each representing an array dimension
+on_reset (object):: Set of reset values/masks applicable to the register
+on_reset/__reset-name__/value (string):: Reset value applicable to the register for the named <<_reset>>
+on_reset/__reset-name__/mask (string):: Reset mask applicable to the register for the named <<_reset>>, all `1` s assumed if not defined
+indexing (object):: Set of <<_indexing>>s, each representing an array dimension
 
 === Constraints
 
 crt_regs_001:: `class` must be either `control_status` or `memory_mapped`
 ctr_regs_002:: `width` must be a multiple of 8
 ctr_regs_003:: `offset` must evaluate to a signed integer number
-ctr_regs_004:: No two <<_value>>s can have the same name
-ctr_regs_005:: No two <<_field>>s can have the same name
+ctr_regs_004:: <<_value>> keys shall conform to the following regular expression: `[a-zA-Z]+[0-9a-zA-Z_]*`
+ctr_regs_005:: <<_field>> keys shall conform to the following regular expression: `[a-zA-Z]+[0-9a-zA-Z_]*`
 ctr_regs_006:: All names under `overlappings` shall reference valid <<_field>> names under `fields`
-ctr_regs_007:: `on_reset/__array-index__/name` shall reference a valid <<_reset>> defined at <<_machine>> level
-ctr_regs_008:: `on_reset/__array-index__/value` shall be valid base-2 (i.e. binary) values, with no more bits than `width` bits
-ctr_regs_009:: `on_reset/__array-index__/mask` shall be valid base-2 (i.e. binary) values, with no more bits than `width` bits
-ctr_regs_010:: No two <<_indexing>>s can have the same name
+ctr_regs_008:: `on_reset/__reset-name__/value` shall be valid base-2 (i.e. binary) values, with no more bits than `width` bits
+ctr_regs_009:: `on_reset/__reset-name__/mask` shall be valid base-2 (i.e. binary) values, with no more bits than `width` bits
+ctr_regs_010:: <<_indexing>> keys shall conform to the following regular expression: `[a-zA-Z]+[0-9a-zA-Z_]*`
+ctr_regs_010:: <<_reset>> keys shall conform to the following regular expression: `[a-zA-Z]+[0-9a-zA-Z_]*`
+ctr_regs_010:: <<_reset>> keys shall match <<_reset>>s defined at <<_machine>> level
 
 == Indexing
 
 layout (string):: Array layout
-dimensions (array):: List of array dimension properties
-dimensions/__array-index__/name (string, 🧮):: Dimension name (e.g. `dim0`)
-dimensions/__array-index__/stride (string, 🧮):: Distance between entries, in bytes, computed automatically from element size if not defined
-dimensions/__array-index__/ranges (array):: List of indexing ranges
-dimensions/__array-index__/ranges/__array-index__ (array):: Pair (i.e. exactly two items) of range bounds
-dimensions/__array-index__/ranges/__array-index__/0 (string, 🧮):: Lower bound of indexing range
-dimensions/__array-index__/ranges/__array-index__/1 (string, 🧮):: Upper bound of indexing range
-dimensions/__array-index__/values (string, 🧮):: List of named <<_value>>s within the indexing ranges
-dimensions/__array-index__/lists (array):: Lists of (possibly non-contiguous) elements within the dimension
-dimensions/__array-index__/lists/__array-index__/name (string):: List name
-dimensions/__array-index__/lists/__array-index__/start (string, 🧮):: Starting index of the list
-dimensions/__array-index__/lists/__array-index__/count (string, 🧮):: Number of elements in the list
-dimensions/__array-index__/lists/__array-index__/stride (string, 🧮):: Stride of elements to choose from the list, assumed `1` if not defined
+dimensions (object):: Set of array dimension properties
+dimensions/__dimension-name__/stride (string, 🧮):: Distance between entries, in bytes, computed automatically from element size if not defined
+dimensions/__dimension-name__/ranges (array):: List of indexing ranges
+dimensions/__dimension-name__/ranges/__array-index__ (array):: Pair (i.e. exactly two items) of range bounds
+dimensions/__dimension-name__/ranges/__array-index__/0 (string, 🧮):: Lower bound of indexing range
+dimensions/__dimension-name__/ranges/__array-index__/1 (string, 🧮):: Upper bound of indexing range
+dimensions/__dimension-name__/values (string, 🧮):: List of named <<_value>>s within the indexing ranges
+dimensions/__dimension-name__/lists (array):: Lists of (possibly non-contiguous) elements within the dimension
+dimensions/__dimension-name__/lists/__array-index__/name (string):: List name
+dimensions/__dimension-name__/lists/__array-index__/start (string, 🧮):: Starting index of the list
+dimensions/__dimension-name__/lists/__array-index__/count (string, 🧮):: Number of elements in the list
+dimensions/__dimension-name__/lists/__array-index__/stride (string, 🧮):: Stride of elements to choose from the list, assumed `1` if not defined
 
 === Constraints
 
 ctr_indx_001:: `layout` must be one of `rows` or `columns`
-ctr_indx_002:: `dimensions/__array-index__/name` must conform to the following regular expression: `[a-zA-Z]+[0-9a-zA-Z_]*`
-ctr_indx_003:: `dimensions/__array-index__/ranges` must contain one or more elements
-ctr_indx_004:: `dimensions/__array-index__/ranges/__array-index__` must be an array of exactly two string elements
-ctr_indx_005:: `dimensions/__array-index__/ranges/__array-index__/0` must evaluate to a signed integer number equal to or higher than zero
-ctr_indx_006:: `dimensions/__array-index__/ranges/__array-index__/1` must evaluate to a signed integer number equal to or higher than `dimensions/__array-index__/ranges/__array-index__/0`
-ctr_indx_007:: No two `dimension` s can have the same `name`
+ctr_indx_002:: `dimensions/__dimension-name__/name` must conform to the following regular expression: `[a-zA-Z]+[0-9a-zA-Z_]*`
+ctr_indx_003:: `dimensions/__dimension-name__/ranges` must contain one or more elements
+ctr_indx_004:: `dimensions/__dimension-name__/ranges/__array-index__` must be an array of exactly two string elements
+ctr_indx_005:: `dimensions/__dimension-name__/ranges/__array-index__/0` must evaluate to a signed integer number equal to or higher than zero
+ctr_indx_006:: `dimensions/__dimension-name__/ranges/__array-index__/1` must evaluate to a signed integer number equal to or higher than `dimensions/__array-index__/ranges/__array-index__/0`
+ctr_indx_007:: dimension keys shall conform to the following regular expression: `[a-zA-Z]+[0-9a-zA-Z_]*`
 ctr_indx_008:: All `value` s under `values` must fall within one or more `ranges`
 ctr_indx_009:: No two `list` s can have the same `name`
-ctr_indx_010:: `dimensions/__array-index__/lists/__array-index__/name` must conform to the following regular expression: `[a-zA-Z]+[0-9a-zA-Z_]*`
-ctr_indx_011:: `dimensions/__array-index__/lists/__array-index__/start` must evaluate to a signed integer number equal to or higher than zero
-ctr_indx_012:: `dimensions/__array-index__/lists/__array-index__/count` must evaluate to a signed integer number equal to or higher than zero
-ctr_indx_013:: `dimensions/__array-index__/lists/__array-index__/stride` must evaluate to a signed integer number equal to or higher than zero
+ctr_indx_010:: `dimensions/__dimension-name__/lists/__array-index__/name` must conform to the following regular expression: `[a-zA-Z]+[0-9a-zA-Z_]*`
+ctr_indx_011:: `dimensions/__dimension-name__/lists/__array-index__/start` must evaluate to a signed integer number equal to or higher than zero
+ctr_indx_012:: `dimensions/__dimension-name__/lists/__array-index__/count` must evaluate to a signed integer number equal to or higher than zero
+ctr_indx_013:: `dimensions/__dimension-name__/lists/__array-index__/stride` must evaluate to a signed integer number equal to or higher than zero
 ctr_indx_014:: All indexes specified by `dimensions/__array-index__/lists` must be contained by `dimensions/__array-index__/ranges`
 
 == Field
 
 position (integer):: Zero-based offset of the field within its containing register, in bits
 length (integer):: Length of the field, in bits
-values (array):: Array of possible <<_value>>s for the field
+values (object):: Set of possible <<_value>>s for the field
 ranges (array):: Array of acceptable value ranges for the field
 volatile (boolean):: Whether the field is considered __volatile__, i.e. it can be arbitrarily changed by hardware without any explicit software interaction (assumed from enclosing <<_register>> if not defined)
 on_read (array):: Effect(s) of reading the field, a restricted combination of `clear`, `set`, `toggle`, `modify` and `modify_external`
 on_write (object):: Key/value map of numeric values accepted by the field and their effect(s), also a restricted combination of `clear`, `set`, `toggle`, `modify` and `modify_external`
-on_reset (array):: Array of reset values/masks applicable to the field
-on_reset/__array-index__/name (string):: Name of applicable <<_reset>> defined at <<_machine>> level
-on_reset/__array-index__/value (string):: Reset value applicable to the field for the named <<_reset>>
-on_reset/__array-index__/mask (string):: Reset mask applicable to the field for the named <<_reset>>
+on_reset (object):: Set of reset values/masks applicable to the field
+on_reset/__reset-name__/value (string):: Reset value applicable to the field for the named <<_reset>>
+on_reset/__reset-name__/mask (string):: Reset mask applicable to the field for the named <<_reset>>
 write_policy (string):: One of `preserve` (writes must mirror the last read value), `legal` (writes must hold legal values) or `any` (any value is acceptable, default if not specified)
 read_policy (string):: One of `ignore` (read values shall be ignored), `legal` (read values are always legal) or `any` (any value can be read, default if not specified)
-indexing (array):: Array of <<_indexing>>s, each representing an array dimension
+indexing (object):: Set of <<_indexing>>s, each representing an array dimension
 
 === Constraints
 
 ctr_fild_001:: `position` must be an integer number in the range `[-(w-1), w-1]` where `w` is the value of the `width` attribute from the enclosing <<_register>>
 ctr_fild_002:: `length` must be an integer number in the range `[1, w]` where `w` is the value of the `width` attribute from the enclosing <<_register>>
-ctr_fild_003:: No two <<_value>>s can have the same name
+ctr_fild_003:: <<_value>> keys shall conform to the following regular expression: `[a-zA-Z]+[0-9a-zA-Z_]*`
 ctr_fild_004:: In `on_read` values `clear`, `set`, `toggle` and `modify` are mutually exclusive
 ctr_fild_005:: `on_write` keys shall be base-2 (i.e. binary) values
 ctr_fild_006:: In `on_write` values `clear`, `set`, `toggle` and `modify` are mutually exclusive
@@ -214,7 +210,7 @@ ctr_fild_008:: If both `values` and `ranges` are defined, values in `values` mus
 ctr_fild_009:: `on_reset/__array-index__/name` shall reference a valid <<_reset>> defined at <<_machine>> level
 ctr_fild_010:: `on_reset/__array-index__/value` shall be valid base-2 (i.e. binary) values, with no more bits than `length` bits
 ctr_fild_011:: `on_reset/__array-index__/mask` shall be valid base-2 (i.e. binary) values, with no more bits than `length` bits
-ctr_fild_012:: No two <<_indexing>>s can have the same name
+ctr_fild_012:: <<_indexing>> keys shall conform to the following regular expression: `[a-zA-Z]+[0-9a-zA-Z_]*`
 
 == Value
 
@@ -227,24 +223,24 @@ ctr_valu_001:: `value` must evaluate to an integer number
 == Peripheral
 
 instance (string):: Peripheral instance name, which differentiates it from other instantiations of the same peripheral
-imports (array):: Array of <<_import>>s, describing elements imported from other files
+imports (object):: Set of <<_import>>s, describing elements imported from other files
 word_size (integer):: Default word size, in bits, of the peripheral (assumed from <<_machine>> `word_size` if not defined)
 base (string, 🧮):: Base address of the peripheral
-addressables (array):: Array of <<_addressable>>s featured by the peripheral
+addressables (object):: Set of <<_addressable>>s featured by the peripheral
 overlappings (array of array of string):: Groups of overlapping (i.e. that represent the same hardware resource) <<_addressable>>s
-parameters (array):: Array of peripheral-level <<_parameter>>s
-indexing (array):: Array of <<_indexing>>s, each representing an array dimension
+parameters (object):: Set of peripheral-level <<_parameter>>s
+indexing (object):: Set of <<_indexing>>s, each representing an array dimension
 
 === Constraints
 
 ctr_perp_001:: `instance` must conform to the following regular expression: `[a-zA-Z]+[0-9a-zA-Z_]*`
 ctr_perp_002:: `word_size` must be a multiple of 8
 ctr_perp_003:: `base` must evaluate to a signed integer number
-ctr_perp_004:: No two <<_import>>s can have the same name
-ctr_perp_005:: No two <<_addressable>>s can have the same name
-ctr_perp_006:: No two <<_parameter>>s can have the same name
+ctr_perp_004:: <<_import>> keys shall conform to the following regular expression: `[a-zA-Z]+[0-9a-zA-Z_]*`
+ctr_perp_005:: <<_addressable>> keys shall conform to the following regular expression: `[a-zA-Z]+[0-9a-zA-Z_]*`
+ctr_perp_006:: <<_parameter>> keys shall conform to the following regular expression: `[a-zA-Z]+[0-9a-zA-Z_]*`
 ctr_perp_007:: All names under `overlappings` shall reference valid <<_addressable>> names under `addressables`
-ctr_perp_008:: No two <<_indexing>>s can have the same name
+ctr_perp_008:: <<_indexing>> keys shall conform to the following regular expression: `[a-zA-Z]+[0-9a-zA-Z_]*`
 
 == Parameter
 

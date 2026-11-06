@@ -6,9 +6,6 @@
     "title": "Field",
     "type": "object",
     "properties": {
-        "name": {
-            "type": "string"
-        },
         "description": {
             "$ref": "description.schema.json"
         },
@@ -19,9 +16,11 @@
             "type": "integer"
         },
         "values": {
-            "type": "array",
-            "items": {
-                "$ref": "value.schema.json"
+            "type": "object",
+            "patternProperties": {
+                ".+": {
+                    "$ref": "value.schema.json"
+                }
             }
         },
         "ranges": {
@@ -66,13 +65,9 @@
             "additionalProperties": false
         },
         "on_reset": {
-            "type": "array",
-            "items": {
-                "type": "object",
-                "properties": {
-                    "name": {
-                        "type": "string"
-                    },
+            "type": "object",
+            "patternProperties": {
+                ".+": {
                     "value": {
                         "type": "string",
                         "pattern": "^[01]+$"
@@ -80,12 +75,12 @@
                     "mask": {
                         "type": "string",
                         "pattern": "^[01]+$"
-                    }
-                },
-                "required": [
-                    "name",
-                    "value"
-                ]
+                    },
+                    "required": [
+                        "name",
+                        "value"
+                    ]
+                }
             }
         },
         "read_policy": {
@@ -115,7 +110,6 @@
         }
     },
     "required": [
-        "name",
         "position"
     ]
 }
