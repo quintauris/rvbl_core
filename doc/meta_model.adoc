@@ -100,6 +100,12 @@ Machine is the root meta-model element, defining one or more peripherals sharing
 |__Mandatory__
 |Default word size, in bits, of the machine (e.g. 32, 64)
 
+|`max_transfer_size`
+|integer
+|N/A
+|__Mandatory__
+|Default transfer size, in bits, of the machine (e.g. 32, 64)
+
 |`imports`
 |object
 |N/A
@@ -152,13 +158,14 @@ Machine is the root meta-model element, defining one or more peripherals sharing
 === Constraints
 
 ctr_mach_001:: `word_size` must be a multiple of 8
-ctr_mach_002:: <<_import>> keys shall conform to the following regular expression: `[a-zA-Z]+[0-9a-zA-Z_]*`
-ctr_mach_003:: <<_addressable>> keys shall conform to the following regular expression: `[a-zA-Z]+[0-9a-zA-Z_]*`
-ctr_mach_004:: <<_peripheral>> keys shall conform to the following regular expression: `[a-zA-Z]+[0-9a-zA-Z_]*`
-ctr_mach_005:: <<_parameter>> keys shall conform to the following regular expression: `[a-zA-Z]+[0-9a-zA-Z_]*`
-ctr_mach_006:: All names under `overlappings/addressables` shall reference valid <<_addressable>> names under `memory_map`
-ctr_mach_007:: All names under `overlappings/peripherals` shall reference valid <<_peripheral>> instance names under `peripherals`
-ctr_mach_008:: <<_reset_types>> keys shall conform to the following regular expression: `[a-zA-Z]+[0-9a-zA-Z_]*`
+ctr_mach_002:: `max_transfer_size` must be a multiple of 8
+ctr_mach_003:: <<_import>> keys shall conform to the following regular expression: `[a-zA-Z]+[0-9a-zA-Z_]*`
+ctr_mach_004:: <<_addressable>> keys shall conform to the following regular expression: `[a-zA-Z]+[0-9a-zA-Z_]*`
+ctr_mach_005:: <<_peripheral>> keys shall conform to the following regular expression: `[a-zA-Z]+[0-9a-zA-Z_]*`
+ctr_mach_006:: <<_parameter>> keys shall conform to the following regular expression: `[a-zA-Z]+[0-9a-zA-Z_]*`
+ctr_mach_007:: All names under `overlappings/addressables` shall reference valid <<_addressable>> names under `memory_map`
+ctr_mach_008:: All names under `overlappings/peripherals` shall reference valid <<_peripheral>> instance names under `peripherals`
+ctr_mach_009:: <<_reset_types>> keys shall conform to the following regular expression: `[a-zA-Z]+[0-9a-zA-Z_]*`
 
 == Import
 

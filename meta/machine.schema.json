@@ -16,6 +16,10 @@
             "type": "integer",
             "multipleOf": 8
         },
+        "max_transfer_size": {
+            "type": "integer",
+            "multipleOf": 8
+        },
         "imports": {
             "type": "object",
             "patternProperties": {

@@ -686,6 +686,7 @@ pub struct Machine {
     pub name: String,
     pub description: Option<Description>,
     pub word_size: u32,
+    pub max_transfer_size: Option<u32>,
     pub imports: Option<HashMap<String, Import>>,
     pub memory_map: HashMap<String, Referenceable<Addressable>>,
     pub peripherals: HashMap<String, Referenceable<Peripheral>>,
@@ -748,6 +749,13 @@ impl Resolve for Machine {
     }
 }
 
+impl Machine {
+    #[allow(unused)]
+    fn resolve_max_transfer_size(&self) -> u32 {
+        self.max_transfer_size.unwrap_or(self.word_size)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use once_cell::sync::Lazy;
@@ -763,11 +771,12 @@ mod tests {
         name: String::new(),
         description: None,
         word_size: 128,
+        max_transfer_size: None,
         imports: None,
         memory_map: HashMap::new(),
         peripherals: HashMap::new(),
         overlappings: None,
-        resets: None,
+        reset_types: None,
         parameters: HashMap::new(),
         vendor: None,
     });
@@ -786,7 +795,7 @@ mod tests {
     });
     static ADDRESSABLE: Addressable = Addressable {
         description: None,
-        base: String::new(),
+        offset: None,
         size: String::new(),
         registers: None,
         overlappings: None,
@@ -1123,6 +1132,37 @@ mod tests {
 
         list.stride = Some(String::from("0x10 * 2"));
         assert_eq!(list.resolve_stride(), 32);
+    }
+
+    #[test]
+    fn test_machine_resolve_max_transfer_size() {
+        let mut machine = Machine {
+            name: String::new(),
+            description: None,
+            word_size: 32,
+            max_transfer_size: None,
+            imports: None,
+            memory_map: HashMap::new(),
+            peripherals: HashMap::new(),
+            overlappings: None,
+            reset_types: None,
+            parameters: HashMap::new(),
+            vendor: None,
+        };
+
+        // No explicit maximum transfer size: falls back to the word size.
+        assert_eq!(machine.resolve_max_transfer_size(), 32);
+
+        machine.word_size = 64;
+        assert_eq!(machine.resolve_max_transfer_size(), 64);
+
+        // Explicit maximum transfer size overrides the word size, whether
+        // larger or smaller.
+        machine.max_transfer_size = Some(128);
+        assert_eq!(machine.resolve_max_transfer_size(), 128);
+
+        machine.max_transfer_size = Some(8);
+        assert_eq!(machine.resolve_max_transfer_size(), 8);
     }
 
     #[test]

@@ -39,6 +39,7 @@ fn main() -> ExitCode {
                 name: String::new(),
                 description: None,
                 word_size: 32,
+                max_transfer_size: None,
                 imports: None,
                 memory_map: HashMap::new(),
                 peripherals: HashMap::new(),
