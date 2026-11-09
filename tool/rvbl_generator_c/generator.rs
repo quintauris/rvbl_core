@@ -310,6 +310,8 @@ fn peripheral_header_register(
             ));
         }
 
+        bit_fields.sort_by(|a, b| a.2.cmp(&b.2));
+
         {
             let mut bit_fields_with_unused: Vec<(String, String, u32, u32)> = vec![];
             let mut i = 0;
