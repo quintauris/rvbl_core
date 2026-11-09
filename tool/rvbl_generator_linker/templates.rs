@@ -5,7 +5,10 @@
 use std::fs::File;
 use std::io::{BufWriter, Result, Write};
 
-use rvbl_model::{evaluator::parse_expression, model};
+use rvbl_model::{
+    evaluator::{parse_expression, parse_expression_option},
+    model,
+};
 
 pub trait MemoryLayoutTemplate {
     fn open(&self, writer: &mut BufWriter<File>) -> Result<()>;
@@ -53,7 +56,7 @@ impl MemoryLayoutTemplate for Gnu {
             Gnu::attribute(&region.1.read, 'r', true),
             Gnu::attribute(&region.1.write, 'w', true),
             Gnu::attribute(&region.1.execute, 'x', false),
-            parse_expression(&region.1.base),
+            parse_expression_option(&region.1.offset),
             parse_expression(&region.1.size)
         )?;
 
@@ -83,7 +86,7 @@ impl MemoryLayoutTemplate for Iar {
             writer,
             "define region {} = Mem:[from {:#010x} size {:#010x}];",
             &region.0,
-            parse_expression(&region.1.base),
+            parse_expression_option(&region.1.offset),
             parse_expression(&region.1.size)
         )?;
 
@@ -118,7 +121,7 @@ impl MemoryLayoutTemplate for Tasking {
 }}"#,
             &region.0,
             parse_expression(&region.1.size),
-            parse_expression(&region.1.base),
+            parse_expression_option(&region.1.offset),
             parse_expression(&region.1.size),
         )?;
         writeln!(writer)?;

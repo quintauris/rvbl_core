@@ -374,7 +374,12 @@ pub trait Resolve {
 }
 
 pub trait Override {
-    fn override_attributes(&mut self, base: &Option<String>, indexing: &Option<Indexing>);
+    fn override_attributes(
+        &mut self,
+        base: &Option<String>,
+        offset: &Option<String>,
+        indexing: &Option<Indexing>,
+    );
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -421,7 +426,7 @@ pub struct AddressableDefaults {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Addressable {
     pub description: Option<Description>,
-    pub base: String,
+    pub offset: Option<String>,
     pub size: String,
     pub registers: Option<HashMap<String, Register>>,
     pub overlappings: Option<Overlappings>,
@@ -444,9 +449,14 @@ impl Described for Addressable {
 }
 
 impl Override for Addressable {
-    fn override_attributes(&mut self, base: &Option<String>, indexing: &Option<Indexing>) {
-        if let Some(b) = base {
-            self.base = b.clone();
+    fn override_attributes(
+        &mut self,
+        _: &Option<String>,
+        offset: &Option<String>,
+        indexing: &Option<Indexing>,
+    ) {
+        if let Some(o) = offset {
+            self.offset = Some(o.clone());
         }
 
         if let Some(i) = indexing {
@@ -461,7 +471,7 @@ impl Addressable {
     #[allow(unused)]
     pub fn resolve_base(&self, peripheral: &Peripheral) -> i64 {
         evaluator::parse_expression_option(&peripheral.base)
-            + evaluator::parse_expression(&self.base)
+            + evaluator::parse_expression_option(&self.offset)
     }
 }
 
@@ -577,7 +587,7 @@ impl<T: Clone + DeserializeOwned + Resolve + Override> Referenceable<T> {
             ) {
                 Ok(mut t) => {
                     if let Some(p) = &reference.peripheral {
-                        t.override_attributes(&p.base, &p.indexing);
+                        t.override_attributes(&p.base, &None, &p.indexing);
                     }
 
                     *self = Referenceable::<T>::Inplace(t);
@@ -649,7 +659,12 @@ impl Resolve for Peripheral {
 }
 
 impl Override for Peripheral {
-    fn override_attributes(&mut self, base: &Option<String>, indexing: &Option<Indexing>) {
+    fn override_attributes(
+        &mut self,
+        base: &Option<String>,
+        _: &Option<String>,
+        indexing: &Option<Indexing>,
+    ) {
         if let Some(b) = base {
             self.base = Some(b.clone());
         }
