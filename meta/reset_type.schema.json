@@ -2,8 +2,8 @@
     "$schema": "https://json-schema.org/draft/2020-12/schema",
     "$id": "reset.schema.json",
     "$comment": "Copyright 2026 Quintauris GmbH. Licensed under the Apache License, Version 2.0 (the \"License\", https://www.apache.org/licenses/LICENSE-2.0)",
-    "description": "Machine reset schema",
-    "title": "Reset",
+    "description": "Machine reset type schema",
+    "title": "Reset Type",
     "type": "object",
     "properties": {
         "description": {
