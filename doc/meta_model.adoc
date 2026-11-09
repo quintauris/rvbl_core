@@ -258,8 +258,14 @@ In the above example, peripheral is instantiated as `uart0` with base address `0
 |`peripheral/base`
 |string
 |Yes
+|Referenced peripheral `base` value
+|Override value for peripheral base address
+
+|`peripheral/indexing`
+|string
+|N/A
 |__Mandatory__
-|Assumed peripheral base address
+|Override indexing for peripheral
 |===
 
 === Constraints
