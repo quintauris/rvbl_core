@@ -9,7 +9,7 @@
         "description": {
             "$ref": "description.schema.json"
         },
-        "base": {
+        "offset": {
             "type": "string"
         },
         "size": {
@@ -108,7 +108,6 @@
         }
     },
     "required": [
-        "base",
         "size",
         "default"
     ]

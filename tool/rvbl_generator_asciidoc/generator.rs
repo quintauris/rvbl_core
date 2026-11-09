@@ -44,7 +44,10 @@ impl AsciiDocGenerator {
         for (name, addressable) in addressables {
             let cells = vec![
                 name.as_str(),
-                addressable.base.as_str(),
+                match &addressable.offset {
+                    Some(o) => &o,
+                    None => "<undefined>",
+                },
                 addressable.size.as_str(),
             ];
 

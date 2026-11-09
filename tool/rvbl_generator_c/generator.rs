@@ -45,7 +45,7 @@ fn machine_header(machine: &model::Machine) -> Result<()> {
         templates::define(
             &mut writer,
             &format!("rvbl_memory_region_{}_base", &key),
-            &format!("0x{:x}", parse_expression(&addressable.base)),
+            &format!("0x{:x}", parse_expression_option(&addressable.offset)),
         )?;
         templates::define(
             &mut writer,
