@@ -20,6 +20,9 @@
             "properties": {
                 "base": {
                     "type": "string"
+                },
+                "indexing": {
+                    "$ref": "indexing.schema.json"
                 }
             }
         },

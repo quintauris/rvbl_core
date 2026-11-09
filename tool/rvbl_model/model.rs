@@ -373,6 +373,10 @@ pub trait Resolve {
     }
 }
 
+pub trait Override {
+    fn override_attributes(&mut self, base: &Option<String>, indexing: &Option<Indexing>);
+}
+
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub enum AddressableAtomicityAmoSupport {
     #[serde(rename = "none")]
@@ -439,6 +443,18 @@ impl Described for Addressable {
     }
 }
 
+impl Override for Addressable {
+    fn override_attributes(&mut self, base: &Option<String>, indexing: &Option<Indexing>) {
+        if let Some(b) = base {
+            self.base = b.clone();
+        }
+
+        if let Some(i) = indexing {
+            self.indexing = Some(i.clone());
+        }
+    }
+}
+
 impl Resolve for Addressable {}
 
 impl Addressable {
@@ -487,6 +503,7 @@ impl Described for Import {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct ReferencePeripheral {
     pub base: Option<String>,
+    pub indexing: Option<Indexing>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -504,7 +521,7 @@ pub enum Referenceable<T> {
     Inplace(T),
 }
 
-impl<T: Clone + DeserializeOwned + Resolve> Referenceable<T> {
+impl<T: Clone + DeserializeOwned + Resolve + Override> Referenceable<T> {
     fn lookup(
         reference: &Reference,
         imports: &Option<HashMap<String, Import>>,
@@ -558,7 +575,11 @@ impl<T: Clone + DeserializeOwned + Resolve> Referenceable<T> {
                 meta_model_search_path,
                 include_search_path,
             ) {
-                Ok(t) => {
+                Ok(mut t) => {
+                    if let Some(p) = &reference.peripheral {
+                        t.override_attributes(&p.base, &p.indexing);
+                    }
+
                     *self = Referenceable::<T>::Inplace(t);
                     Ok(())
                 }
@@ -624,6 +645,18 @@ impl Resolve for Peripheral {
         }
 
         Ok(())
+    }
+}
+
+impl Override for Peripheral {
+    fn override_attributes(&mut self, base: &Option<String>, indexing: &Option<Indexing>) {
+        if let Some(b) = base {
+            self.base = Some(b.clone());
+        }
+
+        if let Some(i) = indexing {
+            self.indexing = Some(i.clone());
+        }
     }
 }
 
