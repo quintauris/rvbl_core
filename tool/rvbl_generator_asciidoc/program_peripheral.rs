@@ -43,7 +43,7 @@ fn main() -> ExitCode {
                 memory_map: HashMap::new(),
                 peripherals: HashMap::new(),
                 overlappings: None,
-                resets: None,
+                reset_types: None,
                 parameters: HashMap::new(),
                 vendor: None,
             };

@@ -45,7 +45,7 @@ pub trait Described {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct Reset {
+pub struct ResetType {
     pub description: Option<Description>,
     pub vendor: Option<Vendor>,
 }
@@ -690,7 +690,7 @@ pub struct Machine {
     pub memory_map: HashMap<String, Referenceable<Addressable>>,
     pub peripherals: HashMap<String, Referenceable<Peripheral>>,
     pub overlappings: Option<MachineOverlappings>,
-    pub resets: Option<HashMap<String, Reset>>,
+    pub reset_types: Option<HashMap<String, ResetType>>,
     pub parameters: HashMap<String, Parameter>,
     pub vendor: Option<Vendor>,
 }

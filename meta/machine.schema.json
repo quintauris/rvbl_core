@@ -65,11 +65,11 @@
                 }
             }
         },
-        "resets": {
+        "reset_types": {
             "type": "object",
             "patternProperties": {
                 ".+": {
-                    "$ref": "reset.schema.json"
+                    "$ref": "reset_type.schema.json"
                 }
             }
         },
