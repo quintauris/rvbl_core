@@ -66,19 +66,58 @@ pub fn parse_expression(text: &str) -> i64 {
         updated = updated.replace(value, parse_number(value).to_string().as_str());
     }
 
-    match eval::eval(&updated).unwrap_or_default().as_i64() {
-        Some(x) => x,
-        None => panic!("Unable to evaluate expression '{}'.", text),
+    match eval::eval(&updated) {
+        Ok(x) => {
+            if x.is_i64() {
+                x.as_i64().unwrap()
+            } else if x.is_f64() {
+                x.as_f64().unwrap().floor() as i64
+            } else {
+                panic!(
+                    "Expression result from '{}' not convertible to integer",
+                    text
+                );
+            }
+        }
+        Err(e) => panic!("Unable to evaluate expression '{}': {e}", text),
     }
 }
 
 #[cfg(test)]
 #[test]
-fn test_parse_expression() {
+fn test_parse_expression_add_sub() {
     assert_eq!(
-        parse_expression("1m + 16K * 0x5A32 + 21"),
-        1000 * 1000 + 16 * 1024 * 0x5A32 + 21
+        parse_expression("1m + 16K + 0x5A32 + 21"),
+        (1000 * 1000) + (16 * 1024) + 0x5A32 + 21
     );
+}
+
+#[cfg(test)]
+#[test]
+fn test_parse_expression_mul_div() {
+    assert_eq!(parse_expression("16K * 32 / 16"), (16 * 1024) * 32 / 16);
+}
+
+#[cfg(test)]
+#[test]
+fn test_parse_expression_mod() {
+    assert_eq!(parse_expression("16K % 4"), 0);
+    assert_eq!(parse_expression("8 % 3"), 2);
+}
+
+#[cfg(test)]
+#[test]
+fn test_parse_expression_builtin() {
+    assert_eq!(parse_expression("min(10, 8, 2)"), 2);
+    assert_eq!(parse_expression("max(10, 8, 32)"), 32);
+}
+
+#[cfg(test)]
+#[test]
+fn test_parse_expression_decimal() {
+    assert_eq!(parse_expression("3.5 + 1.5"), 5);
+    assert_eq!(parse_expression("3.6 + 1.5"), 5);
+    assert_eq!(parse_expression("3.9 + 1.9"), 5);
 }
 
 #[allow(unused)]

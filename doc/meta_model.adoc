@@ -19,7 +19,7 @@ image::meta_model.svg[]
 
 == Common Attributes
 
-All model entities share the following attributes:
+All meta-models elements (e.g. <<_machine>>, <<_peripheral>>, etc.) share the following attributes:
 
 [cols="2,1,1,1,4"]
 |===
@@ -53,22 +53,42 @@ All model entities share the following attributes:
 |object
 |N/A
 |`{}`
-|Vendor-specific data over a vendor-defined structure
+|Vendor-specific data over a vendor-defined structure (e.g. `{"acme": {"custom_field": "custom_data"}}`)
 |===
 
 For conciseness and readability, these attributes are omitted in the following sections.
 
 === Constraints
 
+The following constraints apply to all meta-model elements:
+
 ctr_comm_001:: __vendor_name__ must conform to the following regular expression: `[a-zA-Z]+[0-9a-zA-Z_]*`
 ctr_comm_002:: `description/content_type` must be one of `text/plain`, `text/markdown` or `text/html`
-ctr_comm_003:: No two array elements under `vendor` shall have the same `name` value
 
-== Computed values
+== Evaluated expressions
 
-Attributes marked `Yes` in the `Expression` column are strings that should be evaluated to produce an integer result.
+Attributes marked `Yes` in the `Expression` column are strings that shall be evaluated by model consumers to produce an integer result (e.g. `4096 * 8` o `4K * 16`).
+
+Supported operators are:
+
+* `()`: parentheses for grouping and precedence
+* `+`, `-`, `*`, `/`: arithmetic operators
+* `%`: modular division
+
+Supported built-in functions are (both can take any number of parameters):
+
+* `min()`
+* `max()`
+
+The following number formats are supported:
+
+* Signed integer in base 10
+* Unsigned intenger in base 16, prefixed by `0x`
+* Signed decimal, using `.` as decimal separator
 
 == Machine
+
+Machine is the root meta-model element, defining one or more peripherals sharing a global address space.
 
 [cols="2,1,1,1,4"]
 |===
@@ -90,13 +110,13 @@ Attributes marked `Yes` in the `Expression` column are strings that should be ev
 |object
 |N/A
 |__Mandatory__
-|Set of <<_addressable>>s describing the machine's memory map
+|Set of <<_addressable>>s (or <<_references>> to them) describing the machine's memory map
 
 |`peripherals`
 |object
 |N/A
 |__Mandatory__
-|Set of <<_peripheral>>s featured by the machine
+|Set of <<_peripheral>>s (or <<_references>> to them) featured by the machine
 
 |`overlappings`
 |object
@@ -142,6 +162,28 @@ ctr_mach_008:: <<_reset>> keys shall conform to the following regular expression
 
 == Import
 
+Imports allow bringing model elements defined in a separate file into the context where the import is made, under a user-defined name. For example, the follwing code brings the model entity defined in `riscv/model/ns16550/model.json` to the current context, under the name `ns16550`:
+
+
+----
+  "imports": {
+    "ns16550": {
+      "file": "riscv/model/ns16550/model.json"
+    }
+  }
+----
+
+Now `ns16550` which can be used by <<_reference>>s to produce `ns16550` instances under `peripherals`:
+
+----
+  "uart0": {
+    "reference": "ns16550",
+    "peripheral": {
+      "base": "0x10000000"
+    }
+  },
+----
+
 [cols="2,1,1,1,4"]
 |===
 |Name |Type |Expression |Default value |Description
@@ -150,7 +192,7 @@ ctr_mach_008:: <<_reset>> keys shall conform to the following regular expression
 |string
 |No
 |__Mandatory__
-|File containing the entity to import
+|File containing the entity to import, relative to a search path determined by the tool consuming the model.
 
 |`substitutions`
 |object
@@ -159,13 +201,37 @@ ctr_mach_008:: <<_reset>> keys shall conform to the following regular expression
 |Key/value substitutions to apply to string values in the imported entity
 |===
 
+`substitutions` can be used to apply custom changes to the imported entity, for example:
+
+----
+  "imports": {
+    "ns16550": {
+      "file": "riscv/model/ns16550/model.json"
+      "substitutions": {"FOO": "BAR"}
+    }
+  }
+----
+
+will replace every occurence `$FOO` in `riscv/model/ns16550/model.json` string values with `BAR`.
+
 === Constraints
 
 ctr_impr_001:: Keys within `substitutions` must conform to the following regular expression: `[A-Z]+[0-9a-zA-Z_]*`
-ctr_impr_002:: `peripheral/instance` must conform to the following regular expression: `[a-zA-Z]+[0-9a-zA-Z_]*`
-ctr_impr_003:: `peripheral/base` must evaluate to a signed integer number
 
 == Reference
+
+References instantiate <<_import>>ed elements, possibly setting/overriding some of its uniquely identifying attributes such as peripheral base address or peripheral instance id:
+
+----
+  "uart0": {
+    "reference": "ns16550",
+    "peripheral": {
+      "base": "0x10000000"
+    }
+  },
+----
+
+In the above example, peripheral is instantiated as `uart0` with base address `0x10000000`.
 
 [cols="2,1,1,1,4"]
 |===
@@ -203,6 +269,8 @@ ctr_reft_002:: Keys within `substitutions` must conform to the following regular
 ctr_reft_003:: `peripheral/base` must evaluate to a signed integer number
 
 == Addressable
+
+Addressables constitute (possibly overlapping) segments of the global <<_machine>>'s address space.
 
 [cols="2,1,1,1,4"]
 |===
@@ -284,33 +352,33 @@ ctr_reft_003:: `peripheral/base` must evaluate to a signed integer number
 |string
 |No
 |`memory_mapped`
-|Default class for contained registers
+|Default class for contained registers (see <<_register>> for details)
 
 |`default/register/width`
 |string
 |No
 |Inherited from enclosing <<_peripheral>> or <<_machine>>
-|Default width for contained registers
+|Default width for contained registers (see <<_register>> for details)
 
 |`default/register/volatile`
 |boolean
 |N/A
 |`false`
-|Default volatility for contained registers
+|Default volatility for contained registers (see <<_register>> for details)
 
 |`default/register/access_policy`
 |string
 |No
 |`read_write`
-|Default access policy for contained registers
+|Default access policy for contained registers (see <<_register>> for details)
 |===
 
 === Constraints
 
-ctr_addr_001:: `base` must evaluate to a signed integer number
-ctr_addr_002:: `size` must evaluate to a signed integer number
+ctr_addr_001:: `base` must evaluate to an unsigned integer number
+ctr_addr_002:: `size` must evaluate to an unsigned integer number
 ctr_addr_003:: <<_register>> keys shall conform to the following regular expression: `[a-zA-Z]+[0-9a-zA-Z_]*`
-ctr_addr_004:: All names under `overlappings` shall reference valid <<_register>> names under `registers`
+ctr_addr_004:: All names under `overlappings` shall reference <<_register>> keys under `registers`
 ctr_addr_005:: `attributes/atomicity/amo_support` must be one of `none`, `swap`, `logical` or `arithmetic`
 ctr_addr_006:: `attributes/atomicity/reservability` must be one of `none`, `non_eventual` or `eventual`
 ctr_addr_007:: <<_indexing>> keys shall conform to the following regular expression: `[a-zA-Z]+[0-9a-zA-Z_]*`
@@ -321,6 +389,11 @@ ctr_addr_011:: `default/register/access_policy` values must be one of those supp
 
 == Register
 
+Registers are word-aligned data instances within <<_addressable>>s. How individual registers are accessed is determined by the register's `class` attribute:
+
+`memory_mapped`:: register is accessed via common fetch/store instructions on the register's address (parent's `offset` + `offset` determines the absolute address)
+`control_status`:: register is accessed via direct RISC-V's CSR read/write instructions (parent's `offset` + `offset` determines the CSR index)
+
 [cols="2,1,1,1,4"]
 |===
 |Name |Type |Expression |Default value |Description
@@ -329,7 +402,7 @@ ctr_addr_011:: `default/register/access_policy` values must be one of those supp
 |string
 |`memory_mapped`
 |<<_addressable>> `default/register/class`
-|Register class
+|Register class, see above.
 
 |`width`
 |integer
@@ -339,9 +412,9 @@ ctr_addr_011:: `default/register/access_policy` values must be one of those supp
 
 |`offset`
 |string
-|No
+|Yes
 |__Mandatory__
-|Zero-based offset of the register within the memory space that contains it, in bytes
+|Zero-based offset of the register within the <<_addressable>> that contains it, in bytes
 
 |`volatile`
 |boolean
@@ -371,7 +444,7 @@ ctr_addr_011:: `default/register/access_policy` values must be one of those supp
 |string
 |No
 |`read_write`
-|Register access policy, one of `read_only`, `write_only`, `read_write`, `write_once` or `read_write_once`
+|Register access policy, one of `read_only`, `write_only`, `read_write`, `write_once` (register can't be read, written only once after reset) or `read_write_once` (register can be read anytime, written only once after reset)
 
 |`on_reset`
 |object
@@ -406,13 +479,17 @@ ctr_regs_003:: `offset` must evaluate to a signed integer number
 ctr_regs_004:: <<_value>> keys shall conform to the following regular expression: `[a-zA-Z]+[0-9a-zA-Z_]*`
 ctr_regs_005:: <<_field>> keys shall conform to the following regular expression: `[a-zA-Z]+[0-9a-zA-Z_]*`
 ctr_regs_006:: All names under `overlappings` shall reference valid <<_field>> names under `fields`
+ctr_regs_007:: `on_reset/__reset-name__` shall reference a valid <<_reset>> defined at <<_machine>> level
 ctr_regs_008:: `on_reset/__reset-name__/value` shall be valid base-2 (i.e. binary) values, with no more bits than `width` bits
 ctr_regs_009:: `on_reset/__reset-name__/mask` shall be valid base-2 (i.e. binary) values, with no more bits than `width` bits
 ctr_regs_010:: <<_indexing>> keys shall conform to the following regular expression: `[a-zA-Z]+[0-9a-zA-Z_]*`
-ctr_regs_010:: <<_reset>> keys shall conform to the following regular expression: `[a-zA-Z]+[0-9a-zA-Z_]*`
-ctr_regs_010:: <<_reset>> keys shall match <<_reset>>s defined at <<_machine>> level
+ctr_regs_011:: <<_reset>> keys shall conform to the following regular expression: `[a-zA-Z]+[0-9a-zA-Z_]*`
+ctr_regs_012:: <<_reset>> keys shall match <<_reset>>s defined at <<_machine>> level
+ctr_regs_013:: If `volatile` is `false`, then all children <<_field>>s `volatile` attribute shall be undefined or `false`
 
 == Indexing
+
+Indexing allows declaration of model elements such as <<_peripheral>>s, <<_addressable>>s and <<_register>>s as (possibly multi-dimensional) arrays.
 
 [cols="2,1,1,1,4"]
 |===
@@ -516,6 +593,8 @@ ctr_indx_014:: All indexes specified by `dimensions/__array-index__/lists` must 
 
 == Field
 
+Fields segment <<_register>>s into atomoic data elements.
+
 [cols="2,1,1,1,4"]
 |===
 |Name |Type |Expression |Default value |Description
@@ -601,20 +680,24 @@ ctr_indx_014:: All indexes specified by `dimensions/__array-index__/lists` must 
 
 === Constraints
 
-ctr_fild_001:: `position` must be an integer number in the range `[-(w-1), w-1]` where `w` is the value of the `width` attribute from the enclosing <<_register>>
-ctr_fild_002:: `length` must be an integer number in the range `[1, w]` where `w` is the value of the `width` attribute from the enclosing <<_register>>
+ctr_fild_001:: `position` must be an integer number in the range `[0, w - 1]` where `w` is the value of the `width` attribute from the enclosing <<_register>>
+ctr_fild_002:: `length` must be an integer number in the range `[1, w - p]` where `w` is the value of the `width` attribute from the enclosing <<_register>>, and `p` is the value of `position`
 ctr_fild_003:: <<_value>> keys shall conform to the following regular expression: `[a-zA-Z]+[0-9a-zA-Z_]*`
 ctr_fild_004:: In `on_read` values `clear`, `set`, `toggle` and `modify` are mutually exclusive
-ctr_fild_005:: `on_write` keys shall be base-2 (i.e. binary) values
+ctr_fild_005:: `on_write` keys shall be base-[2, 10, 16] (i.e. binary, decimal or hexadecimal) values
 ctr_fild_006:: In `on_write` values `clear`, `set`, `toggle` and `modify` are mutually exclusive
 ctr_fild_007:: Each element of `ranges` must be a 2-element array of strings that evaluate to integer numbers
 ctr_fild_008:: If both `values` and `ranges` are defined, values in `values` must all be contained by `ranges`
-ctr_fild_009:: `on_reset/__array-index__/name` shall reference a valid <<_reset>> defined at <<_machine>> level
-ctr_fild_010:: `on_reset/__array-index__/value` shall be valid base-2 (i.e. binary) values, with no more bits than `length` bits
-ctr_fild_011:: `on_reset/__array-index__/mask` shall be valid base-2 (i.e. binary) values, with no more bits than `length` bits
+ctr_fild_009:: `on_reset/__reset-name__` shall reference a valid <<_reset>> defined at <<_machine>> level
+ctr_fild_010:: `on_reset/__reset-name__/value` shall be valid base-2 (i.e. binary) values, with no more bits than `length` bits
+ctr_fild_011:: `on_reset/__reset-name__/mask` shall be valid base-2 (i.e. binary) values, with no more bits than `length` bits
 ctr_fild_012:: <<_indexing>> keys shall conform to the following regular expression: `[a-zA-Z]+[0-9a-zA-Z_]*`
+ctr_fild_013:: If `volatile` is `true`, then the parent <<_register>> `volatile` attribute shall be also `true`
+ctr_fild_014:: Values defined by `on_reset/__reset-name__` shall not contradict those under enclosing <<_register>>'s `on_reset/__reset-name__`w
 
 == Value
+
+Named values within a particular context, such as <<_register>>, <<_field>> or <<_parameter>>.
 
 [cols="2,1,1,1,4"]
 |===
@@ -622,7 +705,7 @@ ctr_fild_012:: <<_indexing>> keys shall conform to the following regular express
 
 |`value`
 |string
-|No
+|Yes
 |__Mandatory__
 |Numeric value associated with the named value
 |===
@@ -632,6 +715,8 @@ ctr_fild_012:: <<_indexing>> keys shall conform to the following regular express
 ctr_valu_001:: `value` must evaluate to an integer number
 
 == Peripheral
+
+Peripherals are the building blocks of <<_machine>>s, providing the different structural components that build its functionality up.
 
 [cols="2,1,1,1,4"]
 |===
@@ -671,7 +756,7 @@ ctr_valu_001:: `value` must evaluate to an integer number
 |object
 |N/A
 |__Mandatory__
-|Set of <<_addressable>>s featured by the peripheral
+|Set of <<_addressable>>s (or <<_references>> to them) featured by the peripheral
 
 |`overlappings`
 |array of array of string
@@ -697,7 +782,7 @@ ctr_valu_001:: `value` must evaluate to an integer number
 ctr_perp_001:: `name` must conform to the following regular expression: `[a-zA-Z]+[0-9a-zA-Z_]*`
 ctr_perp_002:: `instance` must conform to the following regular expression: `[a-zA-Z]+[0-9a-zA-Z_]*`
 ctr_perp_003:: `word_size` must be a multiple of 8
-ctr_perp_004:: `base` must evaluate to a signed integer number
+ctr_perp_004:: `base` must evaluate to an unsigned integer number
 ctr_perp_005:: <<_import>> keys shall conform to the following regular expression: `[a-zA-Z]+[0-9a-zA-Z_]*`
 ctr_perp_006:: <<_addressable>> keys shall conform to the following regular expression: `[a-zA-Z]+[0-9a-zA-Z_]*`
 ctr_perp_007:: <<_parameter>> keys shall conform to the following regular expression: `[a-zA-Z]+[0-9a-zA-Z_]*`
@@ -705,6 +790,8 @@ ctr_perp_008:: All names under `overlappings` shall reference valid <<_addressab
 ctr_perp_009:: <<_indexing>> keys shall conform to the following regular expression: `[a-zA-Z]+[0-9a-zA-Z_]*`
 
 == Parameter
+
+Parameters attach custom data to code and other artifacts generated after <<_machine>> and <<_peripheral>> model elements.
 
 [cols="2,1,1,1,4"]
 |===
@@ -720,7 +807,7 @@ ctr_perp_009:: <<_indexing>> keys shall conform to the following regular express
 |string
 |No
 |__Mandatory__
-|One of `uint8`, `uint16`, `uint32`, `uint64`, `int8`, `int16`, `int32`, `int64`. Determines the type of the parameter
+|One of `uint8`, `uint16`, `uint32`, `uint64`, `uint128`, `int8`, `int16`, `int32`, `int64`, `int128`. Determines the type of the parameter
 
 |`value`
 |string
@@ -731,7 +818,8 @@ ctr_perp_009:: <<_indexing>> keys shall conform to the following regular express
 
 === Constraints
 
-ctr_parm_001:: `value` must evaluate to a signed integer number
+ctr_parm_001:: `value` must evaluate to an unsigned integer number if `class` is unsigned (i.e. `uint8`, `uint16`, `uint32`, `uint64` or `uint128`)
+ctr_parm_002:: `value` must evaluate to a signed integer number if `class` is signed (i.e. `int8`, `int16`, `int32`, `int64` or `int128`)
 
 == Reset
 
