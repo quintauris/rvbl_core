@@ -62,9 +62,9 @@ impl AsciiDocGenerator {
                 templates::paragraph_optional(writer, &addressable.resolve_description())?;
                 templates::new_line(writer)?;
 
-                if addressable.registers.is_some() {
+                if let Some(registers) = &addressable.registers {
                     self.registers(
-                        addressable.registers.as_ref().unwrap(),
+                        registers,
                         addressable,
                         peripheral,
                         machine,
@@ -127,14 +127,17 @@ impl AsciiDocGenerator {
 
     fn registers(
         self: &AsciiDocGenerator,
-        registers: &HashMap<String, model::Register>,
+        registers: &HashMap<String, model::Referenceable<model::Register>>,
         addressable: &model::Addressable,
         peripheral: &model::Peripheral,
         machine: &model::Machine,
         writer: &mut BufWriter<File>,
         level: usize,
     ) -> Result<()> {
-        for (name, register) in registers {
+        for (name, register) in registers.iter().filter_map(|(k, r)| match r.dereference() {
+            Ok(a) => Some((k.clone(), a.clone())),
+            Err(_) => None,
+        }) {
             templates::section(writer, level, format!("Register {}", name).as_str())?;
             templates::paragraph_optional(writer, &register.resolve_description())?;
             templates::horizontal_list(
@@ -173,7 +176,7 @@ impl AsciiDocGenerator {
                         (
                             "Stride",
                             dimension
-                                .resolve_stride(register, addressable, peripheral, machine)
+                                .resolve_stride(&register, addressable, peripheral, machine)
                                 .to_string()
                                 .as_str(),
                         ),
@@ -198,14 +201,14 @@ impl AsciiDocGenerator {
                             (
                                 "Position (bits)",
                                 field
-                                    .resolve_position(register, addressable, peripheral, machine)
+                                    .resolve_position(&register, addressable, peripheral, machine)
                                     .to_string()
                                     .as_str(),
                             ),
                             (
                                 "Length (bits)",
                                 field
-                                    .resolve_length(register, addressable, peripheral, machine)
+                                    .resolve_length(&register, addressable, peripheral, machine)
                                     .to_string()
                                     .as_str(),
                             ),
@@ -279,7 +282,7 @@ impl AsciiDocGenerator {
     #[allow(unused)]
     pub fn generate_register_set(
         &self,
-        registers: &HashMap<String, model::Register>,
+        registers: &HashMap<String, model::Referenceable<model::Register>>,
         addressable: &model::Addressable,
         peripheral: &model::Peripheral,
         machine: &model::Machine,

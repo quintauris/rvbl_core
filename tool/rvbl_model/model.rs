@@ -313,6 +313,25 @@ impl Described for Register {
     }
 }
 
+impl Resolve for Register {}
+
+impl Override for Register {
+    fn override_attributes(
+        &mut self,
+        _: &Option<String>,
+        offset: &Option<String>,
+        indexing: &Option<Indexing>,
+    ) {
+        if let Some(o) = offset {
+            self.offset = o.clone();
+        }
+
+        if let Some(i) = indexing {
+            self.indexing = Some(i.clone());
+        }
+    }
+}
+
 impl Register {
     #[allow(unused)]
     pub fn resolve_class(&self, addressable: &Addressable) -> RegisterClass {
@@ -428,7 +447,8 @@ pub struct Addressable {
     pub description: Option<Description>,
     pub offset: Option<String>,
     pub size: String,
-    pub registers: Option<HashMap<String, Register>>,
+    pub imports: Option<HashMap<String, Import>>,
+    pub registers: Option<HashMap<String, Referenceable<Register>>>,
     pub overlappings: Option<Overlappings>,
     pub read: Option<bool>,
     pub write: Option<bool>,
@@ -465,7 +485,19 @@ impl Override for Addressable {
     }
 }
 
-impl Resolve for Addressable {}
+impl Resolve for Addressable {
+    fn resolve(
+        &mut self,
+        meta_model_search_path: &PathBuf,
+        include_search_path: &PathBuf,
+    ) -> loader::Result<()> {
+        for (_, reference) in &mut self.registers.iter_mut().flatten() {
+            reference.resolve(&self.imports, meta_model_search_path, include_search_path)?;
+        }
+
+        Ok(())
+    }
+}
 
 impl Addressable {
     #[allow(unused)]
@@ -517,9 +549,16 @@ pub struct ReferencePeripheral {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct ReferenceRegister {
+    pub offset: Option<String>,
+    pub indexing: Option<Indexing>,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Reference {
     pub reference: String,
     pub peripheral: Option<ReferencePeripheral>,
+    pub register: Option<ReferenceRegister>,
     pub substitutions: Option<HashMap<String, String>>,
     pub vendor: Option<Vendor>,
 }
@@ -588,6 +627,10 @@ impl<T: Clone + DeserializeOwned + Resolve + Override> Referenceable<T> {
                 Ok(mut t) => {
                     if let Some(p) = &reference.peripheral {
                         t.override_attributes(&p.base, &None, &p.indexing);
+                    }
+
+                    if let Some(r) = &reference.register {
+                        t.override_attributes(&None, &r.offset, &r.indexing);
                     }
 
                     *self = Referenceable::<T>::Inplace(t);
@@ -797,6 +840,7 @@ mod tests {
         description: None,
         offset: None,
         size: String::new(),
+        imports: None,
         registers: None,
         overlappings: None,
         read: None,

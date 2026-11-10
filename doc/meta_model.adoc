@@ -273,6 +273,24 @@ In the above example, peripheral is instantiated as `uart0` with base address `0
 |N/A
 |__Mandatory__
 |Override indexing for peripheral
+
+|`register`
+|object
+|N/A
+|`{}`
+|Register-specific parameters to override
+
+|`register/offset`
+|string
+|Yes
+|Referenced register `offset` value
+|Override value for register offset
+
+|`register/indexing`
+|string
+|N/A
+|__Mandatory__
+|Override indexing for register
 |===
 
 === Constraints
@@ -319,11 +337,17 @@ Addressables constitute (possibly overlapping) segments of the global <<_machine
 |`true`
 |Whether the addressable entity is executable
 
+|`imports`
+|object
+|N/A
+|`{}`
+|Set of <<_import>>s, describing elements imported from other files
+
 |`registers`
 |object
 |N/A
 |`{}`
-|Set of <<_register>>s
+|Set of <<_register>>s (or <<_references>> to them)
 
 |`overlappings`
 |array of array of string

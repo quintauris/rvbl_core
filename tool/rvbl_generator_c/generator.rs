@@ -492,7 +492,16 @@ fn peripheral_header(peripheral: &model::Peripheral, machine: &model::Machine) -
         })
     {
         if addressable.1.registers.is_some() {
-            for (name, register) in addressable.1.registers.as_ref().unwrap().iter() {
+            for (name, register) in addressable
+                .1
+                .registers
+                .iter()
+                .flatten()
+                .filter_map(|(k, r)| match r.dereference() {
+                    Ok(a) => Some((k, a)),
+                    Err(_) => None,
+                })
+            {
                 match register.resolve_class(addressable.1) {
                     model::RegisterClass::MemoryMapped => peripheral_header_register(
                         (name, register),
