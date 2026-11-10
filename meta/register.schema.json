@@ -21,7 +21,7 @@
         "offset": {
             "type": "string"
         },
-        "volatile": {
+        "hw_volatile": {
             "type": "boolean"
         },
         "values": {

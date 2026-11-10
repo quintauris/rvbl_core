@@ -83,7 +83,7 @@
                             "type": "integer",
                             "multipleOf": 8
                         },
-                        "volatile": {
+                        "hw_volatile": {
                             "type": "boolean"
                         },
                         "access_policy": {

@@ -373,7 +373,7 @@ Addressables constitute (possibly overlapping) segments of the global <<_machine
 |Inherited from enclosing <<_peripheral>> or <<_machine>>
 |Default width for contained registers (see <<_register>> for details)
 
-|`default/register/volatile`
+|`default/register/hw_volatile`
 |boolean
 |N/A
 |`false`
@@ -397,7 +397,7 @@ ctr_addr_006:: `attributes/atomicity/reservability` must be one of `none`, `non_
 ctr_addr_007:: <<_indexing>> keys shall conform to the following regular expression: `[a-zA-Z]+[0-9a-zA-Z_]*`
 ctr_addr_008:: `default/register/class` values must be one of those supported by <<_register>>'s `class` attribute
 ctr_addr_009:: `default/register/width` values must be one of those supported by <<_register>>'s `width` attribute
-ctr_addr_010:: `default/register/volatile` values must be one of those supported by <<_register>>'s `volatile` attribute
+ctr_addr_010:: `default/register/hw_volatile` values must be one of those supported by <<_register>>'s `hw_volatile` attribute
 ctr_addr_011:: `default/register/access_policy` values must be one of those supported by <<_register>>'s `access_policy` attribute
 
 == Register
@@ -429,7 +429,7 @@ Registers are word-aligned data instances within <<_addressable>>s. How individu
 |__Mandatory__
 |Zero-based offset of the register within the <<_addressable>> that contains it, in bytes
 
-|`volatile`
+|`hw_volatile`
 |boolean
 |N/A
 |`false`
@@ -498,7 +498,7 @@ ctr_regs_009:: `on_reset/__reset-name__/mask` shall be valid base-2 (i.e. binary
 ctr_regs_010:: <<_indexing>> keys shall conform to the following regular expression: `[a-zA-Z]+[0-9a-zA-Z_]*`
 ctr_regs_011:: <<_reset_type>> keys shall conform to the following regular expression: `[a-zA-Z]+[0-9a-zA-Z_]*`
 ctr_regs_012:: <<_reset_type>> keys shall match <<_reset_type>>s defined at <<_machine>> level
-ctr_regs_013:: If `volatile` is `false`, then all children <<_field>>s `volatile` attribute shall be undefined or `false`
+ctr_regs_013:: If `hw_volatile` is `false`, then all children <<_field>>s `hw_volatile` attribute shall be undefined or `false`
 
 == Indexing
 
@@ -636,10 +636,10 @@ Fields segment <<_register>>s into atomoic data elements.
 |`[]`
 |Array of acceptable value ranges for the field
 
-|`volatile`
+|`hw_volatile`
 |boolean
 |N/A
-|Inherited from enclosing <<_register>> `volatile`
+|Inherited from enclosing <<_register>> `hw_volatile`
 |Whether the field is considered __volatile__, i.e. it can be arbitrarily changed by hardware without any explicit software interaction
 
 |`on_read`
@@ -705,7 +705,7 @@ ctr_fild_009:: `on_reset/__reset-name__` shall reference a valid <<_reset_type>>
 ctr_fild_010:: `on_reset/__reset-name__/value` shall be valid base-2 (i.e. binary) values, with no more bits than `length` bits
 ctr_fild_011:: `on_reset/__reset-name__/mask` shall be valid base-2 (i.e. binary) values, with no more bits than `length` bits
 ctr_fild_012:: <<_indexing>> keys shall conform to the following regular expression: `[a-zA-Z]+[0-9a-zA-Z_]*`
-ctr_fild_013:: If `volatile` is `true`, then the parent <<_register>> `volatile` attribute shall be also `true`
+ctr_fild_013:: If `hw_volatile` is `true`, then the parent <<_register>> `hw_volatile` attribute shall be also `true`
 ctr_fild_014:: Values defined by `on_reset/__reset-type__` shall not contradict those under enclosing <<_register>>'s `on_reset/__reset-type__`
 
 == Value
