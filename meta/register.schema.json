@@ -24,6 +24,14 @@
         "hw_volatile": {
             "type": "boolean"
         },
+        "imports": {
+            "type": "object",
+            "patternProperties": {
+                ".+": {
+                    "$ref": "import.schema.json"
+                }
+            }
+        },
         "values": {
             "type": "object",
             "patternProperties": {
@@ -36,7 +44,14 @@
             "type": "object",
             "patternProperties": {
                 ".+": {
-                    "$ref": "field.schema.json"
+                    "anyOf": [
+                        {
+                            "$ref": "field.schema.json"
+                        },
+                        {
+                            "$ref": "reference.schema.json"
+                        }
+                    ]
                 }
             }
         },

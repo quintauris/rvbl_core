@@ -275,7 +275,10 @@ fn peripheral_header_register(
     }
 
     if let Some(fields) = &register.1.fields {
-        for (name, field) in fields {
+        for (name, field) in fields.iter().filter_map(|(k, r)| match r.dereference() {
+            Ok(a) => Some((k.clone(), a.clone())),
+            Err(_) => None,
+        }) {
             let mut field_type = register_internal_type.clone();
             let mut field_type_prefix = register_internal_type_prefix.clone();
             let field_length = field.resolve_length(register.1, addressable.1, peripheral, machine);

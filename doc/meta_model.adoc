@@ -291,6 +291,18 @@ In the above example, peripheral is instantiated as `uart0` with base address `0
 |N/A
 |__Mandatory__
 |Override indexing for register
+
+|`field`
+|object
+|N/A
+|`{}`
+|Field-specific parameters to override
+
+|`field/position`
+|integer
+|N/A
+|Referenced field `position` value
+|Override value for field position
 |===
 
 === Constraints
@@ -459,6 +471,12 @@ Registers are word-aligned data instances within <<_addressable>>s. How individu
 |`false`
 |Whether the register is considered __volatile__, i.e. it can be arbitrarily changed by hardware without any explicit software interaction
 
+|`imports`
+|object
+|N/A
+|`{}`
+|Set of <<_import>>s, describing elements imported from other files
+
 |`values`
 |object
 |N/A
@@ -469,7 +487,7 @@ Registers are word-aligned data instances within <<_addressable>>s. How individu
 |object
 |N/A
 |`{}`
-|Set of <<_field>>s within the register
+|Set of <<_field>>s (or <<_references>> to them) within the register
 
 |`overlappings`
 |array of array of string

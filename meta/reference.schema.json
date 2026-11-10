@@ -37,6 +37,14 @@
                 }
             }
         },
+        "field": {
+            "type": "object",
+            "properties": {
+                "position": {
+                    "type": "string"
+                }
+            }
+        },
         "vendor": {
             "$ref": "vendor.schema.json"
         }

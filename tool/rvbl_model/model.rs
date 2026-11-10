@@ -136,6 +136,22 @@ impl Described for Field {
     }
 }
 
+impl Resolve for Field {}
+
+impl Override for Field {
+    fn override_attributes(
+        &mut self,
+        _: &Option<String>,
+        _: &Option<String>,
+        _: &Option<Indexing>,
+        position: &Option<i32>,
+    ) {
+        if let Some(p) = position {
+            self.position = *p;
+        }
+    }
+}
+
 impl Field {
     #[allow(unused)]
     pub fn resolve_position(
@@ -295,8 +311,9 @@ pub struct Register {
     pub offset: String,
     pub width: Option<u32>,
     pub hw_volatile: Option<bool>,
+    pub imports: Option<HashMap<String, Import>>,
     pub values: Option<HashMap<String, Value>>,
-    pub fields: Option<HashMap<String, Field>>,
+    pub fields: Option<HashMap<String, Referenceable<Field>>>,
     pub overlappings: Option<Overlappings>,
     pub access_policy: Option<RegisterAccessPolicy>,
     pub on_reset: Option<HashMap<String, RegisterOnReset>>,
@@ -313,7 +330,19 @@ impl Described for Register {
     }
 }
 
-impl Resolve for Register {}
+impl Resolve for Register {
+    fn resolve(
+        &mut self,
+        meta_model_search_path: &PathBuf,
+        include_search_path: &PathBuf,
+    ) -> loader::Result<()> {
+        for (_, reference) in &mut self.fields.iter_mut().flatten() {
+            reference.resolve(&self.imports, meta_model_search_path, include_search_path)?;
+        }
+
+        Ok(())
+    }
+}
 
 impl Override for Register {
     fn override_attributes(
@@ -321,6 +350,7 @@ impl Override for Register {
         _: &Option<String>,
         offset: &Option<String>,
         indexing: &Option<Indexing>,
+        _: &Option<i32>,
     ) {
         if let Some(o) = offset {
             self.offset = o.clone();
@@ -362,7 +392,8 @@ impl Register {
             .fields
             .iter()
             .flatten()
-            .filter_map(|(_, f)| f.hw_volatile)
+            .filter_map(|(_, r)| r.dereference().ok())
+            .filter_map(|f| f.hw_volatile)
             .collect();
 
         if field_volatilities.is_empty() {
@@ -398,6 +429,7 @@ pub trait Override {
         base: &Option<String>,
         offset: &Option<String>,
         indexing: &Option<Indexing>,
+        position: &Option<i32>,
     );
 }
 
@@ -474,6 +506,7 @@ impl Override for Addressable {
         _: &Option<String>,
         offset: &Option<String>,
         indexing: &Option<Indexing>,
+        _: &Option<i32>,
     ) {
         if let Some(o) = offset {
             self.offset = Some(o.clone());
@@ -555,10 +588,16 @@ pub struct ReferenceRegister {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct ReferenceField {
+    pub position: Option<i32>,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Reference {
     pub reference: String,
     pub peripheral: Option<ReferencePeripheral>,
     pub register: Option<ReferenceRegister>,
+    pub field: Option<ReferenceField>,
     pub substitutions: Option<HashMap<String, String>>,
     pub vendor: Option<Vendor>,
 }
@@ -626,11 +665,15 @@ impl<T: Clone + DeserializeOwned + Resolve + Override> Referenceable<T> {
             ) {
                 Ok(mut t) => {
                     if let Some(p) = &reference.peripheral {
-                        t.override_attributes(&p.base, &None, &p.indexing);
+                        t.override_attributes(&p.base, &None, &p.indexing, &None);
                     }
 
                     if let Some(r) = &reference.register {
-                        t.override_attributes(&None, &r.offset, &r.indexing);
+                        t.override_attributes(&None, &r.offset, &r.indexing, &None);
+                    }
+
+                    if let Some(f) = &reference.field {
+                        t.override_attributes(&None, &None, &None, &f.position);
                     }
 
                     *self = Referenceable::<T>::Inplace(t);
@@ -707,6 +750,7 @@ impl Override for Peripheral {
         base: &Option<String>,
         _: &Option<String>,
         indexing: &Option<Indexing>,
+        _: &Option<i32>,
     ) {
         if let Some(b) = base {
             self.base = Some(b.clone());
@@ -864,6 +908,7 @@ mod tests {
         offset: String::new(),
         width: None,
         hw_volatile: None,
+        imports: None,
         values: None,
         fields: None,
         overlappings: None,
@@ -1290,8 +1335,8 @@ mod tests {
         let mut field_a = FIELD.clone();
         let mut field_b = FIELD.clone();
         register.fields = Some(HashMap::from([
-            (String::from("a"), field_a.clone()),
-            (String::from("b"), field_b.clone()),
+            (String::from("a"), Referenceable::Inplace(field_a.clone())),
+            (String::from("b"), Referenceable::Inplace(field_b.clone())),
         ]));
         assert_eq!(register.resolve_volatility(&addressable), false);
 
@@ -1304,8 +1349,8 @@ mod tests {
         field_a.hw_volatile = Some(false);
         register.hw_volatile = Some(true);
         register.fields = Some(HashMap::from([
-            (String::from("a"), field_a.clone()),
-            (String::from("b"), field_b.clone()),
+            (String::from("a"), Referenceable::Inplace(field_a.clone())),
+            (String::from("b"), Referenceable::Inplace(field_b.clone())),
         ]));
         assert_eq!(register.resolve_volatility(&addressable), false);
 
@@ -1316,8 +1361,8 @@ mod tests {
         register.hw_volatile = Some(false);
         addressable.default.register.hw_volatile = Some(false);
         register.fields = Some(HashMap::from([
-            (String::from("a"), field_a.clone()),
-            (String::from("b"), field_b.clone()),
+            (String::from("a"), Referenceable::Inplace(field_a.clone())),
+            (String::from("b"), Referenceable::Inplace(field_b.clone())),
         ]));
         assert_eq!(register.resolve_volatility(&addressable), true);
     }

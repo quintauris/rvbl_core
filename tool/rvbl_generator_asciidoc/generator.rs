@@ -192,7 +192,16 @@ impl AsciiDocGenerator {
             templates::new_line(writer)?;
 
             if register.fields.is_some() {
-                for (name, field) in register.fields.iter().flatten() {
+                for (name, field) in
+                    register
+                        .fields
+                        .iter()
+                        .flatten()
+                        .filter_map(|(k, r)| match r.dereference() {
+                            Ok(a) => Some((k.clone(), a.clone())),
+                            Err(_) => None,
+                        })
+                {
                     templates::section(writer, level + 1, format!("Field {}", name).as_str())?;
                     templates::paragraph_optional(writer, &field.resolve_description())?;
                     templates::horizontal_list(
