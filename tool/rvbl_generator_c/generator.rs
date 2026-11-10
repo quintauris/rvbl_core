@@ -177,7 +177,7 @@ fn machine_instances_source(machine: &model::Machine) -> Result<()> {
                 Ok(a) => Some((k, a)),
                 Err(_) => None,
             })
-            .map(|(_, x)| x.resolve_base(&peripheral))
+            .map(|(_, x)| x.resolve_offset(&peripheral))
             .collect::<Vec<i64>>();
 
         if peripheral.parameters.is_some() {

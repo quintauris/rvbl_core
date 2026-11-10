@@ -538,7 +538,7 @@ impl Resolve for Addressable {
 
 impl Addressable {
     #[allow(unused)]
-    pub fn resolve_base(&self, peripheral: &Peripheral) -> i64 {
+    pub fn resolve_offset(&self, peripheral: &Peripheral) -> i64 {
         evaluator::parse_expression_option(&peripheral.base)
             + evaluator::parse_expression_option(&self.offset)
     }
