@@ -405,7 +405,10 @@ fn peripheral_header_register(
             &addressable.0,
             &register.0,
             &register_type,
-            &register.1.offset,
+            match &register.1.offset {
+                Some(s) => s,
+                None => "0",
+            },
             register.1.fields.is_some(),
             indexing_lower_bound,
             &indexing_upper_bound,
@@ -419,7 +422,10 @@ fn peripheral_header_register(
             &addressable.0,
             &register.0,
             &register_type,
-            &register.1.offset,
+            match &register.1.offset {
+                Some(s) => s,
+                None => "0",
+            },
             register.1.fields.is_some(),
             indexing_lower_bound,
             &indexing_upper_bound,

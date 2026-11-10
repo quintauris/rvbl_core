@@ -147,7 +147,13 @@ impl AsciiDocGenerator {
                         "Type",
                         &format!("{:?}", register.resolve_class(addressable)),
                     ),
-                    ("Offset", register.offset.as_str()),
+                    (
+                        "Offset",
+                        match &register.offset {
+                            Some(s) => &s,
+                            None => "0",
+                        },
+                    ),
                     (
                         "Width (bits)",
                         register

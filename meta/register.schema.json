@@ -92,8 +92,5 @@
         "vendor": {
             "$ref": "vendor.schema.json"
         }
-    },
-    "required": [
-        "offset"
-    ]
+    }
 }
