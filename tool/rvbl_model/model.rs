@@ -113,7 +113,7 @@ type FieldOnReset = ResetAction;
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Field {
     pub description: Option<Description>,
-    pub position: i32,
+    pub position: Option<i32>,
     pub length: Option<u32>,
     pub values: Option<HashMap<String, Value>>,
     pub ranges: Option<Vec<(String, String)>>,
@@ -147,7 +147,7 @@ impl Override for Field {
         position: &Option<i32>,
     ) {
         if let Some(p) = position {
-            self.position = *p;
+            self.position = Some(*p);
         }
     }
 }
@@ -161,12 +161,17 @@ impl Field {
         peripheral: &Peripheral,
         machine: &Machine,
     ) -> u32 {
-        match self.position < 0 {
-            true => {
-                (register.resolve_width(&addressable, &peripheral, &machine) as i32 + self.position)
-                    as u32
+        match self.position {
+            Some(p) => {
+                if p < 0 {
+                    let w = register.resolve_width(&addressable, &peripheral, &machine) as i32;
+
+                    (w + p) as u32
+                } else {
+                    p as u32
+                }
             }
-            false => self.position as u32,
+            None => 0,
         }
     }
 
@@ -312,7 +317,7 @@ type RegisterOnReset = ResetAction;
 pub struct Register {
     pub description: Option<Description>,
     pub class: Option<RegisterClass>,
-    pub offset: String,
+    pub offset: Option<String>,
     pub width: Option<u32>,
     pub hw_volatile: Option<bool>,
     pub imports: Option<HashMap<String, Import>>,
@@ -357,7 +362,7 @@ impl Override for Register {
         _: &Option<i32>,
     ) {
         if let Some(o) = offset {
-            self.offset = o.clone();
+            self.offset = Some(o.clone());
         }
 
         if let Some(i) = indexing {
@@ -909,7 +914,7 @@ mod tests {
     static REGISTER: Register = Register {
         description: None,
         class: None,
-        offset: String::new(),
+        offset: None,
         width: None,
         hw_volatile: None,
         imports: None,
@@ -923,7 +928,7 @@ mod tests {
     };
     static FIELD: Field = Field {
         description: None,
-        position: 0,
+        position: Some(0),
         length: None,
         hw_volatile: None,
         values: None,
@@ -965,15 +970,10 @@ mod tests {
             field.resolve_position(&register, &addressable, &peripheral, &machine),
             0
         );
-        field.position = 5;
+        field.position = Some(5);
         assert_eq!(
             field.resolve_position(&register, &addressable, &peripheral, &machine),
             5
-        );
-        field.position = -2;
-        assert_eq!(
-            field.resolve_position(&register, &addressable, &peripheral, &machine),
-            126
         );
     }
 
@@ -989,7 +989,7 @@ mod tests {
             field.resolve_length(&register, &addressable, &peripheral, &machine),
             128
         );
-        field.position = 16;
+        field.position = Some(16);
         assert_eq!(
             field.resolve_length(&register, &addressable, &peripheral, &machine),
             112

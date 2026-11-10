@@ -108,8 +108,5 @@
         "indexing": {
             "$ref": "indexing.schema.json"
         }
-    },
-    "required": [
-        "position"
-    ]
+    }
 }
