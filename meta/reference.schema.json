@@ -26,6 +26,17 @@
                 }
             }
         },
+        "register": {
+            "type": "object",
+            "properties": {
+                "offset": {
+                    "type": "string"
+                },
+                "indexing": {
+                    "$ref": "indexing.schema.json"
+                }
+            }
+        },
         "vendor": {
             "$ref": "vendor.schema.json"
         }

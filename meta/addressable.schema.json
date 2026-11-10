@@ -24,11 +24,26 @@
         "execute": {
             "type": "boolean"
         },
+        "imports": {
+            "type": "object",
+            "patternProperties": {
+                ".+": {
+                    "$ref": "import.schema.json"
+                }
+            }
+        },
         "registers": {
             "type": "object",
             "patternProperties": {
                 ".+": {
-                    "$ref": "register.schema.json"
+                    "anyOf": [
+                        {
+                            "$ref": "register.schema.json"
+                        },
+                        {
+                            "$ref": "reference.schema.json"
+                        }
+                    ]
                 }
             }
         },
