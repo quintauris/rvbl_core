@@ -61,7 +61,7 @@
         "overlappings": {
             "type": "object",
             "properties": {
-                "addressables": {
+                "memory_map": {
                     "$ref": "overlapping.schema.json"
                 },
                 "peripherals": {

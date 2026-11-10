@@ -677,7 +677,7 @@ impl Override for Peripheral {
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct MachineOverlappings {
-    pub memory_regions: Option<Overlappings>,
+    pub memory_map: Option<Overlappings>,
     pub peripherals: Option<Overlappings>,
 }
 

@@ -130,11 +130,11 @@ Machine is the root meta-model element, defining one or more peripherals sharing
 |`{}`
 |Overlapping <<_peripheral>>s and <<_addressable>>s
 
-|`overlappings/addressables`
+|`overlappings/memory_map`
 |array of array of string
 |N/A
 |`{}`
-|Groups of overlapping (i.e. that represent the same hardware resource) <<_addressable>>s
+|Groups of overlapping (i.e. that represent the same hardware resource) <<_addressable>>s under machine's `memory_map`
 
 |`overlappings/peripherals`
 |array of array of string
