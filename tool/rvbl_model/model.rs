@@ -243,11 +243,15 @@ impl IndexingList {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct IndexingDimensionRange {
+    pub lower: String,
+    pub upper: String,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct IndexingDimension {
     pub stride: Option<String>,
-    pub ranges: Vec<(String, String)>,
-    pub values: Option<HashMap<String, Value>>,
-    pub lists: Option<Vec<IndexingList>>,
+    pub ranges: Vec<IndexingDimensionRange>,
 }
 
 impl IndexingDimension {
@@ -1130,9 +1134,10 @@ mod tests {
                 String::from("dim0"),
                 IndexingDimension {
                     stride: Some(String::from("8")),
-                    ranges: vec![("0".into(), "1".into())],
-                    values: None,
-                    lists: None,
+                    ranges: vec![IndexingDimensionRange {
+                        lower: "0".into(),
+                        upper: "1".into(),
+                    }],
                 },
             )]),
         });
@@ -1158,9 +1163,10 @@ mod tests {
                 String::from("dim0"),
                 IndexingDimension {
                     stride: None,
-                    ranges: vec![("0".into(), "1".into())],
-                    values: None,
-                    lists: None,
+                    ranges: vec![IndexingDimensionRange {
+                        lower: "0".into(),
+                        upper: "1".into(),
+                    }],
                 },
             )]),
         });
@@ -1189,9 +1195,10 @@ mod tests {
                 String::from("dim0"),
                 IndexingDimension {
                     stride: None,
-                    ranges: vec![("0".into(), "1".into())],
-                    values: None,
-                    lists: None,
+                    ranges: vec![IndexingDimensionRange {
+                        lower: "0".into(),
+                        upper: "1".into(),
+                    }],
                 },
             )]),
         };

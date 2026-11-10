@@ -171,8 +171,14 @@ impl AsciiDocGenerator {
                 templates::horizontal_list(
                     writer,
                     &vec![
-                        ("Lower bound", dimension.ranges.first().unwrap().0.as_str()),
-                        ("Upper bound", dimension.ranges.first().unwrap().0.as_str()),
+                        (
+                            "Lower bound",
+                            dimension.ranges.first().unwrap().lower.as_str(),
+                        ),
+                        (
+                            "Upper bound",
+                            dimension.ranges.first().unwrap().upper.as_str(),
+                        ),
                         (
                             "Stride",
                             dimension

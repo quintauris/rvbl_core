@@ -241,8 +241,8 @@ fn peripheral_header_register(
     if let Some(indexing) = &register.1.indexing {
         let (_, dimension) = indexing.dimensions.iter().next().unwrap();
 
-        indexing_lower_bound = parse_expression(&dimension.ranges.first().unwrap().0);
-        indexing_upper_bound = dimension.ranges.first().unwrap().1.clone();
+        indexing_lower_bound = parse_expression(&dimension.ranges.first().unwrap().lower);
+        indexing_upper_bound = dimension.ranges.first().unwrap().upper.clone();
         indexing_stride = match &dimension.stride {
             Some(stride) => parse_expression(&stride),
             None => indexing_stride,
