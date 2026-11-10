@@ -735,7 +735,7 @@ Fields segment <<_register>>s into atomoic data elements.
 
 === Constraints
 
-ctr_fild_001:: `position` must be an integer number in the range `[0, w - 1]` where `w` is the value of the `width` attribute from the enclosing <<_register>>
+ctr_fild_001:: `position` must be an integer number in the range `[-w, w - 1]` where `w` is the value of the `width` attribute from the enclosing <<_register>>
 ctr_fild_002:: `length` must be an integer number in the range `[1, w - p]` where `w` is the value of the `width` attribute from the enclosing <<_register>>, and `p` is the value of `position`
 ctr_fild_003:: <<_value>> keys shall conform to the following regular expression: `[a-zA-Z]+[0-9a-zA-Z_]*`
 ctr_fild_004:: In `on_read` values `clear`, `set`, `toggle` and `modify` are mutually exclusive
