@@ -122,7 +122,7 @@ pub struct Field {
     pub on_reset: Option<HashMap<String, FieldOnReset>>,
     pub read_policy: Option<FieldReadPolicy>,
     pub write_policy: Option<FieldWritePolicy>,
-    pub volatile: Option<bool>,
+    pub hw_volatile: Option<bool>,
     pub vendor: Option<Vendor>,
     pub indexing: Option<Indexing>,
 }
@@ -170,7 +170,7 @@ impl Field {
 
     #[allow(unused)]
     pub fn resolve_volatility(&self) -> bool {
-        return self.volatile.unwrap_or(false);
+        return self.hw_volatile.unwrap_or(false);
     }
 
     #[allow(unused)]
@@ -294,7 +294,7 @@ pub struct Register {
     pub class: Option<RegisterClass>,
     pub offset: String,
     pub width: Option<u32>,
-    pub volatile: Option<bool>,
+    pub hw_volatile: Option<bool>,
     pub values: Option<HashMap<String, Value>>,
     pub fields: Option<HashMap<String, Field>>,
     pub overlappings: Option<Overlappings>,
@@ -343,12 +343,12 @@ impl Register {
             .fields
             .iter()
             .flatten()
-            .filter_map(|(_, f)| f.volatile)
+            .filter_map(|(_, f)| f.hw_volatile)
             .collect();
 
         if field_volatilities.is_empty() {
-            self.volatile
-                .unwrap_or(addressable.default.register.volatile.unwrap_or(false))
+            self.hw_volatile
+                .unwrap_or(addressable.default.register.hw_volatile.unwrap_or(false))
         } else {
             field_volatilities.iter().any(|x| *x)
         }
@@ -414,7 +414,7 @@ pub struct AddressableAtomicity {
 pub struct AddressableRegisterDefaults {
     pub class: RegisterClass,
     pub width: Option<u32>,
-    pub volatile: Option<bool>,
+    pub hw_volatile: Option<bool>,
     pub access_policy: Option<RegisterAccessPolicy>,
 }
 
@@ -809,7 +809,7 @@ mod tests {
             register: AddressableRegisterDefaults {
                 class: RegisterClass::MemoryMapped,
                 width: None,
-                volatile: Some(false),
+                hw_volatile: Some(false),
                 access_policy: Some(RegisterAccessPolicy::ReadOnly),
             },
         },
@@ -819,7 +819,7 @@ mod tests {
         class: None,
         offset: String::new(),
         width: None,
-        volatile: None,
+        hw_volatile: None,
         values: None,
         fields: None,
         overlappings: None,
@@ -832,7 +832,7 @@ mod tests {
         description: None,
         position: 0,
         length: None,
-        volatile: None,
+        hw_volatile: None,
         values: None,
         ranges: None,
         on_read: None,
@@ -914,10 +914,10 @@ mod tests {
 
         assert_eq!(field.resolve_volatility(), false);
 
-        field.volatile = Some(false);
+        field.hw_volatile = Some(false);
         assert_eq!(field.resolve_volatility(), false);
 
-        field.volatile = Some(true);
+        field.hw_volatile = Some(true);
         assert_eq!(field.resolve_volatility(), true);
     }
 
@@ -1219,25 +1219,25 @@ mod tests {
         let mut register = REGISTER.clone();
 
         // No fields, no explicit volatility, no addressable default:
-        // defaults to non-volatile.
-        addressable.default.register.volatile = None;
+        // defaults to non-hw_volatile.
+        addressable.default.register.hw_volatile = None;
         assert_eq!(register.resolve_volatility(&addressable), false);
 
         // No fields, no explicit volatility: falls back to the addressable
         // default.
-        addressable.default.register.volatile = Some(true);
+        addressable.default.register.hw_volatile = Some(true);
         assert_eq!(register.resolve_volatility(&addressable), true);
 
-        addressable.default.register.volatile = Some(false);
+        addressable.default.register.hw_volatile = Some(false);
         assert_eq!(register.resolve_volatility(&addressable), false);
 
         // No fields: the register's own volatility overrides the addressable
         // default.
-        register.volatile = Some(true);
+        register.hw_volatile = Some(true);
         assert_eq!(register.resolve_volatility(&addressable), true);
 
-        addressable.default.register.volatile = Some(true);
-        register.volatile = Some(false);
+        addressable.default.register.hw_volatile = Some(true);
+        register.hw_volatile = Some(false);
         assert_eq!(register.resolve_volatility(&addressable), false);
 
         // Fields present but none set their own volatility: still falls
@@ -1251,26 +1251,26 @@ mod tests {
         ]));
         assert_eq!(register.resolve_volatility(&addressable), false);
 
-        register.volatile = None;
+        register.hw_volatile = None;
         assert_eq!(register.resolve_volatility(&addressable), true);
 
-        // At least one field is explicitly non-volatile, but none is
-        // volatile: register-level volatility and addressable default are
+        // At least one field is explicitly non-hw_volatile, but none is
+        // hw_volatile: register-level volatility and addressable default are
         // ignored, result is false.
-        field_a.volatile = Some(false);
-        register.volatile = Some(true);
+        field_a.hw_volatile = Some(false);
+        register.hw_volatile = Some(true);
         register.fields = Some(HashMap::from([
             (String::from("a"), field_a.clone()),
             (String::from("b"), field_b.clone()),
         ]));
         assert_eq!(register.resolve_volatility(&addressable), false);
 
-        // At least one field is explicitly volatile: register is volatile,
+        // At least one field is explicitly hw_volatile: register is hw_volatile,
         // regardless of the register's own volatility and addressable
         // default.
-        field_b.volatile = Some(true);
-        register.volatile = Some(false);
-        addressable.default.register.volatile = Some(false);
+        field_b.hw_volatile = Some(true);
+        register.hw_volatile = Some(false);
+        addressable.default.register.hw_volatile = Some(false);
         register.fields = Some(HashMap::from([
             (String::from("a"), field_a.clone()),
             (String::from("b"), field_b.clone()),

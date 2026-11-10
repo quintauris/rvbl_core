@@ -99,7 +99,7 @@
                 "any"
             ]
         },
-        "volatile": {
+        "hw_volatile": {
             "type": "boolean"
         },
         "vendor": {
