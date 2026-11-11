@@ -498,6 +498,7 @@ pub struct Addressable {
     pub vendor: Option<Vendor>,
     pub indexing: Option<Indexing>,
     pub default: AddressableDefaults,
+    pub children: Option<HashMap<String, Addressable>>,
 }
 
 impl Described for Addressable {
@@ -910,6 +911,7 @@ mod tests {
                 access_policy: Some(RegisterAccessPolicy::ReadOnly),
             },
         },
+        children: None,
     };
     static REGISTER: Register = Register {
         description: None,
