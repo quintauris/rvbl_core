@@ -391,6 +391,36 @@ Addressables constitute (possibly overlapping) segments of the global <<_machine
 |`none`
 |Reservability (LR/SC) support
 
+|`attributes/misaligned_atomicity_granule`
+|string
+|No
+|`1`
+|Size of a misaligned atomicity granule, a naturally aligned power-of-two number of bytes
+
+|`attributes/memory_ordering`
+|string
+|No
+|`1`
+|Classification for purposes of ordering by the FENCE instruction and atomic-instruction ordering
+
+|`attributes/coherent`
+|boolean
+|N/A
+|`true`
+|Whether writes by one agent will eventually be made visible to other coherent agents in the system
+
+|`attributes/cacheable`
+|boolean
+|N/A
+|`true`
+|Whether accesses must be satisfied by the caches instead of the memory itself
+
+|`attributes/idempotent`
+|boolean
+|N/A
+|`true`
+|Whether reads and writes to an address region are idempotent
+
 |`indexing`
 |object
 |N/A
@@ -441,6 +471,9 @@ ctr_addr_008:: `default/register/class` values must be one of those supported by
 ctr_addr_009:: `default/register/width` values must be one of those supported by <<_register>>'s `width` attribute
 ctr_addr_010:: `default/register/hw_volatile` values must be one of those supported by <<_register>>'s `hw_volatile` attribute
 ctr_addr_011:: `default/register/access_policy` values must be one of those supported by <<_register>>'s `access_policy` attribute
+ctr_addr_012:: `attributes/misaligned_atomicity_granule` must be a power of two
+ctr_addr_013:: `attributes/memory_ordering` must be one of `main` or `io`
+
 
 == Register
 

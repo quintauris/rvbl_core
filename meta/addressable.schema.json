@@ -74,6 +74,25 @@
                             ]
                         }
                     }
+                },
+                "misaligned_atomicity_granule": {
+                    "type": "string"
+                },
+                "memory_ordering": {
+                    "type": "string",
+                    "enum": [
+                        "main",
+                        "io"
+                    ]
+                },
+                "coherent": {
+                    "type": "boolean"
+                },
+                "cacheable": {
+                    "type": "boolean"
+                },
+                "idempotent": {
+                    "type": "boolean"
                 }
             }
         },
