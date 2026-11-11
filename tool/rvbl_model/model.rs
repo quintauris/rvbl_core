@@ -443,7 +443,7 @@ pub trait Override {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
-pub enum AddressableAtomicityAmoSupport {
+pub enum AddressableAttributesAtomicityAmoSupport {
     #[serde(rename = "none")]
     None,
     #[serde(rename = "swap")]
@@ -455,7 +455,7 @@ pub enum AddressableAtomicityAmoSupport {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
-pub enum AddressableAtomicityReservability {
+pub enum AddressableAttributesAtomictiyReservability {
     #[serde(rename = "none")]
     None,
     #[serde(rename = "non_eventual")]
@@ -465,9 +465,27 @@ pub enum AddressableAtomicityReservability {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct AddressableAtomicity {
-    pub amo_support: Option<AddressableAtomicityAmoSupport>,
-    pub reservability: Option<AddressableAtomicityReservability>,
+pub enum AddressableAttributesAtomictiyMemoryOrdering {
+    #[serde(rename = "main")]
+    Main,
+    #[serde(rename = "io")]
+    Io,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct AddressableAttributesAtomicity {
+    pub amo_support: Option<AddressableAttributesAtomicityAmoSupport>,
+    pub reservability: Option<AddressableAttributesAtomictiyReservability>,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct AddressableAttributes {
+    pub atomicity: Option<AddressableAttributesAtomicity>,
+    pub misaligned_atomicity_granule: Option<u32>,
+    pub memory_ordering: Option<AddressableAttributesAtomictiyMemoryOrdering>,
+    pub coherent: Option<bool>,
+    pub cacheable: Option<bool>,
+    pub idempotent: Option<bool>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -494,7 +512,7 @@ pub struct Addressable {
     pub read: Option<bool>,
     pub write: Option<bool>,
     pub execute: Option<bool>,
-    pub atomicity: Option<AddressableAtomicity>,
+    pub attributes: Option<AddressableAttributes>,
     pub vendor: Option<Vendor>,
     pub indexing: Option<Indexing>,
     pub default: AddressableDefaults,
@@ -900,7 +918,7 @@ mod tests {
         read: None,
         write: None,
         execute: None,
-        atomicity: None,
+        attributes: None,
         vendor: None,
         indexing: None,
         default: AddressableDefaults {
