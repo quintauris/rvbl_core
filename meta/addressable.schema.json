@@ -120,6 +120,21 @@
             "required": [
                 "register"
             ]
+        },
+        "children": {
+            "type": "object",
+            "patternProperties": {
+                ".+": {
+                    "anyOf": [
+                        {
+                            "$ref": "addressable.schema.json"
+                        },
+                        {
+                            "$ref": "reference.schema.json"
+                        }
+                    ]
+                }
+            }
         }
     },
     "required": [

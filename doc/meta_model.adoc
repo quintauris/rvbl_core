@@ -420,6 +420,12 @@ Addressables constitute (possibly overlapping) segments of the global <<_machine
 |No
 |`read_write`
 |Default access policy for contained registers (see <<_register>> for details)
+
+|`children`
+|object
+|N/A
+|`{}`
+|Nested <<_addressable>>s.
 |===
 
 === Constraints
