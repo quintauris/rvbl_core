@@ -451,6 +451,12 @@ Addressables constitute (possibly overlapping) segments of the global <<_machine
 |`read_write`
 |Default access policy for contained registers (see <<_register>> for details)
 
+|`default/register/endianness`
+|string
+|No
+|Inherited from enclosing <<_peripheral>>
+|Default endianness for contained registers (see <<_register>> for details)
+
 |`children`
 |object
 |N/A
@@ -471,8 +477,9 @@ ctr_addr_008:: `default/register/class` values must be one of those supported by
 ctr_addr_009:: `default/register/width` values must be one of those supported by <<_register>>'s `width` attribute
 ctr_addr_010:: `default/register/hw_volatile` values must be one of those supported by <<_register>>'s `hw_volatile` attribute
 ctr_addr_011:: `default/register/access_policy` values must be one of those supported by <<_register>>'s `access_policy` attribute
-ctr_addr_012:: `attributes/misaligned_atomicity_granule` must be a power of two
-ctr_addr_013:: `attributes/memory_ordering` must be one of `main` or `io`
+ctr_addr_012:: `default/register/endianness` must be one of `little`, `big`
+ctr_addr_013:: `attributes/misaligned_atomicity_granule` must be a power of two
+ctr_addr_014:: `attributes/memory_ordering` must be one of `main` or `io`
 
 
 == Register
@@ -494,8 +501,8 @@ Registers are word-aligned data instances within <<_addressable>>s. How individu
 
 |`width`
 |integer
+|N/A
 |Inherited from enclosing <<_addressable>>
-|<<_addressable>> `word_size`
 |Number of bits in the register
 
 |`offset`
@@ -509,6 +516,12 @@ Registers are word-aligned data instances within <<_addressable>>s. How individu
 |N/A
 |`false`
 |Whether the register is considered __volatile__, i.e. it can be arbitrarily changed by hardware without any explicit software interaction
+
+|`endianness`
+|string
+|No
+|`little`
+|Whether the register is stored in little- or big-endian order
 
 |`imports`
 |object
@@ -580,6 +593,7 @@ ctr_regs_010:: <<_indexing>> keys shall conform to the following regular express
 ctr_regs_011:: <<_reset_type>> keys shall conform to the following regular expression: `[a-zA-Z]+[0-9a-zA-Z_]*`
 ctr_regs_012:: <<_reset_type>> keys shall match <<_reset_type>>s defined at <<_machine>> level
 ctr_regs_013:: If `hw_volatile` is `false`, then all children <<_field>>s `hw_volatile` attribute shall be undefined or `false`
+ctr_regs_014:: `endianness` must be one of `little`, `big`
 
 == Indexing
 
@@ -869,6 +883,31 @@ Peripherals are the building blocks of <<_machine>>s, providing the different st
 |N/A
 |`{}`
 |Set of <<_indexing>>s, each representing an array dimension
+
+|`architecture`
+|object
+|N/A
+|`{}`
+|CPU architecture attributes, if applicable
+
+|`architecture/instruction_set`
+|string
+|No
+|__Mandatory__
+|CPU instruction set
+
+|`architecture/extensions`
+|array of strings
+|N/A
+|__Mandatory__
+|CPU extensions
+
+|`architecture/endianness`
+|string
+|No
+|__Mandatory__
+|CPU endianness
+
 |===
 
 === Constraints
@@ -882,6 +921,8 @@ ctr_perp_006:: <<_addressable>> keys shall conform to the following regular expr
 ctr_perp_007:: <<_parameter>> keys shall conform to the following regular expression: `[a-zA-Z]+[0-9a-zA-Z_]*`
 ctr_perp_008:: All names under `overlappings` shall reference valid <<_addressable>> names under `addressables`
 ctr_perp_009:: <<_indexing>> keys shall conform to the following regular expression: `[a-zA-Z]+[0-9a-zA-Z_]*`
+ctr_perp_010:: `architecture/instruction_set` must be one of `RV32I`, `RV32E`, `RV64E`, `RV64I`
+ctr_perp_011:: `architecture/endianness` must be one of `little`, `big`
 
 == Parameter
 

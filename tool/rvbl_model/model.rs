@@ -310,6 +310,14 @@ pub enum RegisterClass {
     ControlStatus,
 }
 
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
+pub enum Endianness {
+    #[serde(rename = "little")]
+    Little,
+    #[serde(rename = "big")]
+    Big,
+}
+
 type Overlappings = Vec<Vec<String>>;
 type RegisterOnReset = ResetAction;
 
@@ -320,6 +328,7 @@ pub struct Register {
     pub offset: Option<String>,
     pub width: Option<u32>,
     pub hw_volatile: Option<bool>,
+    pub endianness: Option<Endianness>,
     pub imports: Option<HashMap<String, Import>>,
     pub values: Option<HashMap<String, Value>>,
     pub fields: Option<HashMap<String, Referenceable<Field>>>,
@@ -414,6 +423,18 @@ impl Register {
     }
 
     #[allow(unused)]
+    pub fn resolve_endianness(
+        &self,
+        addressable: &Addressable,
+        peripheral: &Peripheral,
+    ) -> Endianness {
+        match &self.endianness {
+            Some(e) => e.clone(),
+            None => addressable.resolve_endianness(peripheral),
+        }
+    }
+
+    #[allow(unused)]
     pub fn resolve_access_policy(&self, addressable: &Addressable) -> RegisterAccessPolicy {
         self.access_policy.clone().unwrap_or(
             addressable
@@ -494,6 +515,7 @@ pub struct AddressableRegisterDefaults {
     pub width: Option<u32>,
     pub hw_volatile: Option<bool>,
     pub access_policy: Option<RegisterAccessPolicy>,
+    pub endianness: Option<Endianness>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -565,6 +587,14 @@ impl Addressable {
     pub fn resolve_offset(&self, peripheral: &Peripheral) -> i64 {
         evaluator::parse_expression_option(&peripheral.base)
             + evaluator::parse_expression_option(&self.offset)
+    }
+
+    #[allow(unused)]
+    pub fn resolve_endianness(&self, peripheral: &Peripheral) -> Endianness {
+        match &self.default.register.endianness {
+            Some(e) => e.clone(),
+            None => peripheral.resolve_endianness(),
+        }
     }
 }
 
@@ -735,6 +765,21 @@ impl<T: Clone + DeserializeOwned + Resolve + Override> Referenceable<T> {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
+pub enum PeripheralArchitectureInstructionSet {
+    RV32I,
+    RV32E,
+    RV64E,
+    RV64I,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct PeripheralArchitecture {
+    pub instruction_set: PeripheralArchitectureInstructionSet,
+    pub extensions: Vec<String>,
+    pub endianness: Endianness,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Peripheral {
     pub name: String,
     pub base: Option<String>,
@@ -747,6 +792,7 @@ pub struct Peripheral {
     pub parameters: Option<HashMap<String, Parameter>>,
     pub vendor: Option<Vendor>,
     pub indexing: Option<Indexing>,
+    pub architecture: Option<PeripheralArchitecture>,
 }
 
 impl Described for Peripheral {
@@ -786,6 +832,15 @@ impl Override for Peripheral {
 
         if let Some(i) = indexing {
             self.indexing = Some(i.clone());
+        }
+    }
+}
+
+impl Peripheral {
+    fn resolve_endianness(&self) -> Endianness {
+        match &self.architecture {
+            Some(a) => a.endianness.clone(),
+            None => Endianness::Little,
         }
     }
 }
@@ -907,6 +962,7 @@ mod tests {
         parameters: None,
         vendor: None,
         indexing: None,
+        architecture: None,
     });
     static ADDRESSABLE: Addressable = Addressable {
         description: None,
@@ -927,6 +983,7 @@ mod tests {
                 width: None,
                 hw_volatile: Some(false),
                 access_policy: Some(RegisterAccessPolicy::ReadOnly),
+                endianness: None,
             },
         },
         children: None,
@@ -937,6 +994,7 @@ mod tests {
         offset: None,
         width: None,
         hw_volatile: None,
+        endianness: None,
         imports: None,
         values: None,
         fields: None,
