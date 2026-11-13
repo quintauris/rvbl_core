@@ -129,6 +129,13 @@
                                 "write_once",
                                 "read_write_once"
                             ]
+                        },
+                        "endianness": {
+                            "type": "string",
+                            "enum": [
+                                "little",
+                                "big"
+                            ]
                         }
                     },
                     "required": [

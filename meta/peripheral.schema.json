@@ -59,6 +59,33 @@
         },
         "indexing": {
             "$ref": "indexing.schema.json"
+        },
+        "architecture": {
+            "type": "object",
+            "properties": {
+                "instruction_set": {
+                    "type": "string",
+                    "enum": [
+                        "RV32I",
+                        "RV32E",
+                        "RV64E",
+                        "RV64I"
+                    ]
+                },
+                "extensions": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "endianness": {
+                    "type": "string",
+                    "enum": [
+                        "little",
+                        "big"
+                    ]
+                }
+            }
         }
     },
     "required": [
