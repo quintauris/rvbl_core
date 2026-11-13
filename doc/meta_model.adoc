@@ -98,7 +98,7 @@ Machine is the root meta-model element, defining one or more peripherals sharing
 |integer
 |N/A
 |__Mandatory__
-|Default word size, in bits, of the machine (e.g. 32, 64)
+|Register size, unless otherwise specified by <<_peripheral>>, <<_addressable>> or <<_register>>, in bits (e.g. 32)
 
 |`max_transfer_size`
 |integer
@@ -533,13 +533,13 @@ Registers are word-aligned data instances within <<_addressable>>s. How individu
 |object
 |N/A
 |`{}`
-|Set of possible <<_value>>s for the register
+|Set of possible <<_value>>s for the register, mutually exclusive with `fields`
 
 |`fields`
 |object
 |N/A
 |`{}`
-|Set of <<_field>>s (or <<_references>> to them) within the register
+|Set of <<_field>>s (or <<_references>> to them) within the register, mutually exclusive with `values`, see. Fields names prefixed with `_reserved` (e.g. `_reserved0`, `_reserved_0`) shall be specially considered by model consumers (e.g. don't generate ccessor code, preserve value when updating other fields)
 
 |`overlappings`
 |array of array of string
@@ -594,6 +594,8 @@ ctr_regs_011:: <<_reset_type>> keys shall conform to the following regular expre
 ctr_regs_012:: <<_reset_type>> keys shall match <<_reset_type>>s defined at <<_machine>> level
 ctr_regs_013:: If `hw_volatile` is `false`, then all children <<_field>>s `hw_volatile` attribute shall be undefined or `false`
 ctr_regs_014:: `endianness` must be one of `little`, `big`
+ctr_regs_015:: `values` and `fields` shall not be defined toghether (i.e. both attributes are mutually exclusive)
+ctr_regs_016:: No field under `fields` shall be named `_reserved`
 
 == Indexing
 
@@ -607,7 +609,11 @@ Indexing allows declaration of model elements such as <<_peripheral>>s, <<_addre
 |string
 |No
 |__Mandatory__
-|Array layout
+|Determines disposition of elements in each dimension:
+
+ `rows` assumes row-based layout of elements, where the following formula determines the address of each element: `<dim0_stride>*<dim0_index> + <dim1_stride>*<dim1_index> + ... + <dimN_stride>*<dimN_index>`
+
+ `columns` assumes column-based layout of elements, where the following formula determines the address of each element: `<dimN_stride>*<dim0_index> + <dimN-1_stride>*<dim1_index> + ... + <dim0_stride>*<dimN_index>`
 
 |`dimensions`
 |object
@@ -618,7 +624,7 @@ Indexing allows declaration of model elements such as <<_peripheral>>s, <<_addre
 |`dimensions/__dimension-name__/stride`
 |string
 |Yes
-|Element size
+|__Mandatory__
 |Distance between entries, in bytes
 
 |`dimensions/__dimension-name__/ranges`
@@ -711,7 +717,7 @@ Fields segment <<_register>>s into atomoic data elements.
 |integer
 |N/A
 |__Mandatory__
-|Zero-based offset of the field within its containing register, in bits
+|Offset of the field within its containing register, where `0` is the less significant bit. Negative values indicate offset from the most significant bit (i.e. `-1` is the most significant bit). Model consumers shall consider automatically converting negative to absolute values (e.g. for field access efficient code generation)
 
 |`length`
 |integer
@@ -746,8 +752,8 @@ Fields segment <<_register>>s into atomoic data elements.
 |`on_write`
 |object
 |N/A
-|`set`
-|Key/value map of numeric values accepted by the field and their effect(s), also a restricted combination of `clear`, `set`, `toggle`, `modify` and `modify_external`
+|`modify`
+|Key/value map of numeric values accepted by the field (or just `any`)  and their effect(s), also a restricted combination of `clear`, `set`, `toggle`, `modify` and `modify_external`
 
 |`on_reset`
 |object
@@ -792,16 +798,17 @@ ctr_fild_001:: `position` must be an integer number in the range `[-w, w - 1]` w
 ctr_fild_002:: `length` must be an integer number in the range `[1, w - p]` where `w` is the value of the `width` attribute from the enclosing <<_register>>, and `p` is the value of `position`
 ctr_fild_003:: <<_value>> keys shall conform to the following regular expression: `[a-zA-Z]+[0-9a-zA-Z_]*`
 ctr_fild_004:: In `on_read` values `clear`, `set`, `toggle` and `modify` are mutually exclusive
-ctr_fild_005:: `on_write` keys shall be base-[2, 10, 16] (i.e. binary, decimal or hexadecimal) values
-ctr_fild_006:: In `on_write` values `clear`, `set`, `toggle` and `modify` are mutually exclusive
-ctr_fild_007:: Each element of `ranges` must be a 2-element array of strings that evaluate to integer numbers
-ctr_fild_008:: If both `values` and `ranges` are defined, values in `values` must all be contained by `ranges`
-ctr_fild_009:: `on_reset/__reset-name__` shall reference a valid <<_reset_type>> defined at <<_machine>> level
-ctr_fild_010:: `on_reset/__reset-name__/value` shall be valid base-2 (i.e. binary) values, with no more bits than `length` bits
-ctr_fild_011:: `on_reset/__reset-name__/mask` shall be valid base-2 (i.e. binary) values, with no more bits than `length` bits
-ctr_fild_012:: <<_indexing>> keys shall conform to the following regular expression: `[a-zA-Z]+[0-9a-zA-Z_]*`
-ctr_fild_013:: If `hw_volatile` is `true`, then the parent <<_register>> `hw_volatile` attribute shall be also `true`
-ctr_fild_014:: Values defined by `on_reset/__reset-type__` shall not contradict those under enclosing <<_register>>'s `on_reset/__reset-type__`
+ctr_fild_005:: `on_write` keys shall conform to one of the following regular expressions: `b[01]+` (binary value), `h[0-9a-fA-F]` (hexadecimal value), `d?[0-9]+` (decimal value) or `any` (any value)
+ctr_fild_006:: `on_write` keys shall either be a list of numerical values, or just `any`
+ctr_fild_007:: In `on_write` values `clear`, `set`, `toggle` and `modify` are mutually exclusive
+ctr_fild_008:: Each element of `ranges` must be a 2-element array of strings that evaluate to integer numbers
+ctr_fild_009:: If both `values` and `ranges` are defined, values in `values` must all be contained by `ranges`
+ctr_fild_010:: `on_reset/__reset-name__` shall reference a valid <<_reset_type>> defined at <<_machine>> level
+ctr_fild_011:: `on_reset/__reset-name__/value` shall be valid base-2 (i.e. binary) values, with no more bits than `length` bits
+ctr_fild_012:: `on_reset/__reset-name__/mask` shall be valid base-2 (i.e. binary) values, with no more bits than `length` bits
+ctr_fild_013:: <<_indexing>> keys shall conform to the following regular expression: `[a-zA-Z]+[0-9a-zA-Z_]*`
+ctr_fild_014:: If `hw_volatile` is `true`, then the parent <<_register>> `hw_volatile` attribute shall be also `true`
+ctr_fild_015:: Values defined by `on_reset/__reset-type__` shall not contradict those under enclosing <<_register>>'s `on_reset/__reset-type__`
 
 == Value
 
