@@ -18,16 +18,32 @@
         "peripheral": {
             "type": "object",
             "properties": {
-                "instance": {
-                    "type": "string"
-                },
                 "base": {
                     "type": "string"
+                },
+                "indexing": {
+                    "$ref": "indexing.schema.json"
                 }
-            },
-            "required": [
-                "instance"
-            ]
+            }
+        },
+        "register": {
+            "type": "object",
+            "properties": {
+                "offset": {
+                    "type": "string"
+                },
+                "indexing": {
+                    "$ref": "indexing.schema.json"
+                }
+            }
+        },
+        "field": {
+            "type": "object",
+            "properties": {
+                "position": {
+                    "type": "string"
+                }
+            }
         },
         "vendor": {
             "$ref": "vendor.schema.json"

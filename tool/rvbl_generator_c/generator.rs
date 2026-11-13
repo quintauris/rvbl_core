@@ -19,7 +19,7 @@ fn machine_header(machine: &model::Machine) -> Result<()> {
     let peripheral_types: HashSet<String> = machine
         .peripherals
         .iter()
-        .filter_map(|r| r.dereference().ok())
+        .filter_map(|(_, r)| r.dereference().ok())
         .map(|p| p.name.clone())
         .collect::<HashSet<String>>();
 
@@ -34,19 +34,22 @@ fn machine_header(machine: &model::Machine) -> Result<()> {
     templates::new_line(&mut writer)?;
     templates::new_line(&mut writer)?;
 
-    for addressable in machine
+    for (key, addressable) in machine
         .memory_map
         .iter()
-        .filter_map(|r| r.dereference().ok())
+        .filter_map(|(k, r)| match r.dereference() {
+            Ok(a) => Some((k, a)),
+            Err(_) => None,
+        })
     {
         templates::define(
             &mut writer,
-            &format!("rvbl_memory_region_{}_base", &addressable.name),
-            &format!("0x{:x}", parse_expression(&addressable.base)),
+            &format!("rvbl_memory_region_{}_base", &key),
+            &format!("0x{:x}", parse_expression_option(&addressable.offset)),
         )?;
         templates::define(
             &mut writer,
-            &format!("rvbl_memory_region_{}_size", &addressable.name),
+            &format!("rvbl_memory_region_{}_size", &key),
             &format!("{}", parse_expression(&addressable.size)),
         )?;
     }
@@ -71,7 +74,7 @@ fn machine_header(machine: &model::Machine) -> Result<()> {
     for peripheral in machine
         .peripherals
         .iter()
-        .filter_map(|r| r.dereference().ok())
+        .filter_map(|(_, r)| r.dereference().ok())
     {
         let default_instance = String::from("<unnamed instace>");
         let type_ = &peripheral.name;
@@ -114,12 +117,12 @@ fn configuration_header(machine: &model::Machine) -> Result<()> {
     templates::include(&mut writer, Path::new("rvbl/type/rvbl_types.h"))?;
     templates::new_line(&mut writer)?;
 
-    for parameter in machine.parameters.iter() {
+    for (name, parameter) in machine.parameters.iter() {
         match parameter.stage.as_str() {
             "compile" => templates::machine_compile_parameter(
                 &mut writer,
                 "=".repeat(2).as_str(),
-                parameter.name.as_str(),
+                name.as_str(),
                 machine.name.as_str(),
                 parameter.class.as_str(),
                 parse_expression_option(&parameter.value)
@@ -129,14 +132,14 @@ fn configuration_header(machine: &model::Machine) -> Result<()> {
             "link" => templates::machine_link_parameter(
                 &mut writer,
                 "=".repeat(2).as_str(),
-                parameter.name.as_str(),
+                name.as_str(),
                 machine.name.as_str(),
                 parameter.class.as_str(),
             )?,
             "run" => templates::machine_run_parameter(
                 &mut writer,
                 "=".repeat(2).as_str(),
-                parameter.name.as_str(),
+                name.as_str(),
                 machine.name.as_str(),
                 parameter.class.as_str(),
             )?,
@@ -162,7 +165,7 @@ fn machine_instances_source(machine: &model::Machine) -> Result<()> {
     for peripheral in machine
         .peripherals
         .iter()
-        .filter_map(|r| r.dereference().ok())
+        .filter_map(|(_, r)| r.dereference().ok())
     {
         let type_ = &peripheral.name;
         let default_instance = String::from("<unnamed instace>");
@@ -170,18 +173,28 @@ fn machine_instances_source(machine: &model::Machine) -> Result<()> {
         let mut initializers = peripheral
             .addressables
             .iter()
-            .filter_map(|r| r.dereference().ok())
-            .map(|x| x.resolve_base(&peripheral))
+            .filter_map(|(k, r)| match r.dereference() {
+                Ok(a) => Some((k, a)),
+                Err(_) => None,
+            })
+            .map(|(_, x)| x.resolve_offset(&peripheral))
             .collect::<Vec<i64>>();
 
         if peripheral.parameters.is_some() {
-            initializers.extend(peripheral.parameters.as_ref().unwrap().iter().map(|x| {
-                parse_expression(
-                    &x.value
-                        .as_ref()
-                        .unwrap_or(&DEFAULT_PARAMETER_VALUE.to_string()),
-                )
-            }));
+            initializers.extend(
+                peripheral
+                    .parameters
+                    .as_ref()
+                    .unwrap()
+                    .iter()
+                    .map(|(_, x)| {
+                        parse_expression(
+                            &x.value
+                                .as_ref()
+                                .unwrap_or(&DEFAULT_PARAMETER_VALUE.to_string()),
+                        )
+                    }),
+            );
         }
 
         let strings = initializers
@@ -203,8 +216,8 @@ fn machine_instances_source(machine: &model::Machine) -> Result<()> {
 }
 
 fn peripheral_header_register(
-    register: &model::Register,
-    addressable: &model::Addressable,
+    register: (&String, &model::Register),
+    addressable: (&String, &model::Addressable),
     peripheral: &model::Peripheral,
     peripheral_type: &String,
     machine: &model::Machine,
@@ -213,26 +226,23 @@ fn peripheral_header_register(
     let mut bit_fields: Vec<(String, String, u32, u32)> = vec![];
     let register_integer_type = format!(
         "rvbl_uint{}_t",
-        register.resolve_width(addressable, peripheral, machine)
+        register.1.resolve_width(addressable.1, peripheral, machine)
     );
     let mut register_internal_type = register_integer_type.clone();
     let mut register_internal_type_prefix = String::new();
-    let register_namespace = format!(
-        "rvbl_{}_{}_{}",
-        peripheral.name, addressable.name, register.name
-    );
+    let register_namespace = format!("rvbl_{}_{}_{}", peripheral.name, addressable.0, register.0);
     let register_type = format!("{register_namespace}_t");
-    let register_width = register.resolve_width(addressable, peripheral, machine);
+    let register_width = register.1.resolve_width(addressable.1, peripheral, machine);
 
     let mut indexing_lower_bound: i64 = 0;
     let mut indexing_upper_bound = String::from("0");
     let mut indexing_stride: i64 = (register_width / 8).into();
 
-    if let Some(indexing) = &register.indexing {
-        let dimension = indexing.dimensions.iter().next().unwrap();
+    if let Some(indexing) = &register.1.indexing {
+        let (_, dimension) = indexing.dimensions.iter().next().unwrap();
 
-        indexing_lower_bound = parse_expression(&dimension.ranges.first().unwrap().0);
-        indexing_upper_bound = dimension.ranges.first().unwrap().1.clone();
+        indexing_lower_bound = parse_expression(&dimension.ranges.first().unwrap().lower);
+        indexing_upper_bound = dimension.ranges.first().unwrap().upper.clone();
         indexing_stride = match &dimension.stride {
             Some(stride) => parse_expression(&stride),
             None => indexing_stride,
@@ -241,11 +251,11 @@ fn peripheral_header_register(
 
     templates::documentation_block(
         &mut writer,
-        format!("=== Register `{}`", register.name).as_str(),
+        format!("=== Register `{}`", register.0).as_str(),
     )?;
     templates::new_line(&mut writer)?;
 
-    if register.values.is_some() {
+    if register.1.values.is_some() {
         register_internal_type = format!("{register_namespace}_values_t");
         register_internal_type_prefix = String::from("enum");
         templates::enumeration(
@@ -254,22 +264,27 @@ fn peripheral_header_register(
             &register_internal_type,
             &format!("{register_namespace}_values"),
             &register
+                .1
                 .values
                 .as_ref()
                 .unwrap()
                 .iter()
-                .map(|v| (v.name.as_str(), v.value.as_str()))
+                .map(|(k, v)| (k.as_str(), v.value.as_str()))
                 .collect::<Vec<(&str, &str)>>(),
         )?;
     }
 
-    if let Some(fields) = &register.fields {
-        for field in fields {
+    if let Some(fields) = &register.1.fields {
+        for (name, field) in fields.iter().filter_map(|(k, r)| match r.dereference() {
+            Ok(a) => Some((k.clone(), a.clone())),
+            Err(_) => None,
+        }) {
             let mut field_type = register_internal_type.clone();
             let mut field_type_prefix = register_internal_type_prefix.clone();
-            let field_length = field.resolve_length(register, addressable, peripheral, machine);
-            let field_position = field.resolve_position(register, addressable, peripheral, machine);
-            let field_namespace = format!("{register_namespace}_{}", field.name);
+            let field_length = field.resolve_length(register.1, addressable.1, peripheral, machine);
+            let field_position =
+                field.resolve_position(register.1, addressable.1, peripheral, machine);
+            let field_namespace = format!("{register_namespace}_{}", name);
 
             if field.values.is_some() {
                 field_type = format!("{field_namespace}_t");
@@ -285,18 +300,20 @@ fn peripheral_header_register(
                         .as_ref()
                         .unwrap()
                         .iter()
-                        .map(|v| (v.name.as_str(), v.value.as_str()))
+                        .map(|(k, v)| (k.as_str(), v.value.as_str()))
                         .collect::<Vec<(&str, &str)>>(),
                 )?;
             }
 
             bit_fields.push((
                 format!("{field_type_prefix} {field_type}"),
-                field.name.clone(),
+                name.clone(),
                 field_position,
                 field_length,
             ));
         }
+
+        bit_fields.sort_by(|a, b| a.2.cmp(&b.2));
 
         {
             let mut bit_fields_with_unused: Vec<(String, String, u32, u32)> = vec![];
@@ -379,17 +396,20 @@ fn peripheral_header_register(
         &register_type,
     )?;
 
-    match register.resolve_class(addressable) {
+    match register.1.resolve_class(addressable.1) {
         model::RegisterClass::MemoryMapped => templates::memory_mapped_register(
             &mut writer,
             "=".repeat(4).as_str(),
             &peripheral.name,
             &peripheral_type,
-            &addressable.name,
-            &register.name,
+            &addressable.0,
+            &register.0,
             &register_type,
-            &register.offset,
-            register.fields.is_some(),
+            match &register.1.offset {
+                Some(s) => s,
+                None => "0",
+            },
+            register.1.fields.is_some(),
             indexing_lower_bound,
             &indexing_upper_bound,
             indexing_stride,
@@ -399,11 +419,14 @@ fn peripheral_header_register(
             "=".repeat(4).as_str(),
             &peripheral.name,
             &peripheral_type,
-            &addressable.name,
-            &register.name,
+            &addressable.0,
+            &register.0,
             &register_type,
-            &register.offset,
-            register.fields.is_some(),
+            match &register.1.offset {
+                Some(s) => s,
+                None => "0",
+            },
+            register.1.fields.is_some(),
             indexing_lower_bound,
             &indexing_upper_bound,
             indexing_stride,
@@ -422,11 +445,14 @@ fn peripheral_header(peripheral: &model::Peripheral, machine: &model::Machine) -
     let mut initializers = peripheral
         .addressables
         .iter()
-        .filter_map(|r| r.dereference().ok())
+        .filter_map(|(k, r)| match r.dereference() {
+            Ok(a) => Some((k, a)),
+            Err(_) => None,
+        })
         .map(|m| {
             (
                 "rvbl_uword_t".to_string(),
-                format!("{}_region_address", m.name),
+                format!("{}_region_address", m.0),
             )
         })
         .collect::<Vec<(String, String)>>();
@@ -447,12 +473,14 @@ fn peripheral_header(peripheral: &model::Peripheral, machine: &model::Machine) -
     templates::new_line(&mut writer)?;
 
     if peripheral.parameters.is_some() {
-        initializers.extend(peripheral.parameters.as_ref().unwrap().iter().map(|p| {
-            (
-                format!("rvbl_{}_t", p.class),
-                format!("{}_parameter", p.name),
-            )
-        }));
+        initializers.extend(
+            peripheral
+                .parameters
+                .as_ref()
+                .unwrap()
+                .iter()
+                .map(|(k, p)| (format!("rvbl_{}_t", p.class), format!("{}_parameter", k))),
+        );
     }
 
     templates::structure(
@@ -467,13 +495,25 @@ fn peripheral_header(peripheral: &model::Peripheral, machine: &model::Machine) -
     for addressable in peripheral
         .addressables
         .iter()
-        .filter_map(|r| r.dereference().ok())
+        .filter_map(|(k, r)| match r.dereference() {
+            Ok(a) => Some((k, a)),
+            Err(_) => None,
+        })
     {
-        if addressable.registers.is_some() {
-            for register in addressable.registers.as_ref().unwrap().iter() {
-                match register.resolve_class(addressable) {
+        if addressable.1.registers.is_some() {
+            for (name, register) in addressable
+                .1
+                .registers
+                .iter()
+                .flatten()
+                .filter_map(|(k, r)| match r.dereference() {
+                    Ok(a) => Some((k, a)),
+                    Err(_) => None,
+                })
+            {
+                match register.resolve_class(addressable.1) {
                     model::RegisterClass::MemoryMapped => peripheral_header_register(
-                        register,
+                        (name, register),
                         addressable,
                         peripheral,
                         &peripheral_type,
@@ -481,7 +521,7 @@ fn peripheral_header(peripheral: &model::Peripheral, machine: &model::Machine) -
                         &mut writer,
                     ),
                     model::RegisterClass::ControlStatus => peripheral_header_register(
-                        register,
+                        (name, register),
                         addressable,
                         peripheral,
                         &peripheral_type,
@@ -518,7 +558,7 @@ impl Generator for CGenerator {
         for peripheral in machine
             .peripherals
             .iter()
-            .filter_map(|r| r.dereference().ok())
+            .filter_map(|(_, r)| r.dereference().ok())
         {
             peripheral_header(&peripheral, machine)?
         }
@@ -536,7 +576,7 @@ impl Generator for CGenerator {
         for peripheral in machine
             .peripherals
             .iter()
-            .filter_map(|r| r.dereference().ok())
+            .filter_map(|(_, r)| r.dereference().ok())
         {
             paths.insert(format!("include/rvbl/machine/rvbl_{}.h", peripheral.name));
         }

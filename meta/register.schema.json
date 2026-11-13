@@ -6,9 +6,6 @@
     "title": "Register",
     "type": "object",
     "properties": {
-        "name": {
-            "type": "string"
-        },
         "description": {
             "$ref": "description.schema.json"
         },
@@ -24,19 +21,45 @@
         "offset": {
             "type": "string"
         },
-        "volatile": {
+        "hw_volatile": {
             "type": "boolean"
         },
+        "endianness": {
+            "type": "string",
+            "enum": [
+                "little",
+                "big"
+            ]
+        },
+        "imports": {
+            "type": "object",
+            "patternProperties": {
+                ".+": {
+                    "$ref": "import.schema.json"
+                }
+            }
+        },
         "values": {
-            "type": "array",
-            "items": {
-                "$ref": "value.schema.json"
+            "type": "object",
+            "patternProperties": {
+                ".+": {
+                    "$ref": "value.schema.json"
+                }
             }
         },
         "fields": {
-            "type": "array",
-            "items": {
-                "$ref": "field.schema.json"
+            "type": "object",
+            "patternProperties": {
+                ".+": {
+                    "anyOf": [
+                        {
+                            "$ref": "field.schema.json"
+                        },
+                        {
+                            "$ref": "reference.schema.json"
+                        }
+                    ]
+                }
             }
         },
         "overlappings": {
@@ -53,13 +76,9 @@
             ]
         },
         "on_reset": {
-            "type": "array",
-            "items": {
-                "type": "object",
-                "properties": {
-                    "name": {
-                        "type": "string"
-                    },
+            "type": "object",
+            "patternProperties": {
+                ".+": {
                     "value": {
                         "type": "string",
                         "pattern": "^[01]+$"
@@ -67,12 +86,11 @@
                     "mask": {
                         "type": "string",
                         "pattern": "^[01]+$"
-                    }
-                },
-                "required": [
-                    "name",
-                    "value"
-                ]
+                    },
+                    "required": [
+                        "value"
+                    ]
+                }
             }
         },
         "indexing": {
@@ -81,9 +99,5 @@
         "vendor": {
             "$ref": "vendor.schema.json"
         }
-    },
-    "required": [
-        "name",
-        "offset"
-    ]
+    }
 }

@@ -16,42 +16,52 @@
             "type": "integer",
             "multipleOf": 8
         },
+        "max_transfer_size": {
+            "type": "integer",
+            "multipleOf": 8
+        },
         "imports": {
-            "type": "array",
-            "items": {
-                "$ref": "import.schema.json"
+            "type": "object",
+            "patternProperties": {
+                ".+": {
+                    "$ref": "import.schema.json"
+                }
             }
         },
         "memory_map": {
-            "type": "array",
-            "items": {
-                "anyOf": [
-                    {
-                        "$ref": "addressable.schema.json"
-                    },
-                    {
-                        "$ref": "reference.schema.json"
-                    }
-                ]
+            "type": "object",
+            "patternProperties": {
+                ".+": {
+                    "anyOf": [
+                        {
+                            "$ref": "addressable.schema.json"
+                        },
+                        {
+                            "$ref": "reference.schema.json"
+                        }
+                    ]
+                }
             }
         },
         "peripherals": {
-            "type": "array",
-            "items": {
-                "anyOf": [
-                    {
-                        "$ref": "peripheral.schema.json"
-                    },
-                    {
-                        "$ref": "reference.schema.json"
-                    }
-                ]
+            "type": "object",
+            "patternProperties": {
+                ".+": {
+                    "anyOf": [
+                        {
+                            "$ref": "peripheral.schema.json"
+                        },
+                        {
+                            "$ref": "reference.schema.json"
+                        }
+                    ]
+                }
             }
         },
         "overlappings": {
             "type": "object",
             "properties": {
-                "addressables": {
+                "memory_map": {
                     "$ref": "overlapping.schema.json"
                 },
                 "peripherals": {
@@ -59,16 +69,20 @@
                 }
             }
         },
-        "resets": {
-            "type": "array",
-            "items": {
-                "$ref": "reset.schema.json"
+        "reset_types": {
+            "type": "object",
+            "patternProperties": {
+                ".+": {
+                    "$ref": "reset_type.schema.json"
+                }
             }
         },
         "parameters": {
-            "type": "array",
-            "items": {
-                "$ref": "parameter.schema.json"
+            "type": "object",
+            "patternProperties": {
+                ".+": {
+                    "$ref": "parameter.schema.json"
+                }
             }
         },
         "vendor": {
