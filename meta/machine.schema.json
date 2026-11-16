@@ -27,7 +27,31 @@
             "type": "object",
             "patternProperties": {
                 ".+": {
-                    "$ref": "import.schema.json"
+                    "anyOf": [
+                        {
+                            "$ref": "import.schema.json"
+                        },
+                        {
+                            "type": "object",
+                            "properties": {
+                                "peripheral": {
+                                    "$ref": "peripheral.schema.json"
+                                }
+                            },
+                            "maxProperties": 1,
+                            "minProperties": 1
+                        },
+                        {
+                            "type": "object",
+                            "properties": {
+                                "addressable": {
+                                    "$ref": "addressable.schema.json"
+                                }
+                            },
+                            "maxProperties": 1,
+                            "minProperties": 1
+                        }
+                    ]
                 }
             }
         },

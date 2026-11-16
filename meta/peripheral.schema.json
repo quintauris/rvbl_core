@@ -9,9 +9,6 @@
         "name": {
             "type": "string"
         },
-        "base": {
-            "type": "string"
-        },
         "description": {
             "$ref": "description.schema.json"
         },

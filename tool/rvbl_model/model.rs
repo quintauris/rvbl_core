@@ -619,10 +619,12 @@ impl Described for Parameter {
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Import {
-    pub file: String,
+    pub file: Option<String>,
     pub description: Option<Description>,
     pub substitutions: Option<HashMap<String, String>>,
     pub vendor: Option<Vendor>,
+    pub peripheral: Option<Peripheral>,
+    pub addressable: Option<Addressable>,
 }
 
 impl Described for Import {
@@ -675,32 +677,39 @@ impl<T: Clone + DeserializeOwned + Resolve + Override> Referenceable<T> {
         meta_model_search_path: &PathBuf,
         search_path: &PathBuf,
     ) -> loader::Result<T> {
+        let error_unsupported = Err(loader::Error::ValidationError(format!(
+            "In-line imports are not yet supported.",
+        )));
         match imports
             .iter()
             .flatten()
             .find(|(k, _)| **k == reference.reference)
         {
             Some((_, import)) => {
-                let mut dependencies: HashSet<PathBuf> = [].into();
-                let mut parameters = match &import.substitutions {
-                    Some(s) => s.clone(),
-                    None => HashMap::new(),
-                };
+                if let Some(file) = &import.file {
+                    let mut dependencies: HashSet<PathBuf> = [].into();
+                    let mut parameters = match &import.substitutions {
+                        Some(s) => s.clone(),
+                        None => HashMap::new(),
+                    };
 
-                match &reference.substitutions {
-                    Some(s) => {
-                        parameters.extend(s.into_iter().map(|(k, v)| (k.clone(), v.clone())));
+                    match &reference.substitutions {
+                        Some(s) => {
+                            parameters.extend(s.into_iter().map(|(k, v)| (k.clone(), v.clone())));
+                        }
+                        None => {}
                     }
-                    None => {}
-                }
 
-                loader::load_model::<T>(
-                    &PathBuf::from(&import.file),
-                    meta_model_search_path,
-                    search_path,
-                    &parameters,
-                    &mut dependencies,
-                )
+                    loader::load_model::<T>(
+                        &PathBuf::from(&file),
+                        meta_model_search_path,
+                        search_path,
+                        &parameters,
+                        &mut dependencies,
+                    )
+                } else {
+                    error_unsupported
+                }
             }
             None => Err(loader::Error::ValidationError(format!(
                 "Import \"{}\" not found.",
@@ -783,6 +792,7 @@ pub struct PeripheralArchitecture {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Peripheral {
     pub name: String,
+    #[serde(skip)]
     pub base: Option<String>,
     pub description: Option<Description>,
     pub instance: Option<String>,
@@ -792,6 +802,7 @@ pub struct Peripheral {
     pub overlappings: Option<Overlappings>,
     pub parameters: Option<HashMap<String, Parameter>>,
     pub vendor: Option<Vendor>,
+    #[serde(skip)]
     pub indexing: Option<Indexing>,
     pub architecture: Option<PeripheralArchitecture>,
     pub license: Option<String>,

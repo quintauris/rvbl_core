@@ -192,7 +192,22 @@ Imports allow bringing model elements defined in a separate file into the contex
   }
 ----
 
-Now `ns16550` which can be used by <<_reference>>s to produce `ns16550` instances under `peripherals`:
+Alternatively, `ns16550` can also be declared inline:
+
+----
+  "imports": {
+    "ns16550": {
+      "peripheral": {
+        "name": "uart_ns16550",
+        "addressables": {
+          ...
+        }
+      }
+    }
+  }
+----
+
+Now `ns16550`, no matter whether it  which can be used by <<_reference>>s to produce `ns16550` instances under `peripherals`:
 
 ----
   "uart0": {
@@ -210,14 +225,26 @@ Now `ns16550` which can be used by <<_reference>>s to produce `ns16550` instance
 |`file`
 |string
 |No
-|__Mandatory__
+|__Mandatory__ unless `peripheral` or `addressable` are defined
 |File containing the entity to import, relative to a search path determined by the tool consuming the model.
 
 |`substitutions`
 |object
 |N/A
-|__Mandatory__
+|`{}`
 |Key/value substitutions to apply to string values in the imported entity
+
+|`peripheral`
+|object
+|N/A
+|__Mandatory__ unless `file` or `addressable` are defined
+|In-line peripheral declaration, see <<_peripheral>>
+
+|`addressable`
+|object
+|N/A
+|__Mandatory__ unless `file` or `peripheral` are defined
+|In-line addressable declaration, see <<_addressable>>
 |===
 
 `substitutions` can be used to apply custom changes to the imported entity, for example:
@@ -236,6 +263,7 @@ will replace every occurence `$FOO` in `riscv/model/ns16550/model.json` string v
 === Constraints
 
 ctr_impr_001:: Keys within `substitutions` must conform to the following regular expression: `[A-Z]+[0-9a-zA-Z_]*`
+ctr_impr_002:: Keys `file`, `peripheral` and `addressable` are mutually exclusive
 
 == Reference
 
