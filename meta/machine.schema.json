@@ -87,6 +87,9 @@
         },
         "vendor": {
             "$ref": "vendor.schema.json"
+        },
+        "license": {
+            "type": "string"
         }
     },
     "required": [

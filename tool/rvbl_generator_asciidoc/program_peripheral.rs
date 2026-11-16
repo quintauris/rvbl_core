@@ -47,6 +47,7 @@ fn main() -> ExitCode {
                 reset_types: None,
                 parameters: HashMap::new(),
                 vendor: None,
+                license: None,
             };
 
             match generator.generate_peripheral(&peripheral, &machine) {

@@ -161,6 +161,9 @@
                     ]
                 }
             }
+        },
+        "license": {
+            "type": "string"
         }
     },
     "required": [

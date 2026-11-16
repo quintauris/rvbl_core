@@ -539,6 +539,7 @@ pub struct Addressable {
     pub indexing: Option<Indexing>,
     pub default: AddressableDefaults,
     pub children: Option<HashMap<String, Addressable>>,
+    pub license: Option<String>,
 }
 
 impl Described for Addressable {
@@ -793,6 +794,7 @@ pub struct Peripheral {
     pub vendor: Option<Vendor>,
     pub indexing: Option<Indexing>,
     pub architecture: Option<PeripheralArchitecture>,
+    pub license: Option<String>,
 }
 
 impl Described for Peripheral {
@@ -864,6 +866,7 @@ pub struct Machine {
     pub reset_types: Option<HashMap<String, ResetType>>,
     pub parameters: HashMap<String, Parameter>,
     pub vendor: Option<Vendor>,
+    pub license: Option<String>,
 }
 
 impl Described for Machine {
@@ -949,6 +952,7 @@ mod tests {
         reset_types: None,
         parameters: HashMap::new(),
         vendor: None,
+        license: None,
     });
     static PERIPHERAL: Lazy<Peripheral> = Lazy::new(|| Peripheral {
         name: String::new(),
@@ -963,6 +967,7 @@ mod tests {
         vendor: None,
         indexing: None,
         architecture: None,
+        license: None,
     });
     static ADDRESSABLE: Addressable = Addressable {
         description: None,
@@ -987,6 +992,7 @@ mod tests {
             },
         },
         children: None,
+        license: None,
     };
     static REGISTER: Register = Register {
         description: None,
@@ -1322,6 +1328,7 @@ mod tests {
             reset_types: None,
             parameters: HashMap::new(),
             vendor: None,
+            license: None,
         };
 
         // No explicit maximum transfer size: falls back to the word size.

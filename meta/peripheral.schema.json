@@ -86,6 +86,9 @@
                     ]
                 }
             }
+        },
+        "license": {
+            "type": "string"
         }
     },
     "required": [

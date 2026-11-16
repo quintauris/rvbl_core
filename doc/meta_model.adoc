@@ -153,6 +153,12 @@ Machine is the root meta-model element, defining one or more peripherals sharing
 |N/A
 |`{}`
 |Set of machine-level <<_parameter>>s
+
+|`license`
+|string
+|N/A
+|`<undefined>`
+|Reference to license applicable to the entity and its descendants (custom URL or https://spdx.org/licenses/[SPDX identifier])
 |===
 
 === Constraints
@@ -462,6 +468,12 @@ Addressables constitute (possibly overlapping) segments of the global <<_machine
 |N/A
 |`{}`
 |Nested <<_addressable>>s.
+
+|`license`
+|string
+|N/A
+|`<undefined>`
+|Reference to license applicable to the entity and its descendants (custom URL or https://spdx.org/licenses/[SPDX identifier])
 |===
 
 === Constraints
@@ -915,6 +927,11 @@ Peripherals are the building blocks of <<_machine>>s, providing the different st
 |__Mandatory__
 |CPU endianness
 
+|`license`
+|string
+|N/A
+|`<undefined>`
+|Reference to license applicable to the entity and its descendants (custom URL or https://spdx.org/licenses/[SPDX identifier])
 |===
 
 === Constraints
