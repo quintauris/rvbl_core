@@ -94,6 +94,12 @@ Machine is the root meta-model element, defining one or more peripherals sharing
 |===
 |Name |Type |Expression |Default value |Description
 
+|`meta_model_version`
+|string
+|N/A
+|__Mandatory__
+|Meta-model version the machine model conforms to, following https://semver.org[Semantic Versioning 2.0.0]
+
 |`word_size`
 |integer
 |N/A

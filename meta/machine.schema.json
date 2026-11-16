@@ -9,6 +9,9 @@
         "name": {
             "type": "string"
         },
+        "meta_model_version": {
+            "type": "string"
+        },
         "description": {
             "$ref": "description.schema.json"
         },
@@ -94,6 +97,7 @@
     },
     "required": [
         "name",
+        "meta_model_version",
         "word_size",
         "memory_map",
         "peripherals",

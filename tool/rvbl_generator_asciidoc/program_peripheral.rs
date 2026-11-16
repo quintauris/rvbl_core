@@ -37,6 +37,7 @@ fn main() -> ExitCode {
             let generator = generator::AsciiDocGenerator::default();
             let machine = Machine {
                 name: String::new(),
+                meta_model_version: String::new(),
                 description: None,
                 word_size: 32,
                 max_transfer_size: None,

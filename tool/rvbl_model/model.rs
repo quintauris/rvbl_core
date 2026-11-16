@@ -856,6 +856,7 @@ pub struct MachineOverlappings {
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Machine {
     pub name: String,
+    pub meta_model_version: String,
     pub description: Option<Description>,
     pub word_size: u32,
     pub max_transfer_size: Option<u32>,
@@ -942,6 +943,7 @@ mod tests {
     };
     static MACHINE: Lazy<Machine> = Lazy::new(|| Machine {
         name: String::new(),
+        meta_model_version: String::new(),
         description: None,
         word_size: 128,
         max_transfer_size: None,
@@ -1318,6 +1320,7 @@ mod tests {
     fn test_machine_resolve_max_transfer_size() {
         let mut machine = Machine {
             name: String::new(),
+            meta_model_version: String::new(),
             description: None,
             word_size: 32,
             max_transfer_size: None,
