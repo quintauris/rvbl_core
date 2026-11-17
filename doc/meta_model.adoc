@@ -46,13 +46,13 @@ All meta-models elements (e.g. <<_machine>>, <<_peripheral>>, etc.) share the fo
 |`vendor`
 |object
 |N/A
-|`{}`
+|`null`
 |Vendor-specific data associated with the entity
 
 |`vendor/__vendor_name__`
 |object
 |N/A
-|`{}`
+|`null`
 |Vendor-specific data over a vendor-defined structure (e.g. `{"acme": {"custom_field": "custom_data"}}`)
 |===
 
@@ -126,49 +126,49 @@ Machine is the root meta-model element, defining one or more peripherals sharing
 |`declarations`
 |object
 |N/A
-|`{}`
+|`null`
 |Set of <<_declaration>>s, describing elements imported from other files
 
 |`memory_map`
 |object
 |N/A
 |__Mandatory__
-|Set of <<_addressable>>s (or <<_instance>>s to them) describing the machine's memory map
+|Set of <<_addressable>>s (or <<_instance>>s of them) describing the machine's memory map
 
 |`peripherals`
 |object
 |N/A
 |__Mandatory__
-|Set of <<_peripheral>>s (or <<_instance>>s to them) featured by the machine
+|Set of <<_peripheral>> <<_instance>>s featured by the machine
 
 |`overlappings`
 |object
 |N/A
-|`{}`
+|`null`
 |Overlapping <<_peripheral>>s and <<_addressable>>s
 
 |`overlappings/memory_map`
 |array of array of string
 |N/A
-|`{}`
+|`null`
 |Groups of overlapping (i.e. that represent the same hardware resource) <<_addressable>>s under machine's `memory_map`
 
 |`overlappings/peripherals`
 |array of array of string
 |N/A
-|`{}`
+|`null`
 |Groups of overlapping (i.e. that represent the same hardware resource) <<_peripheral>>s
 
 |`reset_types`
 |object
 |N/A
-|`{}`
+|`null`
 |Set of <<_reset_type>>s describing the machine's reset types
 
 |`parameters`
 |object
 |N/A
-|`{}`
+|`null`
 |Set of machine-level <<_parameter>>s
 
 |`license`
@@ -225,7 +225,7 @@ Alternatively, `ns16550` can also be declared inline:
   }
 ----
 
-Now `ns16550`, no matter whether it  which can be used by <<_instance>>s to produce `ns16550` instances under `peripherals`:
+Now `ns16550`, no matter whether it  which can be used by <<_instance>>s of produce `ns16550` instances under `peripherals`:
 
 ----
   "uart0": {
@@ -249,7 +249,7 @@ Now `ns16550`, no matter whether it  which can be used by <<_instance>>s to prod
 |`substitutions`
 |object
 |N/A
-|`{}`
+|`null`
 |Key/value substitutions to apply to string values in the imported entity
 
 |`peripheral`
@@ -323,13 +323,13 @@ In the above example, peripheral is instantiated as `uart0` with base address `0
 |`substitutions`
 |object
 |N/A
-|`{}`
+|`null`
 |Key/value substitutions to apply to string values in the instantiated entity
 
 |`peripheral`
 |object
 |N/A
-|`{}`
+|`null`
 |Peripheral-specific parameters to override
 
 |`peripheral/base`
@@ -341,13 +341,13 @@ In the above example, peripheral is instantiated as `uart0` with base address `0
 |`peripheral/indexing`
 |string
 |N/A
-|`{}`
+|`null`
 |Override indexing for peripheral
 
 |`addressable`
 |object
 |N/A
-|`{}`
+|`null`
 |Addressable-specific parameters to override
 
 |`addressable/offset`
@@ -359,13 +359,13 @@ In the above example, peripheral is instantiated as `uart0` with base address `0
 |`addressable/indexing`
 |string
 |N/A
-|`{}`
+|`null`
 |Override indexing for addressable
 
 |`register`
 |object
 |N/A
-|`{}`
+|`null`
 |Register-specific parameters to override
 
 |`register/offset`
@@ -377,13 +377,13 @@ In the above example, peripheral is instantiated as `uart0` with base address `0
 |`register/indexing`
 |string
 |N/A
-|`{}`
+|`null`
 |Override indexing for register
 
 |`field`
 |object
 |N/A
-|`{}`
+|`null`
 |Field-specific parameters to override
 
 |`field/position`
@@ -395,7 +395,7 @@ In the above example, peripheral is instantiated as `uart0` with base address `0
 |`field/indexing`
 |object
 |N/A
-|`{}`
+|`null`
 |Override indexing for register
 |===
 
@@ -449,19 +449,19 @@ Addressables constitute (possibly overlapping) segments of the global <<_machine
 |`declarations`
 |object
 |N/A
-|`{}`
+|`null`
 |Set of <<_declaration>>s, describing elements imported from other files
 
 |`registers`
 |object
 |N/A
-|`{}`
-|Set of <<_register>>s (or <<_instance>>s to them)
+|`null`
+|Set of <<_register>>s (or <<_instance>>s of them)
 
 |`overlappings`
 |array of array of string
 |N/A
-|`{}`
+|`null`
 |Groups of overlapping (i.e. that represent the same hardware resource) <<_register>>s
 
 |`attributes`
@@ -557,7 +557,7 @@ Addressables constitute (possibly overlapping) segments of the global <<_machine
 |`children`
 |object
 |N/A
-|`{}`
+|`null`
 |Nested <<_addressable>>s.
 
 |`license`
@@ -629,25 +629,25 @@ Registers are word-aligned data instances within <<_addressable>>s. How individu
 |`declarations`
 |object
 |N/A
-|`{}`
+|`null`
 |Set of <<_declaration>>s, describing elements imported from other files
 
 |`values`
 |object
 |N/A
-|`{}`
+|`null`
 |Set of possible <<_value>>s for the register, mutually exclusive with `fields`
 
 |`fields`
 |object
 |N/A
-|`{}`
-|Set of <<_field>>s (or <<_instance>>s to them) within the register, mutually exclusive with `values`, see. Fields names prefixed with `_reserved` (e.g. `_reserved0`, `_reserved_0`) shall be specially considered by model consumers (e.g. don't generate ccessor code, preserve value when updating other fields)
+|`null`
+|Set of <<_field>>s (or <<_instance>>s of them) within the register, mutually exclusive with `values`, see. Fields names prefixed with `_reserved` (e.g. `_reserved0`, `_reserved_0`) shall be specially considered by model consumers (e.g. don't generate ccessor code, preserve value when updating other fields)
 
 |`overlappings`
 |array of array of string
 |N/A
-|`{}`
+|`null`
 |Groups of overlapping (i.e. that represent the same hardware resource) <<_field>>s
 
 |`access_policy`
@@ -659,7 +659,7 @@ Registers are word-aligned data instances within <<_addressable>>s. How individu
 |`on_reset`
 |object
 |N/A
-|`{}`
+|`null`
 |Set of reset values/masks applicable to the register
 
 |`on_reset/__reset-type__/value`
@@ -677,7 +677,7 @@ Registers are word-aligned data instances within <<_addressable>>s. How individu
 |`indexing`
 |object
 |N/A
-|`{}`
+|`null`
 |Set of <<_indexing>>s, each representing an array dimension
 |===
 
@@ -831,7 +831,7 @@ Fields segment <<_register>>s into atomoic data elements.
 |`values`
 |object
 |N/A
-|`{}`
+|`null`
 |Set of possible <<_value>>s for the field
 
 |`ranges`
@@ -861,7 +861,7 @@ Fields segment <<_register>>s into atomoic data elements.
 |`on_reset`
 |object
 |N/A
-|`{}`
+|`null`
 |Set of reset values/masks applicable to the field
 
 |`on_reset/__reset-type__/value`
@@ -891,7 +891,7 @@ Fields segment <<_register>>s into atomoic data elements.
 |`indexing`
 |object
 |N/A
-|`{}`
+|`null`
 |Set of <<_indexing>>s, each representing an array dimension
 |===
 
@@ -955,7 +955,7 @@ Peripherals are the building blocks of <<_machine>>s, providing the different st
 |`declarations`
 |object
 |N/A
-|`{}`
+|`null`
 |Set of <<_declaration>>s, describing elements imported from other files
 
 |`word_size`
@@ -974,30 +974,30 @@ Peripherals are the building blocks of <<_machine>>s, providing the different st
 |object
 |N/A
 |__Mandatory__
-|Set of <<_addressable>>s (or <<_instance>>s to them) featured by the peripheral
+|Set of <<_addressable>>s (or <<_instance>>s of them) featured by the peripheral
 
 |`overlappings`
 |array of array of string
 |N/A
-|`{}`
+|`null`
 |Groups of overlapping (i.e. that represent the same hardware resource) <<_addressable>>s
 
 |`parameters`
 |object
 |N/A
-|`{}`
+|`null`
 |Set of peripheral-level <<_parameter>>s
 
 |`indexing`
 |object
 |N/A
-|`{}`
+|`null`
 |Set of <<_indexing>>s, each representing an array dimension
 
 |`architecture`
 |object
 |N/A
-|`{}`
+|`null`
 |CPU architecture attributes, if applicable
 
 |`architecture/instruction_set`
