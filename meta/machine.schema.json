@@ -23,35 +23,11 @@
             "type": "integer",
             "multipleOf": 8
         },
-        "imports": {
+        "declarations": {
             "type": "object",
             "patternProperties": {
                 ".+": {
-                    "anyOf": [
-                        {
-                            "$ref": "import.schema.json"
-                        },
-                        {
-                            "type": "object",
-                            "properties": {
-                                "peripheral": {
-                                    "$ref": "peripheral.schema.json"
-                                }
-                            },
-                            "maxProperties": 1,
-                            "minProperties": 1
-                        },
-                        {
-                            "type": "object",
-                            "properties": {
-                                "addressable": {
-                                    "$ref": "addressable.schema.json"
-                                }
-                            },
-                            "maxProperties": 1,
-                            "minProperties": 1
-                        }
-                    ]
+                    "$ref": "declaration.schema.json"
                 }
             }
         },
@@ -64,7 +40,7 @@
                             "$ref": "addressable.schema.json"
                         },
                         {
-                            "$ref": "reference.schema.json"
+                            "$ref": "instance.schema.json"
                         }
                     ]
                 }
@@ -74,14 +50,7 @@
             "type": "object",
             "patternProperties": {
                 ".+": {
-                    "anyOf": [
-                        {
-                            "$ref": "peripheral.schema.json"
-                        },
-                        {
-                            "$ref": "reference.schema.json"
-                        }
-                    ]
+                    "$ref": "instance.schema.json"
                 }
             }
         },

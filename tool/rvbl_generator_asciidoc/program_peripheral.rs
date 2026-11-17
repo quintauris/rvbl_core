@@ -41,7 +41,7 @@ fn main() -> ExitCode {
                 description: None,
                 word_size: 32,
                 max_transfer_size: None,
-                imports: None,
+                declarations: None,
                 memory_map: HashMap::new(),
                 peripherals: HashMap::new(),
                 overlappings: None,

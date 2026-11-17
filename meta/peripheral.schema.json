@@ -16,11 +16,11 @@
             "type": "integer",
             "multipleof": 8
         },
-        "imports": {
+        "declarations": {
             "type": "object",
             "patternProperties": {
                 ".+": {
-                    "$ref": "import.schema.json"
+                    "$ref": "declaration.schema.json"
                 }
             }
         },
@@ -33,7 +33,7 @@
                             "$ref": "addressable.schema.json"
                         },
                         {
-                            "$ref": "reference.schema.json"
+                            "$ref": "instance.schema.json"
                         }
                     ]
                 }

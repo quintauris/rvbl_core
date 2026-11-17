@@ -31,11 +31,11 @@
                 "big"
             ]
         },
-        "imports": {
+        "declarations": {
             "type": "object",
             "patternProperties": {
                 ".+": {
-                    "$ref": "import.schema.json"
+                    "$ref": "declaration.schema.json"
                 }
             }
         },
@@ -56,7 +56,7 @@
                             "$ref": "field.schema.json"
                         },
                         {
-                            "$ref": "reference.schema.json"
+                            "$ref": "instance.schema.json"
                         }
                     ]
                 }

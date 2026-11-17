@@ -329,7 +329,7 @@ pub struct Register {
     pub width: Option<u32>,
     pub hw_volatile: Option<bool>,
     pub endianness: Option<Endianness>,
-    pub imports: Option<HashMap<String, Import>>,
+    pub declarations: Option<HashMap<String, Declaration>>,
     pub values: Option<HashMap<String, Value>>,
     pub fields: Option<HashMap<String, Referenceable<Field>>>,
     pub overlappings: Option<Overlappings>,
@@ -355,7 +355,11 @@ impl Resolve for Register {
         include_search_path: &PathBuf,
     ) -> loader::Result<()> {
         for (_, reference) in &mut self.fields.iter_mut().flatten() {
-            reference.resolve(&self.imports, meta_model_search_path, include_search_path)?;
+            reference.resolve(
+                &self.declarations,
+                meta_model_search_path,
+                include_search_path,
+            )?;
         }
 
         Ok(())
@@ -528,7 +532,7 @@ pub struct Addressable {
     pub description: Option<Description>,
     pub offset: Option<String>,
     pub size: String,
-    pub imports: Option<HashMap<String, Import>>,
+    pub declarations: Option<HashMap<String, Declaration>>,
     pub registers: Option<HashMap<String, Referenceable<Register>>>,
     pub overlappings: Option<Overlappings>,
     pub read: Option<bool>,
@@ -576,7 +580,11 @@ impl Resolve for Addressable {
         include_search_path: &PathBuf,
     ) -> loader::Result<()> {
         for (_, reference) in &mut self.registers.iter_mut().flatten() {
-            reference.resolve(&self.imports, meta_model_search_path, include_search_path)?;
+            reference.resolve(
+                &self.declarations,
+                meta_model_search_path,
+                include_search_path,
+            )?;
         }
 
         Ok(())
@@ -618,16 +626,18 @@ impl Described for Parameter {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct Import {
+pub struct Declaration {
     pub file: Option<String>,
     pub description: Option<Description>,
     pub substitutions: Option<HashMap<String, String>>,
     pub vendor: Option<Vendor>,
     pub peripheral: Option<Peripheral>,
     pub addressable: Option<Addressable>,
+    pub register: Option<Peripheral>,
+    pub field: Option<Addressable>,
 }
 
-impl Described for Import {
+impl Described for Declaration {
     fn resolve_description(&self) -> Option<String> {
         match &self.description {
             Some(d) => Some(d.content.clone()),
@@ -637,28 +647,28 @@ impl Described for Import {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct ReferencePeripheral {
+pub struct InstancePeripheral {
     pub base: Option<String>,
     pub indexing: Option<Indexing>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct ReferenceRegister {
+pub struct InstanceRegister {
     pub offset: Option<String>,
     pub indexing: Option<Indexing>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct ReferenceField {
+pub struct InstanceField {
     pub position: Option<i32>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct Reference {
-    pub reference: String,
-    pub peripheral: Option<ReferencePeripheral>,
-    pub register: Option<ReferenceRegister>,
-    pub field: Option<ReferenceField>,
+pub struct Instance {
+    pub instance_of: String,
+    pub peripheral: Option<InstancePeripheral>,
+    pub register: Option<InstanceRegister>,
+    pub field: Option<InstanceField>,
     pub substitutions: Option<HashMap<String, String>>,
     pub vendor: Option<Vendor>,
 }
@@ -666,24 +676,24 @@ pub struct Reference {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(untagged)]
 pub enum Referenceable<T> {
-    Reference(Reference),
+    Reference(Instance),
     Inplace(T),
 }
 
 impl<T: Clone + DeserializeOwned + Resolve + Override> Referenceable<T> {
     fn lookup(
-        reference: &Reference,
-        imports: &Option<HashMap<String, Import>>,
+        instance: &Instance,
+        declarations: &Option<HashMap<String, Declaration>>,
         meta_model_search_path: &PathBuf,
         search_path: &PathBuf,
     ) -> loader::Result<T> {
         let error_unsupported = Err(loader::Error::ValidationError(format!(
-            "In-line imports are not yet supported.",
+            "In-line declarations are not yet supported.",
         )));
-        match imports
+        match declarations
             .iter()
             .flatten()
-            .find(|(k, _)| **k == reference.reference)
+            .find(|(k, _)| **k == instance.instance_of)
         {
             Some((_, import)) => {
                 if let Some(file) = &import.file {
@@ -693,7 +703,7 @@ impl<T: Clone + DeserializeOwned + Resolve + Override> Referenceable<T> {
                         None => HashMap::new(),
                     };
 
-                    match &reference.substitutions {
+                    match &instance.substitutions {
                         Some(s) => {
                             parameters.extend(s.into_iter().map(|(k, v)| (k.clone(), v.clone())));
                         }
@@ -713,21 +723,21 @@ impl<T: Clone + DeserializeOwned + Resolve + Override> Referenceable<T> {
             }
             None => Err(loader::Error::ValidationError(format!(
                 "Import \"{}\" not found.",
-                reference.reference
+                instance.instance_of
             ))),
         }
     }
 
     pub fn resolve(
         &mut self,
-        imports: &Option<HashMap<String, Import>>,
+        declarations: &Option<HashMap<String, Declaration>>,
         meta_model_search_path: &PathBuf,
         include_search_path: &PathBuf,
     ) -> loader::Result<()> {
         match self {
             Referenceable::Reference(reference) => match Referenceable::<T>::lookup(
                 reference,
-                imports,
+                declarations,
                 meta_model_search_path,
                 include_search_path,
             ) {
@@ -757,7 +767,7 @@ impl<T: Clone + DeserializeOwned + Resolve + Override> Referenceable<T> {
     pub fn dereference(&self) -> loader::Result<&T> {
         match self {
             Referenceable::Reference(reference) => Err(loader::Error::ValidationError(
-                String::from(format!("Broken reference: {}", reference.reference)),
+                String::from(format!("Broken reference: {}", reference.instance_of)),
             )),
             Referenceable::Inplace(value) => Ok(value),
         }
@@ -767,7 +777,7 @@ impl<T: Clone + DeserializeOwned + Resolve + Override> Referenceable<T> {
     pub fn dereference_mut(&mut self) -> loader::Result<&mut T> {
         match self {
             Referenceable::Reference(reference) => Err(loader::Error::ValidationError(
-                String::from(format!("Broken reference: {}", reference.reference)),
+                String::from(format!("Broken reference: {}", reference.instance_of)),
             )),
             Referenceable::Inplace(value) => Ok(value),
         }
@@ -797,7 +807,7 @@ pub struct Peripheral {
     pub description: Option<Description>,
     pub instance: Option<String>,
     pub word_size: Option<u32>,
-    pub imports: Option<HashMap<String, Import>>,
+    pub declarations: Option<HashMap<String, Declaration>>,
     pub addressables: HashMap<String, Referenceable<Addressable>>,
     pub overlappings: Option<Overlappings>,
     pub parameters: Option<HashMap<String, Parameter>>,
@@ -824,7 +834,11 @@ impl Resolve for Peripheral {
         include_search_path: &PathBuf,
     ) -> loader::Result<()> {
         for (_, reference) in &mut self.addressables {
-            reference.resolve(&self.imports, meta_model_search_path, include_search_path)?;
+            reference.resolve(
+                &self.declarations,
+                meta_model_search_path,
+                include_search_path,
+            )?;
         }
 
         Ok(())
@@ -871,7 +885,7 @@ pub struct Machine {
     pub description: Option<Description>,
     pub word_size: u32,
     pub max_transfer_size: Option<u32>,
-    pub imports: Option<HashMap<String, Import>>,
+    pub declarations: Option<HashMap<String, Declaration>>,
     pub memory_map: HashMap<String, Referenceable<Addressable>>,
     pub peripherals: HashMap<String, Referenceable<Peripheral>>,
     pub overlappings: Option<MachineOverlappings>,
@@ -897,11 +911,15 @@ impl Resolve for Machine {
         include_search_path: &PathBuf,
     ) -> loader::Result<()> {
         for (_, reference) in &mut self.memory_map {
-            reference.resolve(&self.imports, meta_model_search_path, include_search_path)?;
+            reference.resolve(
+                &self.declarations,
+                meta_model_search_path,
+                include_search_path,
+            )?;
         }
 
         for (key, reference) in &mut self.peripherals {
-            let mut reference_peripheral: Option<ReferencePeripheral> = None;
+            let mut reference_peripheral: Option<InstancePeripheral> = None;
 
             match reference {
                 Referenceable::Reference(r) => reference_peripheral = r.peripheral.clone(),
@@ -911,7 +929,7 @@ impl Resolve for Machine {
             match reference_peripheral {
                 Some(parameters) => {
                     reference.resolve(
-                        &self.imports,
+                        &self.declarations,
                         meta_model_search_path,
                         include_search_path,
                     )?;
@@ -958,7 +976,7 @@ mod tests {
         description: None,
         word_size: 128,
         max_transfer_size: None,
-        imports: None,
+        declarations: None,
         memory_map: HashMap::new(),
         peripherals: HashMap::new(),
         overlappings: None,
@@ -973,7 +991,7 @@ mod tests {
         instance: Some(String::new()),
         word_size: None,
         base: None,
-        imports: None,
+        declarations: None,
         addressables: HashMap::new(),
         overlappings: None,
         parameters: None,
@@ -986,7 +1004,7 @@ mod tests {
         description: None,
         offset: None,
         size: String::new(),
-        imports: None,
+        declarations: None,
         registers: None,
         overlappings: None,
         read: None,
@@ -1014,7 +1032,7 @@ mod tests {
         width: None,
         hw_volatile: None,
         endianness: None,
-        imports: None,
+        declarations: None,
         values: None,
         fields: None,
         overlappings: None,
@@ -1335,7 +1353,7 @@ mod tests {
             description: None,
             word_size: 32,
             max_transfer_size: None,
-            imports: None,
+            declarations: None,
             memory_map: HashMap::new(),
             peripherals: HashMap::new(),
             overlappings: None,

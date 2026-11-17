@@ -123,23 +123,23 @@ Machine is the root meta-model element, defining one or more peripherals sharing
 |__Mandatory__
 |Default transfer size, in bits, of the machine (e.g. 32, 64)
 
-|`imports`
+|`declarations`
 |object
 |N/A
 |`{}`
-|Set of <<_import>>s, describing elements imported from other files
+|Set of <<_declaration>>s, describing elements imported from other files
 
 |`memory_map`
 |object
 |N/A
 |__Mandatory__
-|Set of <<_addressable>>s (or <<_references>> to them) describing the machine's memory map
+|Set of <<_addressable>>s (or <<_instance>>s to them) describing the machine's memory map
 
 |`peripherals`
 |object
 |N/A
 |__Mandatory__
-|Set of <<_peripheral>>s (or <<_references>> to them) featured by the machine
+|Set of <<_peripheral>>s (or <<_instance>>s to them) featured by the machine
 
 |`overlappings`
 |object
@@ -182,7 +182,7 @@ Machine is the root meta-model element, defining one or more peripherals sharing
 
 ctr_mach_001:: `word_size` must be a multiple of 8
 ctr_mach_002:: `max_transfer_size` must be a multiple of 8
-ctr_mach_003:: <<_import>> keys shall conform to the following regular expression: `[a-zA-Z]+[0-9a-zA-Z_]*`
+ctr_mach_003:: <<_declaration>> keys shall conform to the following regular expression: `[a-zA-Z]+[0-9a-zA-Z_]*`
 ctr_mach_004:: <<_addressable>> keys shall conform to the following regular expression: `[a-zA-Z]+[0-9a-zA-Z_]*`
 ctr_mach_005:: <<_peripheral>> keys shall conform to the following regular expression: `[a-zA-Z]+[0-9a-zA-Z_]*`
 ctr_mach_006:: <<_parameter>> keys shall conform to the following regular expression: `[a-zA-Z]+[0-9a-zA-Z_]*`
@@ -190,15 +190,22 @@ ctr_mach_007:: All names under `overlappings/addressables` shall reference valid
 ctr_mach_008:: All names under `overlappings/peripherals` shall reference valid <<_peripheral>> instance names under `peripherals`
 ctr_mach_009:: <<_reset_types>> keys shall conform to the following regular expression: `[a-zA-Z]+[0-9a-zA-Z_]*`
 
-== Import
+== Declaration
 
-Imports allow bringing model elements defined in a separate file into the context where the import is made, under a user-defined name. For example, the follwing code brings the model entity defined in `riscv/model/ns16550/model.json` to the current context, under the name `ns16550`:
+It is possible to declare, either inline or `import` ing them, model elements in the following contexts:
+
+* <<_machine>>: <<_peripheral>>s and <<_addressable>>s
+* <<_peripheral>>: <<_addressable>>s
+* <<_addressables>>: <<_addressable>>s and <<_register>>s
+* <<_register>>: <<field>>s
+
+ under a user-defined name. For example, the follwing code brings the model entity defined in `riscv/model/ns16550/model.json` to the current context <<_machine>> context, under the name `ns16550`:
 
 
 ----
-  "imports": {
+  "declarations": {
     "ns16550": {
-      "file": "riscv/model/ns16550/model.json"
+      "import": "riscv/model/ns16550/model.json"
     }
   }
 ----
@@ -206,7 +213,7 @@ Imports allow bringing model elements defined in a separate file into the contex
 Alternatively, `ns16550` can also be declared inline:
 
 ----
-  "imports": {
+  "declarations": {
     "ns16550": {
       "peripheral": {
         "name": "uart_ns16550",
@@ -218,11 +225,11 @@ Alternatively, `ns16550` can also be declared inline:
   }
 ----
 
-Now `ns16550`, no matter whether it  which can be used by <<_reference>>s to produce `ns16550` instances under `peripherals`:
+Now `ns16550`, no matter whether it  which can be used by <<_instance>>s to produce `ns16550` instances under `peripherals`:
 
 ----
   "uart0": {
-    "reference": "ns16550",
+    "instance_of": "ns16550",
     "peripheral": {
       "base": "0x10000000"
     }
@@ -233,10 +240,10 @@ Now `ns16550`, no matter whether it  which can be used by <<_reference>>s to pro
 |===
 |Name |Type |Expression |Default value |Description
 
-|`file`
+|`import`
 |string
 |No
-|__Mandatory__ unless `peripheral` or `addressable` are defined
+|__Mandatory__ unless `peripheral`, `addressable`, `register` or `field` are defined
 |File containing the entity to import, relative to a search path determined by the tool consuming the model.
 
 |`substitutions`
@@ -248,22 +255,34 @@ Now `ns16550`, no matter whether it  which can be used by <<_reference>>s to pro
 |`peripheral`
 |object
 |N/A
-|__Mandatory__ unless `file` or `addressable` are defined
+|__Mandatory__ unless `import`, `addressable`, `register` or `field` are defined
 |In-line peripheral declaration, see <<_peripheral>>
 
 |`addressable`
 |object
 |N/A
-|__Mandatory__ unless `file` or `peripheral` are defined
+|__Mandatory__ unless `import`, `peripheral`, `register` or `field` are defined
 |In-line addressable declaration, see <<_addressable>>
+
+|`register`
+|object
+|N/A
+|__Mandatory__ unless `import` `peripheral`, `addressable` or `field` are defined
+|In-line register declaration, see <<_register>>
+
+|`field`
+|object
+|N/A
+|__Mandatory__ unless `import`, `peripheral`, `addressable` or `register` are defined
+|In-line field declaration, see <<_field>>
 |===
 
 `substitutions` can be used to apply custom changes to the imported entity, for example:
 
 ----
-  "imports": {
+  "declarations": {
     "ns16550": {
-      "file": "riscv/model/ns16550/model.json"
+      "import": "riscv/model/ns16550/model.json"
       "substitutions": {"FOO": "BAR"}
     }
   }
@@ -274,15 +293,15 @@ will replace every occurence `$FOO` in `riscv/model/ns16550/model.json` string v
 === Constraints
 
 ctr_impr_001:: Keys within `substitutions` must conform to the following regular expression: `[A-Z]+[0-9a-zA-Z_]*`
-ctr_impr_002:: Keys `file`, `peripheral` and `addressable` are mutually exclusive
+ctr_impr_002:: Keys `file`, `peripheral`, `addressable`, `register` and `field` are mutually exclusive
 
-== Reference
+== Instance
 
-References instantiate <<_import>>ed elements, possibly setting/overriding some of its uniquely identifying attributes such as peripheral base address or peripheral instance id:
+It is possible to instantiate <<_declaration>> elements, setting/overriding some of its uniquely identifying attributes such as peripheral base address or peripheral instance id:
 
 ----
   "uart0": {
-    "reference": "ns16550",
+    "instance_of": "ns16550",
     "peripheral": {
       "base": "0x10000000"
     }
@@ -295,17 +314,17 @@ In the above example, peripheral is instantiated as `uart0` with base address `0
 |===
 |Name |Type |Expression |Default value |Description
 
-|`reference`
+|`instance_of`
 |string
 |No
 |__Mandatory__
-|Name assigned to an <<_import>>ed entity
+|Name of a declaration in the context of the <<_declaration>>ed entity
 
 |`substitutions`
 |object
 |N/A
 |`{}`
-|Key/value substitutions to apply to string values in the referenced entity
+|Key/value substitutions to apply to string values in the instantiated entity
 
 |`peripheral`
 |object
@@ -316,14 +335,32 @@ In the above example, peripheral is instantiated as `uart0` with base address `0
 |`peripheral/base`
 |string
 |Yes
-|Referenced peripheral `base` value
+|Instanced peripheral `base` value
 |Override value for peripheral base address
 
 |`peripheral/indexing`
 |string
 |N/A
-|__Mandatory__
+|`{}`
 |Override indexing for peripheral
+
+|`addressable`
+|object
+|N/A
+|`{}`
+|Addressable-specific parameters to override
+
+|`addressable/offset`
+|string
+|Yes
+|Instanced addressable `offset` value
+|Override value for addressable offset
+
+|`addressable/indexing`
+|string
+|N/A
+|`{}`
+|Override indexing for addressable
 
 |`register`
 |object
@@ -334,13 +371,13 @@ In the above example, peripheral is instantiated as `uart0` with base address `0
 |`register/offset`
 |string
 |Yes
-|Referenced register `offset` value
+|Instanced register `offset` value
 |Override value for register offset
 
 |`register/indexing`
 |string
 |N/A
-|__Mandatory__
+|`{}`
 |Override indexing for register
 
 |`field`
@@ -352,15 +389,24 @@ In the above example, peripheral is instantiated as `uart0` with base address `0
 |`field/position`
 |integer
 |N/A
-|Referenced field `position` value
+|Instanced field `position` value
 |Override value for field position
+
+|`field/indexing`
+|object
+|N/A
+|`{}`
+|Override indexing for register
 |===
 
 === Constraints
 
-ctr_refr_001:: `reference` must be a `name` assigned to an <<_import>> in the context of the reference (<<_machine>> or <<_peripheral>>)
+ctr_refr_001:: `instance_of` must be a `name` assigned to an <<_declaration>> in the context of the instance (<<_machine>>, <<_peripheral>>, <<_addressable>> or <<_register>>)
 ctr_reft_002:: Keys within `substitutions` must conform to the following regular expression: `[A-Z]+[0-9a-zA-Z_]*`
 ctr_reft_003:: `peripheral/base` must evaluate to a signed integer number
+ctr_reft_004:: `addressable/offset` must evaluate to a signed integer number
+ctr_reft_005:: `register/offset` must evaluate to a signed integer number
+ctr_reft_006:: `field/position` must evaluate to a signed integer number
 
 == Addressable
 
@@ -400,17 +446,17 @@ Addressables constitute (possibly overlapping) segments of the global <<_machine
 |`true`
 |Whether the addressable entity is executable
 
-|`imports`
+|`declarations`
 |object
 |N/A
 |`{}`
-|Set of <<_import>>s, describing elements imported from other files
+|Set of <<_declaration>>s, describing elements imported from other files
 
 |`registers`
 |object
 |N/A
 |`{}`
-|Set of <<_register>>s (or <<_references>> to them)
+|Set of <<_register>>s (or <<_instance>>s to them)
 
 |`overlappings`
 |array of array of string
@@ -580,11 +626,11 @@ Registers are word-aligned data instances within <<_addressable>>s. How individu
 |`little`
 |Whether the register is stored in little- or big-endian order
 
-|`imports`
+|`declarations`
 |object
 |N/A
 |`{}`
-|Set of <<_import>>s, describing elements imported from other files
+|Set of <<_declaration>>s, describing elements imported from other files
 
 |`values`
 |object
@@ -596,7 +642,7 @@ Registers are word-aligned data instances within <<_addressable>>s. How individu
 |object
 |N/A
 |`{}`
-|Set of <<_field>>s (or <<_references>> to them) within the register, mutually exclusive with `values`, see. Fields names prefixed with `_reserved` (e.g. `_reserved0`, `_reserved_0`) shall be specially considered by model consumers (e.g. don't generate ccessor code, preserve value when updating other fields)
+|Set of <<_field>>s (or <<_instance>>s to them) within the register, mutually exclusive with `values`, see. Fields names prefixed with `_reserved` (e.g. `_reserved0`, `_reserved_0`) shall be specially considered by model consumers (e.g. don't generate ccessor code, preserve value when updating other fields)
 
 |`overlappings`
 |array of array of string
@@ -906,11 +952,11 @@ Peripherals are the building blocks of <<_machine>>s, providing the different st
 |Must be defined when instantiating under <<_machine>>`/peripherals`
 |Peripheral instance name, which differentiates it from other instantiations of the same peripheral
 
-|`imports`
+|`declarations`
 |object
 |N/A
 |`{}`
-|Set of <<_import>>s, describing elements imported from other files
+|Set of <<_declaration>>s, describing elements imported from other files
 
 |`word_size`
 |integer
@@ -928,7 +974,7 @@ Peripherals are the building blocks of <<_machine>>s, providing the different st
 |object
 |N/A
 |__Mandatory__
-|Set of <<_addressable>>s (or <<_references>> to them) featured by the peripheral
+|Set of <<_addressable>>s (or <<_instance>>s to them) featured by the peripheral
 
 |`overlappings`
 |array of array of string
@@ -985,7 +1031,7 @@ ctr_perp_001:: `name` must conform to the following regular expression: `[a-zA-Z
 ctr_perp_002:: `instance` must conform to the following regular expression: `[a-zA-Z]+[0-9a-zA-Z_]*`
 ctr_perp_003:: `word_size` must be a multiple of 8
 ctr_perp_004:: `base` must evaluate to an unsigned integer number
-ctr_perp_005:: <<_import>> keys shall conform to the following regular expression: `[a-zA-Z]+[0-9a-zA-Z_]*`
+ctr_perp_005:: <<_declaration>> keys shall conform to the following regular expression: `[a-zA-Z]+[0-9a-zA-Z_]*`
 ctr_perp_006:: <<_addressable>> keys shall conform to the following regular expression: `[a-zA-Z]+[0-9a-zA-Z_]*`
 ctr_perp_007:: <<_parameter>> keys shall conform to the following regular expression: `[a-zA-Z]+[0-9a-zA-Z_]*`
 ctr_perp_008:: All names under `overlappings` shall reference valid <<_addressable>> names under `addressables`
