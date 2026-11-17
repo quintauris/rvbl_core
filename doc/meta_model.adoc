@@ -99,7 +99,7 @@ Values resulting from expression evaluation, signed or unsigned, must have an in
 
 == Machine
 
-Machine is the root meta-model element, defining one or more peripherals sharing a global address space.
+Machine is the root meta-model element, defining one or more peripherals sharing a global address space, which starts at `0`.
 
 [cols="2,1,1,1,4"]
 |===
