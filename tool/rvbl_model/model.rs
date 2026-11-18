@@ -116,6 +116,8 @@ pub struct Field {
     pub position: Option<i32>,
     pub length: Option<u32>,
     pub values: Option<HashMap<String, Value>>,
+    pub read_values: Option<HashMap<String, Value>>,
+    pub write_values: Option<HashMap<String, Value>>,
     pub ranges: Option<Vec<(String, String)>>,
     pub on_read: Option<FieldOnRead>,
     pub on_write: Option<FieldOnWrite>,
@@ -328,7 +330,6 @@ pub struct Register {
     pub offset: Option<String>,
     pub width: Option<u32>,
     pub hw_volatile: Option<bool>,
-    pub endianness: Option<Endianness>,
     pub declarations: Option<HashMap<String, Declaration>>,
     pub values: Option<HashMap<String, Value>>,
     pub fields: Option<HashMap<String, Referenceable<Field>>>,
@@ -427,18 +428,6 @@ impl Register {
     }
 
     #[allow(unused)]
-    pub fn resolve_endianness(
-        &self,
-        addressable: &Addressable,
-        peripheral: &Peripheral,
-    ) -> Endianness {
-        match &self.endianness {
-            Some(e) => e.clone(),
-            None => addressable.resolve_endianness(peripheral),
-        }
-    }
-
-    #[allow(unused)]
     pub fn resolve_access_policy(&self, addressable: &Addressable) -> RegisterAccessPolicy {
         self.access_policy.clone().unwrap_or(
             addressable
@@ -519,7 +508,6 @@ pub struct AddressableRegisterDefaults {
     pub width: Option<u32>,
     pub hw_volatile: Option<bool>,
     pub access_policy: Option<RegisterAccessPolicy>,
-    pub endianness: Option<Endianness>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -596,14 +584,6 @@ impl Addressable {
     pub fn resolve_offset(&self, peripheral: &Peripheral) -> i64 {
         evaluator::parse_expression_option(&peripheral.base)
             + evaluator::parse_expression_option(&self.offset)
-    }
-
-    #[allow(unused)]
-    pub fn resolve_endianness(&self, peripheral: &Peripheral) -> Endianness {
-        match &self.default.register.endianness {
-            Some(e) => e.clone(),
-            None => peripheral.resolve_endianness(),
-        }
     }
 }
 
@@ -863,15 +843,6 @@ impl Override for Peripheral {
     }
 }
 
-impl Peripheral {
-    fn resolve_endianness(&self) -> Endianness {
-        match &self.architecture {
-            Some(a) => a.endianness.clone(),
-            None => Endianness::Little,
-        }
-    }
-}
-
 #[derive(Serialize, Deserialize, Debug)]
 pub struct MachineOverlappings {
     pub memory_map: Option<Overlappings>,
@@ -1019,7 +990,6 @@ mod tests {
                 width: None,
                 hw_volatile: Some(false),
                 access_policy: Some(RegisterAccessPolicy::ReadOnly),
-                endianness: None,
             },
         },
         children: None,
@@ -1031,7 +1001,6 @@ mod tests {
         offset: None,
         width: None,
         hw_volatile: None,
-        endianness: None,
         declarations: None,
         values: None,
         fields: None,
@@ -1047,6 +1016,8 @@ mod tests {
         length: None,
         hw_volatile: None,
         values: None,
+        read_values: None,
+        write_values: None,
         ranges: None,
         on_read: None,
         on_write: None,

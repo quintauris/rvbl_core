@@ -186,7 +186,7 @@ ctr_mach_003:: <<_declaration>> keys shall conform to the following regular expr
 ctr_mach_004:: <<_addressable>> keys shall conform to the following regular expression: `[a-zA-Z]+[0-9a-zA-Z_]*`
 ctr_mach_005:: <<_peripheral>> keys shall conform to the following regular expression: `[a-zA-Z]+[0-9a-zA-Z_]*`
 ctr_mach_006:: <<_parameter>> keys shall conform to the following regular expression: `[a-zA-Z]+[0-9a-zA-Z_]*`
-ctr_mach_007:: All names under `overlappings/addressables` shall reference valid <<_addressable>> names under `memory_map`
+ctr_mach_007:: All names under `overlappings/memory_map` shall reference valid <<_addressable>> names under `memory_map`
 ctr_mach_008:: All names under `overlappings/peripherals` shall reference valid <<_peripheral>> instance names under `peripherals`
 ctr_mach_009:: <<_reset_types>> keys shall conform to the following regular expression: `[a-zA-Z]+[0-9a-zA-Z_]*`
 
@@ -290,6 +290,8 @@ Now `ns16550`, no matter whether it  which can be used by <<_instance>>s of prod
 
 will replace every occurence `$FOO` in `riscv/model/ns16550/model.json` string values with `BAR`.
 
+`substitutions` key/value sets in nested `import`s are merged recursively i.e. new keys/values are added, values for existing keys from "parent" `import`s are replaced.
+
 === Constraints
 
 ctr_impr_001:: Keys within `substitutions` must conform to the following regular expression: `[A-Z]+[0-9a-zA-Z_]*`
@@ -324,7 +326,7 @@ In the above example, peripheral is instantiated as `uart0` with base address `0
 |object
 |N/A
 |`null`
-|Key/value substitutions to apply to string values in the instantiated entity
+|Key/value substitutions to apply to string values in the instantiated entity. These keys/values are merged (i.e. new keys/values are added, values for existing keys are replaced) with those from the <<_declaration>> referenced by `instance_of`. See <<_declaration>>s for more details on `substitutions`.
 
 |`peripheral`
 |object
@@ -403,9 +405,9 @@ In the above example, peripheral is instantiated as `uart0` with base address `0
 
 ctr_refr_001:: `instance_of` must be a `name` assigned to an <<_declaration>> in the context of the instance (<<_machine>>, <<_peripheral>>, <<_addressable>> or <<_register>>)
 ctr_reft_002:: Keys within `substitutions` must conform to the following regular expression: `[A-Z]+[0-9a-zA-Z_]*`
-ctr_reft_003:: `peripheral/base` must evaluate to a signed integer number
-ctr_reft_004:: `addressable/offset` must evaluate to a signed integer number
-ctr_reft_005:: `register/offset` must evaluate to a signed integer number
+ctr_reft_003:: `peripheral/base` must evaluate to an unsigned integer number
+ctr_reft_004:: `addressable/offset` must evaluate to an unsigned integer number
+ctr_reft_005:: `register/offset` must evaluate to an unsigned integer number
 ctr_reft_006:: `field/position` must evaluate to a signed integer number
 
 == Addressable
@@ -420,7 +422,11 @@ Addressables constitute (possibly overlapping) segments of the global <<_machine
 |string
 |Yes
 |__Mandatory__
-|Offset of the addressable entity, relative to the enclosing <<_peripheral>> `base` if applicable
+a|Offset of the addressable entity, relative to:
+
+* When enclosed by another <<_addressable>>, its `offset` value
+* When enclosed by a <<_peripheral>>, its `base` address
+* When enclosed by a <<_machine>>, `0
 
 |`size`
 |string
@@ -548,12 +554,6 @@ Addressables constitute (possibly overlapping) segments of the global <<_machine
 |`read_write`
 |Default access policy for contained registers (see <<_register>> for details)
 
-|`default/register/endianness`
-|string
-|No
-|Inherited from enclosing <<_peripheral>>
-|Default endianness for contained registers (see <<_register>> for details)
-
 |`children`
 |object
 |N/A
@@ -580,9 +580,8 @@ ctr_addr_008:: `default/register/class` values must be one of those supported by
 ctr_addr_009:: `default/register/width` values must be one of those supported by <<_register>>'s `width` attribute
 ctr_addr_010:: `default/register/hw_volatile` values must be one of those supported by <<_register>>'s `hw_volatile` attribute
 ctr_addr_011:: `default/register/access_policy` values must be one of those supported by <<_register>>'s `access_policy` attribute
-ctr_addr_012:: `default/register/endianness` must be one of `little`, `big`
-ctr_addr_013:: `attributes/misaligned_atomicity_granule` must be a power of two
-ctr_addr_014:: `attributes/memory_ordering` must be one of `main` or `io`
+ctr_addr_012:: `attributes/misaligned_atomicity_granule` must be a power of two
+ctr_addr_013:: `attributes/memory_ordering` must be one of `main` or `io`
 
 
 == Register
@@ -619,12 +618,6 @@ Registers are word-aligned data instances within <<_addressable>>s. How individu
 |N/A
 |`false`
 |Whether the register is considered __volatile__, i.e. it can be arbitrarily changed by hardware without any explicit software interaction
-
-|`endianness`
-|string
-|No
-|`little`
-|Whether the register is stored in little- or big-endian order
 
 |`declarations`
 |object
@@ -685,7 +678,7 @@ Registers are word-aligned data instances within <<_addressable>>s. How individu
 
 crt_regs_001:: `class` must be either `control_status` or `memory_mapped`
 ctr_regs_002:: `width` must be a multiple of 8
-ctr_regs_003:: `offset` must evaluate to a signed integer number
+ctr_regs_003:: `offset` must evaluate to an unsigned integer number in the range `[0, as - rs]` where `as` is the enclosing <<_addressable>> size, and `rs` is the register size, in bytes (`width / 8`)
 ctr_regs_004:: <<_value>> keys shall conform to the following regular expression: `[a-zA-Z]+[0-9a-zA-Z_]*`
 ctr_regs_005:: <<_field>> keys shall conform to the following regular expression: `[a-zA-Z]+[0-9a-zA-Z_]*`
 ctr_regs_006:: All names under `overlappings` shall reference valid <<_field>> names under `fields`
@@ -696,9 +689,7 @@ ctr_regs_010:: <<_indexing>> keys shall conform to the following regular express
 ctr_regs_011:: <<_reset_type>> keys shall conform to the following regular expression: `[a-zA-Z]+[0-9a-zA-Z_]*`
 ctr_regs_012:: <<_reset_type>> keys shall match <<_reset_type>>s defined at <<_machine>> level
 ctr_regs_013:: If `hw_volatile` is `false`, then all children <<_field>>s `hw_volatile` attribute shall be undefined or `false`
-ctr_regs_014:: `endianness` must be one of `little`, `big`
-ctr_regs_015:: `values` and `fields` shall not be defined toghether (i.e. both attributes are mutually exclusive)
-ctr_regs_016:: No field under `fields` shall be named `_reserved`
+ctr_regs_014:: `values` and `fields` shall not be defined toghether (i.e. both attributes are mutually exclusive)
 
 == Indexing
 
@@ -834,6 +825,18 @@ Fields segment <<_register>>s into atomoic data elements.
 |`null`
 |Set of possible <<_value>>s for the field
 
+|`read_values`
+|object
+|N/A
+|`null`
+|Set of possible readable <<_value>>s for the field
+
+|`write_values`
+|object
+|N/A
+|`null`
+|Set of possible writable <<_value>>s for the field
+
 |`ranges`
 |array
 |N/A
@@ -911,7 +914,8 @@ ctr_fild_011:: `on_reset/__reset-name__/value` shall be valid base-2 (i.e. binar
 ctr_fild_012:: `on_reset/__reset-name__/mask` shall be valid base-2 (i.e. binary) values, with no more bits than `length` bits
 ctr_fild_013:: <<_indexing>> keys shall conform to the following regular expression: `[a-zA-Z]+[0-9a-zA-Z_]*`
 ctr_fild_014:: If `hw_volatile` is `true`, then the parent <<_register>> `hw_volatile` attribute shall be also `true`
-ctr_fild_015:: Values defined by `on_reset/__reset-type__` shall not contradict those under enclosing <<_register>>'s `on_reset/__reset-type__`
+ctr_fild_015:: Sets of values defined by `read_values` and `values` shall be disjunct
+ctr_fild_016:: Sets of values defined by `write_values` and `values` shall be disjunct
 
 == Value
 

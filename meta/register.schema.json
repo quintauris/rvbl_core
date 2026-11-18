@@ -24,13 +24,6 @@
         "hw_volatile": {
             "type": "boolean"
         },
-        "endianness": {
-            "type": "string",
-            "enum": [
-                "little",
-                "big"
-            ]
-        },
         "declarations": {
             "type": "object",
             "patternProperties": {

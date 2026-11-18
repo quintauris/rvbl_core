@@ -23,6 +23,22 @@
                 }
             }
         },
+        "read_values": {
+            "type": "object",
+            "patternProperties": {
+                ".+": {
+                    "$ref": "value.schema.json"
+                }
+            }
+        },
+        "write_values": {
+            "type": "object",
+            "patternProperties": {
+                ".+": {
+                    "$ref": "value.schema.json"
+                }
+            }
+        },
         "ranges": {
             "type": "array",
             "items": {

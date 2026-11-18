@@ -12,9 +12,6 @@
         "description": {
             "$ref": "description.schema.json"
         },
-        "substitutions": {
-            "type": "object"
-        },
         "peripheral": {
             "type": "object",
             "properties": {
