@@ -67,7 +67,19 @@ ctr_comm_002:: `description/content_type` must be one of `text/plain`, `text/mar
 
 == Evaluated expressions
 
-Attributes marked `Yes` in the `Expression` column are strings that shall be evaluated by model consumers to produce an integer result (e.g. `4096 * 8` o `4K * 16`).
+Attributes marked `Yes` in the `Expression` column are strings that shall be evaluated as numeric expressions by model consumers to produce an integer result (e.g. `4096 * 8` o `4K * 16`).
+
+Supported number formats are:
+
+* Signed integer in base 10, optionally suffixed as follows:
+ * `K` multiply by `1024` (e.g. `4K = 4*1024 = 4096`)
+ * `M` multiply by `1048576`
+ * `G` multiply by `1073741824`
+ * `k` multiply by `1000` (e.g. `4k = 4*1000 = 4000`)
+ * `m` multiply by `1000000`
+ * `g` multiply by `1000000000`
+* Unsigned intenger in base 16, prefixed by `0x`
+* Signed decimal, using `.` as decimal separator
 
 Supported operators are:
 
@@ -79,21 +91,6 @@ Supported built-in functions are (both can take any number of parameters):
 
 * `min()`
 * `max()`
-
-The following number formats are supported:
-
-* Signed integer in base 10
-* Unsigned intenger in base 16, prefixed by `0x`
-* Signed decimal, using `.` as decimal separator
-
-The following number suffixes are supported:
-
-* `K` multiply by `1024` (e.g. `4K = 4*1024 = 4096`)
-* `M` multiply by `1048576`
-* `G` multiply by `1073741824`
-* `k` multiply by `1000` (e.g. `4k = 4*1000 = 4000`)
-* `m` multiply by `1000000`
-* `g` multiply by `1000000000`
 
 Values resulting from expression evaluation, signed or unsigned, must have an integral part representable in 63 bits or less. Decimal values will be rounded down to the closest integer.
 
@@ -1025,6 +1022,7 @@ Parameters attach custom data to code and other artifacts generated after <<_mac
 
 ctr_parm_001:: `value` must evaluate to an unsigned integer number if `class` is unsigned (i.e. `uint8`, `uint16`, `uint32`, `uint64` or `uint128`)
 ctr_parm_002:: `value` must evaluate to a signed integer number if `class` is signed (i.e. `int8`, `int16`, `int32`, `int64` or `int128`)
+ctr_parm_003:: once evaluated, `value` must fit into the number of bits declared by `class` (`8`, `16`, `32`, `64` or `128`), in 2's complement binary representation
 
 == Reset Type
 
