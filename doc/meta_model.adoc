@@ -11,7 +11,7 @@ Quintauris <www.quintauris.com> (generated {localdatetime})
 
 == Overview
 
-Quintauris' machine meta-model defines the structure and properties of machine models employed across the {project}.
+Quintauris' machine meta-model formally defines a set of meta-classes describing the structure and properties of machine models employed across the {project}. The present page is a human-readable definition, which is matched with a machine-readable definition in JSON-Schema format.
 
 The top-level machine meta-model is a composition of smaller, more purpose-specific meta-models. The following is a simplified, top-level description of the meta-model hierarchy:
 
@@ -19,7 +19,7 @@ image::meta_model.svg[]
 
 == Common Attributes
 
-All meta-models elements (e.g. <<_machine>>, <<_peripheral>>, etc.) share the following attributes:
+All meta-classes (e.g. <<_machine>>, <<_peripheral>>, etc.) share the following attributes:
 
 [cols="2,1,1,1,4"]
 |===
@@ -60,7 +60,7 @@ For conciseness and readability, these attributes are omitted in the following s
 
 === Constraints
 
-The following constraints apply to all meta-model elements:
+The following constraints apply to all meta-classes:
 
 ctr_comm_001:: __vendor_name__ must conform to the following regular expression: `[a-zA-Z]+[0-9a-zA-Z_]*`
 ctr_comm_002:: `description/content_type` must be one of `text/plain`, `text/markdown` or `text/html`
@@ -99,7 +99,7 @@ Values resulting from expression evaluation, signed or unsigned, must have an in
 
 == Machine
 
-Machine is the root meta-model element, defining one or more peripherals sharing a global address space, which starts at `0`.
+Machine is the root meta-class, defining one or more peripherals sharing a global address space, which starts at `0`.
 
 [cols="2,1,1,1,4"]
 |===
@@ -127,7 +127,7 @@ Machine is the root meta-model element, defining one or more peripherals sharing
 |object
 |N/A
 |`null`
-|Set of <<_declaration>>s, describing elements imported from other files
+|Set of <<_declaration>>s, describing model elements imported from other files
 
 |`memory_map`
 |object
@@ -456,7 +456,7 @@ a|Offset of the addressable entity, relative to:
 |object
 |N/A
 |`null`
-|Set of <<_declaration>>s, describing elements imported from other files
+|Set of <<_declaration>>s, describing model elements imported from other files
 
 |`registers`
 |object
@@ -623,7 +623,7 @@ Registers are word-aligned data instances within <<_addressable>>s. How individu
 |object
 |N/A
 |`null`
-|Set of <<_declaration>>s, describing elements imported from other files
+|Set of <<_declaration>>s, describing model elements imported from other files
 
 |`values`
 |object
@@ -693,7 +693,7 @@ ctr_regs_014:: `values` and `fields` shall not be defined toghether (i.e. both a
 
 == Indexing
 
-Indexing allows declaration of model elements such as <<_peripheral>>s, <<_addressable>>s and <<_register>>s as (possibly multi-dimensional) arrays.
+Indexing allows (possibly multi-dimensional) array-based instantiation of model elements such as <<_peripheral>>s, <<_addressable>>s and <<_register>>s.
 
 [cols="2,1,1,1,4"]
 |===
@@ -705,9 +705,9 @@ Indexing allows declaration of model elements such as <<_peripheral>>s, <<_addre
 |__Mandatory__
 |Determines disposition of elements in each dimension:
 
- `rows` assumes row-based layout of elements, where the following formula determines the address of each element: `<dim0_stride>*<dim0_index> + <dim1_stride>*<dim1_index> + ... + <dimN_stride>*<dimN_index>`
+ `rows` assumes row-based layout of elements, where the following formula determines the address of each array element: `<dim0_stride>*<dim0_index> + <dim1_stride>*<dim1_index> + ... + <dimN_stride>*<dimN_index>`
 
- `columns` assumes column-based layout of elements, where the following formula determines the address of each element: `<dimN_stride>*<dim0_index> + <dimN-1_stride>*<dim1_index> + ... + <dim0_stride>*<dimN_index>`
+ `columns` assumes column-based layout of elements, where the following formula determines the address of each array element: `<dimN_stride>*<dim0_index> + <dimN-1_stride>*<dim1_index> + ... + <dim0_stride>*<dimN_index>`
 
 |`dimensions`
 |object
@@ -727,59 +727,17 @@ Indexing allows declaration of model elements such as <<_peripheral>>s, <<_addre
 |__Mandatory__
 |List of indexing ranges
 
-|`dimensions/__dimension-name__/ranges/__array-index__`
-|array
-|N/A
-|__Mandatory__
-|Pair (i.e. exactly two items) of range bounds
-
-|`dimensions/__dimension-name__/ranges/__array-index__/0`
+|`dimensions/__dimension-name__/ranges/__array_index__/lower`
 |string
 |Yes
 |__Mandatory__
 |Lower bound of indexing range
 
-|`dimensions/__dimension-name__/ranges/__array-index__/1`
+|`dimensions/__dimension-name__/ranges/__array-index__/uppper`
 |string
 |Yes
 |__Mandatory__
 |Upper bound of indexing range
-
-|`dimensions/__dimension-name__/values`
-|string
-|Yes
-|__Mandatory__
-|List of named <<_value>>s within the indexing ranges
-
-|`dimensions/__dimension-name__/lists`
-|array
-|N/A
-|__Mandatory__
-|Lists of (possibly non-contiguous) elements within the dimension
-
-|`dimensions/__dimension-name__/lists/__array-index__/name`
-|string
-|No
-|__Mandatory__
-|List name
-
-|`dimensions/__dimension-name__/lists/__array-index__/start`
-|string
-|Yes
-|__Mandatory__
-|Starting index of the list
-
-|`dimensions/__dimension-name__/lists/__array-index__/count`
-|string
-|Yes
-|__Mandatory__
-|Number of elements in the list
-
-|`dimensions/__dimension-name__/lists/__array-index__/stride`
-|string
-|Yes
-|`1`
-|Stride of elements to choose from the list
 |===
 
 === Constraints
@@ -788,20 +746,13 @@ ctr_indx_001:: `layout` must be one of `rows` or `columns`
 ctr_indx_002:: `dimensions/__dimension-name__/name` must conform to the following regular expression: `[a-zA-Z]+[0-9a-zA-Z_]*`
 ctr_indx_003:: `dimensions/__dimension-name__/ranges` must contain one or more elements
 ctr_indx_004:: `dimensions/__dimension-name__/ranges/__array-index__` must be an array of exactly two string elements
-ctr_indx_005:: `dimensions/__dimension-name__/ranges/__array-index__/0` must evaluate to a signed integer number equal to or higher than zero
-ctr_indx_006:: `dimensions/__dimension-name__/ranges/__array-index__/1` must evaluate to a signed integer number equal to or higher than `dimensions/__array-index__/ranges/__array-index__/0`
+ctr_indx_005:: `dimensions/__dimension-name__/ranges/__array-index__/lower` must evaluate to an unsigned integer number equal to or higher than zero
+ctr_indx_006:: `dimensions/__dimension-name__/ranges/__array-index__/upper` must evaluate to an unsigned integer number equal to or higher than `dimensions/__array-index__/ranges/__array-index__/lower`
 ctr_indx_007:: dimension keys shall conform to the following regular expression: `[a-zA-Z]+[0-9a-zA-Z_]*`
-ctr_indx_008:: All `value` s under `values` must fall within one or more `ranges`
-ctr_indx_009:: No two `list` s can have the same `name`
-ctr_indx_010:: `dimensions/__dimension-name__/lists/__array-index__/name` must conform to the following regular expression: `[a-zA-Z]+[0-9a-zA-Z_]*`
-ctr_indx_011:: `dimensions/__dimension-name__/lists/__array-index__/start` must evaluate to a signed integer number equal to or higher than zero
-ctr_indx_012:: `dimensions/__dimension-name__/lists/__array-index__/count` must evaluate to a signed integer number equal to or higher than zero
-ctr_indx_013:: `dimensions/__dimension-name__/lists/__array-index__/stride` must evaluate to a signed integer number equal to or higher than zero
-ctr_indx_014:: All indexes specified by `dimensions/__array-index__/lists` must be contained by `dimensions/__array-index__/ranges`
 
 == Field
 
-Fields segment <<_register>>s into atomoic data elements.
+Fields segment <<_register>>s into atomoic data units.
 
 [cols="2,1,1,1,4"]
 |===
@@ -960,7 +911,7 @@ Peripherals are the building blocks of <<_machine>>s, providing the different st
 |object
 |N/A
 |`null`
-|Set of <<_declaration>>s, describing elements imported from other files
+|Set of <<_declaration>>s, describing model elements imported from other files
 
 |`word_size`
 |integer
