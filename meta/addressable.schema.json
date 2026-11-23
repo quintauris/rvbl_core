@@ -6,13 +6,10 @@
     "title": "addressable",
     "type": "object",
     "properties": {
-        "name": {
-            "type": "string"
-        },
         "description": {
             "$ref": "description.schema.json"
         },
-        "base": {
+        "offset": {
             "type": "string"
         },
         "size": {
@@ -27,10 +24,27 @@
         "execute": {
             "type": "boolean"
         },
+        "declarations": {
+            "type": "object",
+            "patternProperties": {
+                ".+": {
+                    "$ref": "declaration.schema.json"
+                }
+            }
+        },
         "registers": {
-            "type": "array",
-            "items": {
-                "$ref": "register.schema.json"
+            "type": "object",
+            "patternProperties": {
+                ".+": {
+                    "anyOf": [
+                        {
+                            "$ref": "register.schema.json"
+                        },
+                        {
+                            "$ref": "instance.schema.json"
+                        }
+                    ]
+                }
             }
         },
         "overlappings": {
@@ -60,6 +74,25 @@
                             ]
                         }
                     }
+                },
+                "misaligned_atomicity_granule": {
+                    "type": "string"
+                },
+                "memory_ordering": {
+                    "type": "string",
+                    "enum": [
+                        "main",
+                        "io"
+                    ]
+                },
+                "coherent": {
+                    "type": "boolean"
+                },
+                "cacheable": {
+                    "type": "boolean"
+                },
+                "idempotent": {
+                    "type": "boolean"
                 }
             }
         },
@@ -84,7 +117,7 @@
                             "type": "integer",
                             "multipleOf": 8
                         },
-                        "volatile": {
+                        "hw_volatile": {
                             "type": "boolean"
                         },
                         "access_policy": {
@@ -106,11 +139,27 @@
             "required": [
                 "register"
             ]
+        },
+        "children": {
+            "type": "object",
+            "patternProperties": {
+                ".+": {
+                    "anyOf": [
+                        {
+                            "$ref": "addressable.schema.json"
+                        },
+                        {
+                            "$ref": "instance.schema.json"
+                        }
+                    ]
+                }
+            }
+        },
+        "license": {
+            "type": "string"
         }
     },
     "required": [
-        "name",
-        "base",
         "size",
         "default"
     ]

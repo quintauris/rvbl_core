@@ -17,66 +17,33 @@
             "$ref": "description.schema.json"
         },
         "dimensions": {
-            "type": "array",
-            "items": {
-                "type": "object",
-                "properties": {
-                    "name": {
-                        "type": "string"
-                    },
+            "type": "object",
+            "patternProperties": {
+                ".+": {
                     "stride": {
                         "type": "string"
                     },
                     "ranges": {
                         "type": "array",
                         "items": {
-                            "type": "array",
-                            "items": {
-                                "type": "string"
-                            },
-                            "minItems": 2,
-                            "maxItems": 2
+                            "type": "object",
+                            "properties": {
+                                "lower": {
+                                    "type": "string"
+                                },
+                                "upper": {
+                                    "type": "string"
+                                }
+                            }
                         },
                         "minItems": 1
                     },
-                    "values": {
-                        "type": "array",
-                        "items": {
-                            "$ref": "value.schema.json"
-                        }
-                    },
-                    "lists": {
-                        "type": "array",
-                        "items": {
-                            "type": "object",
-                            "properties": {
-                                "name": {
-                                    "type": "string"
-                                },
-                                "start": {
-                                    "type": "string"
-                                },
-                                "count": {
-                                    "type": "string"
-                                },
-                                "stride": {
-                                    "type": "string"
-                                }
-                            },
-                            "required": [
-                                "name",
-                                "start",
-                                "count"
-                            ]
-                        }
-                    }
-                },
-                "required": [
-                    "name",
-                    "ranges"
-                ]
-            },
-            "minItems": 1
+                    "required": [
+                        "ranges"
+                    ],
+                    "minItems": 1
+                }
+            }
         },
         "vendor": {
             "$ref": "vendor.schema.json"

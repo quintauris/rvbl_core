@@ -9,12 +9,6 @@
         "name": {
             "type": "string"
         },
-        "instance": {
-            "type": "string"
-        },
-        "base": {
-            "type": "string"
-        },
         "description": {
             "$ref": "description.schema.json"
         },
@@ -22,33 +16,39 @@
             "type": "integer",
             "multipleof": 8
         },
-        "imports": {
-            "type": "array",
-            "items": {
-                "$ref": "import.schema.json"
+        "declarations": {
+            "type": "object",
+            "patternProperties": {
+                ".+": {
+                    "$ref": "declaration.schema.json"
+                }
             }
         },
         "addressables": {
-            "type": "array",
-            "items": {
-                "anyOf": [
-                    {
-                        "$ref": "addressable.schema.json"
-                    },
-                    {
-                        "$ref": "reference.schema.json"
-                    }
-                ]
+            "type": "object",
+            "patternProperties": {
+                ".+": {
+                    "anyOf": [
+                        {
+                            "$ref": "addressable.schema.json"
+                        },
+                        {
+                            "$ref": "instance.schema.json"
+                        }
+                    ]
+                }
             },
-            "minItems": 1
+            "minProperties": 1
         },
         "overlappings": {
             "$ref": "overlapping.schema.json"
         },
         "parameters": {
-            "type": "array",
-            "items": {
-                "$ref": "parameter.schema.json"
+            "type": "object",
+            "patternProperties": {
+                ".+": {
+                    "$ref": "parameter.schema.json"
+                }
             }
         },
         "vendor": {
@@ -56,6 +56,36 @@
         },
         "indexing": {
             "$ref": "indexing.schema.json"
+        },
+        "architecture": {
+            "type": "object",
+            "properties": {
+                "instruction_set": {
+                    "type": "string",
+                    "enum": [
+                        "RV32I",
+                        "RV32E",
+                        "RV64E",
+                        "RV64I"
+                    ]
+                },
+                "extensions": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "endianness": {
+                    "type": "string",
+                    "enum": [
+                        "little",
+                        "big"
+                    ]
+                }
+            }
+        },
+        "license": {
+            "type": "string"
         }
     },
     "required": [

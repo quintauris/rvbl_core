@@ -5,11 +5,18 @@
 use std::fs::File;
 use std::io::{BufWriter, Result, Write};
 
-use rvbl_model::{evaluator::parse_expression, model};
+use rvbl_model::{
+    evaluator::{parse_expression, parse_expression_option},
+    model,
+};
 
 pub trait MemoryLayoutTemplate {
     fn open(&self, writer: &mut BufWriter<File>) -> Result<()>;
-    fn entry(&self, writer: &mut BufWriter<File>, region: &model::Addressable) -> Result<()>;
+    fn entry(
+        &self,
+        writer: &mut BufWriter<File>,
+        region: (&String, &model::Addressable),
+    ) -> Result<()>;
     fn close(&self, writer: &mut BufWriter<File>) -> Result<()>;
 }
 
@@ -37,16 +44,20 @@ impl MemoryLayoutTemplate for Gnu {
         Ok(())
     }
 
-    fn entry(&self, writer: &mut BufWriter<File>, region: &model::Addressable) -> Result<()> {
+    fn entry(
+        &self,
+        writer: &mut BufWriter<File>,
+        region: (&String, &model::Addressable),
+    ) -> Result<()> {
         writeln!(
             writer,
             "{}({}{}{}) : ORIGIN = {:#010x}, LENGTH = {:#010x}",
-            &region.name,
-            Gnu::attribute(&region.read, 'r', true),
-            Gnu::attribute(&region.write, 'w', true),
-            Gnu::attribute(&region.execute, 'x', false),
-            parse_expression(&region.base),
-            parse_expression(&region.size)
+            &region.0,
+            Gnu::attribute(&region.1.read, 'r', true),
+            Gnu::attribute(&region.1.write, 'w', true),
+            Gnu::attribute(&region.1.execute, 'x', false),
+            parse_expression_option(&region.1.offset),
+            parse_expression(&region.1.size)
         )?;
 
         Ok(())
@@ -66,13 +77,17 @@ impl MemoryLayoutTemplate for Iar {
         Ok(())
     }
 
-    fn entry(&self, writer: &mut BufWriter<File>, region: &model::Addressable) -> Result<()> {
+    fn entry(
+        &self,
+        writer: &mut BufWriter<File>,
+        region: (&String, &model::Addressable),
+    ) -> Result<()> {
         writeln!(
             writer,
             "define region {} = Mem:[from {:#010x} size {:#010x}];",
-            &region.name,
-            parse_expression(&region.base),
-            parse_expression(&region.size)
+            &region.0,
+            parse_expression_option(&region.1.offset),
+            parse_expression(&region.1.size)
         )?;
 
         Ok(())
@@ -90,7 +105,11 @@ impl MemoryLayoutTemplate for Tasking {
         Ok(())
     }
 
-    fn entry(&self, writer: &mut BufWriter<File>, region: &model::Addressable) -> Result<()> {
+    fn entry(
+        &self,
+        writer: &mut BufWriter<File>,
+        region: (&String, &model::Addressable),
+    ) -> Result<()> {
         writeln!(
             writer,
             r#"memory {}
@@ -100,10 +119,10 @@ impl MemoryLayoutTemplate for Tasking {
   size = {:#010x};
   map(dest_offset={:#010x}, size={:#010x}, dest=bus:rv32i:main_bus);
 }}"#,
-            &region.name,
-            parse_expression(&region.size),
-            parse_expression(&region.base),
-            parse_expression(&region.size),
+            &region.0,
+            parse_expression(&region.1.size),
+            parse_expression_option(&region.1.offset),
+            parse_expression(&region.1.size),
         )?;
         writeln!(writer)?;
 

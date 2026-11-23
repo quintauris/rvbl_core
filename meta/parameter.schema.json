@@ -6,9 +6,6 @@
     "title": "Parameter",
     "type": "object",
     "properties": {
-        "name": {
-            "type": "string"
-        },
         "description": {
             "$ref": "description.schema.json"
         },
@@ -39,7 +36,6 @@
         }
     },
     "required": [
-        "name",
         "stage",
         "class"
     ]

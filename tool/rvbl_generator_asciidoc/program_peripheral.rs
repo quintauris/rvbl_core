@@ -11,7 +11,11 @@ use rvbl_model::{
     argument, loader,
     model::{Machine, Peripheral},
 };
-use std::{collections::HashSet, path::PathBuf, process::ExitCode, vec};
+use std::{
+    collections::{HashMap, HashSet},
+    path::PathBuf,
+    process::ExitCode,
+};
 
 fn main() -> ExitCode {
     let arguments = argument::Arguments::parse();
@@ -33,15 +37,18 @@ fn main() -> ExitCode {
             let generator = generator::AsciiDocGenerator::default();
             let machine = Machine {
                 name: String::new(),
+                meta_model_version: String::new(),
                 description: None,
                 word_size: 32,
-                imports: None,
-                memory_map: vec![],
-                peripherals: vec![],
+                max_transfer_size: None,
+                declarations: None,
+                memory_map: HashMap::new(),
+                peripherals: HashMap::new(),
                 overlappings: None,
-                resets: None,
-                parameters: vec![],
+                reset_types: None,
+                parameters: HashMap::new(),
                 vendor: None,
+                license: None,
             };
 
             match generator.generate_peripheral(&peripheral, &machine) {

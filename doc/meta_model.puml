@@ -4,11 +4,11 @@
   https://www.apache.org/licenses/LICENSE-2.0
 '/
 @startuml
-Machine "0" *-- "*" Import : "imports"
+Machine "0" *-- "*" Declaration : "declarations"
 Machine "0" *-- "*" Addressable : "memory_map"
 Machine "0" *-- "*" Peripheral : "peripherals"
 Machine "0" *-- "*" Overlapping : "overlappings"
-Machine "0" *-- "*" Reset : "resets"
+Machine "0" *-- "*" ResetType : "reset_types"
 Machine "0" *-- "*" Parameter : "parameters"
 
 Addressable "0" *-- "*" Register : "registers"
@@ -23,7 +23,7 @@ Register "0" *-- "1" Indexing : "indexing"
 Field "0" *-- "*" Value : "values"
 Field "0" *-- "1" Indexing : "indexing"
 
-Peripheral "0" *-- "*" Import : "imports"
+Peripheral "0" *-- "*" Declaration : "declarations"
 Peripheral "0" *-- "*" Addressable : "addressables"
 Peripheral "0" *-- "*" Overlapping : "overlappings"
 Peripheral "0" *-- "*" Parameter : "parameters"
