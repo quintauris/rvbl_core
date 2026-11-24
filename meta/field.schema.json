@@ -120,9 +120,6 @@
         },
         "vendor": {
             "$ref": "vendor.schema.json"
-        },
-        "indexing": {
-            "$ref": "indexing.schema.json"
         }
     }
 }

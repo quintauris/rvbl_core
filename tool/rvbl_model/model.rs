@@ -126,7 +126,6 @@ pub struct Field {
     pub write_policy: Option<FieldWritePolicy>,
     pub hw_volatile: Option<bool>,
     pub vendor: Option<Vendor>,
-    pub indexing: Option<Indexing>,
 }
 
 impl Described for Field {
@@ -257,6 +256,7 @@ pub struct IndexingDimensionRange {
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct IndexingDimension {
+    pub name: String,
     pub stride: Option<String>,
     pub ranges: Vec<IndexingDimensionRange>,
 }
@@ -280,7 +280,7 @@ impl IndexingDimension {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Indexing {
     pub layout: Option<IndexingLayout>,
-    pub dimensions: HashMap<String, IndexingDimension>,
+    pub dimensions: Vec<IndexingDimension>,
 }
 
 impl Indexing {
@@ -1025,7 +1025,6 @@ mod tests {
         read_policy: None,
         write_policy: None,
         vendor: None,
-        indexing: None,
     };
 
     #[test]
@@ -1216,27 +1215,20 @@ mod tests {
 
         register.indexing = Some(Indexing {
             layout: None,
-            dimensions: HashMap::from([(
-                String::from("dim0"),
-                IndexingDimension {
-                    stride: Some(String::from("8")),
-                    ranges: vec![IndexingDimensionRange {
-                        lower: "0".into(),
-                        upper: "1".into(),
-                    }],
-                },
-            )]),
+            dimensions: vec![IndexingDimension {
+                name: String::from("dim0"),
+                stride: Some(String::from("8")),
+                ranges: vec![IndexingDimensionRange {
+                    lower: "0".into(),
+                    upper: "1".into(),
+                }],
+            }],
         });
 
         match &register.indexing {
             Some(i) => {
                 assert_eq!(
-                    i.dimensions.get("dim0").unwrap().resolve_stride(
-                        &register,
-                        &addressable,
-                        &peripheral,
-                        &machine
-                    ),
+                    i.dimensions[0].resolve_stride(&register, &addressable, &peripheral, &machine),
                     8
                 );
             }
@@ -1245,27 +1237,20 @@ mod tests {
 
         register.indexing = Some(Indexing {
             layout: None,
-            dimensions: HashMap::from([(
-                String::from("dim0"),
-                IndexingDimension {
-                    stride: None,
-                    ranges: vec![IndexingDimensionRange {
-                        lower: "0".into(),
-                        upper: "1".into(),
-                    }],
-                },
-            )]),
+            dimensions: vec![IndexingDimension {
+                name: String::from("dim0"),
+                stride: None,
+                ranges: vec![IndexingDimensionRange {
+                    lower: "0".into(),
+                    upper: "1".into(),
+                }],
+            }],
         });
 
         match &register.indexing {
             Some(i) => {
                 assert_eq!(
-                    i.dimensions.get("dim0").unwrap().resolve_stride(
-                        &register,
-                        &addressable,
-                        &peripheral,
-                        &machine
-                    ),
+                    i.dimensions[0].resolve_stride(&register, &addressable, &peripheral, &machine),
                     16
                 );
             }
@@ -1277,16 +1262,14 @@ mod tests {
     fn test_indexing_resolve_layout() {
         let mut indexing = Indexing {
             layout: None,
-            dimensions: HashMap::from([(
-                String::from("dim0"),
-                IndexingDimension {
-                    stride: None,
-                    ranges: vec![IndexingDimensionRange {
-                        lower: "0".into(),
-                        upper: "1".into(),
-                    }],
-                },
-            )]),
+            dimensions: vec![IndexingDimension {
+                name: String::from("dim0"),
+                stride: None,
+                ranges: vec![IndexingDimensionRange {
+                    lower: "0".into(),
+                    upper: "1".into(),
+                }],
+            }],
         };
 
         assert!(matches!(indexing.resolve_layout(), IndexingLayout::Rows));

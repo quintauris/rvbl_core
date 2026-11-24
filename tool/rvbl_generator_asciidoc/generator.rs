@@ -172,7 +172,7 @@ impl AsciiDocGenerator {
             )?;
 
             if let Some(indexing) = &register.indexing {
-                let (_, dimension) = indexing.dimensions.iter().next().unwrap();
+                let dimension = indexing.dimensions.iter().next().unwrap();
 
                 templates::horizontal_list(
                     writer,

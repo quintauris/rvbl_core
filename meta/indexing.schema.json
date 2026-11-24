@@ -17,9 +17,13 @@
             "$ref": "description.schema.json"
         },
         "dimensions": {
-            "type": "object",
-            "patternProperties": {
-                ".+": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "name": {
+                        "type": "string"
+                    },
                     "stride": {
                         "type": "string"
                     },
@@ -37,13 +41,14 @@
                             }
                         },
                         "minItems": 1
-                    },
-                    "required": [
-                        "ranges"
-                    ],
-                    "minItems": 1
-                }
-            }
+                    }
+                },
+                "required": [
+                    "name",
+                    "ranges"
+                ]
+            },
+            "minItems": 1
         },
         "vendor": {
             "$ref": "vendor.schema.json"
